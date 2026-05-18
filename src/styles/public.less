@@ -1,0 +1,58 @@
+@btnWidth: 120px;
+@btnHeight: 40px;
+
+.baseBtn {
+  width: @btnWidth;
+  height: @btnHeight;
+  margin: 5px 5px;
+  border-radius: 3px;
+  box-shadow: 7px 6px 28px 1px rgba(0, 0, 0, 0.24);
+  transition: 0.2s all;
+  color: white;
+  &:active {
+    transform: scale(0.98);
+
+    box-shadow: 3px 2px 22px 1px rgba(0, 0, 0, 0.24);
+  }
+}
+
+.btnConfirm {
+  .baseBtn;
+  background-color: #1e90ff;
+  &:hover {
+    background-color: #00bfff;
+  }
+}
+
+.btnCancel {
+  .baseBtn;
+  background-color: white;
+  border: #778899 1px solid;
+  color: #778899;
+  &:hover {
+    color: #dcdcdc;
+    border: #dcdcdc 1px solid;
+  }
+}
+
+.btnUpdate {
+  .baseBtn;
+  background-color: #5f9ea0;
+  border: #5f9ea0 1px solid;
+  color: white;
+  &:hover {
+    background-color: #87cecb;
+    border: #87cecb 1px solid;
+  }
+}
+
+.btnDelete {
+  .baseBtn;
+  background-color: #ff4500;
+  border: #ff4500 1px solid;
+  color: white;
+  &:hover {
+    background-color: #ff7f50;
+    border: #ff7f50 1px solid;
+  }
+}
