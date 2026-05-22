@@ -5,11 +5,9 @@ import Vue from '@vitejs/plugin-vue'
 import WindiCSS from 'vite-plugin-windicss'
 import VueJsx from '@vitejs/plugin-vue-jsx'
 import EslintPlugin from 'vite-plugin-eslint'
-import VueI18n from '@intlify/vite-plugin-vue-i18n'
+import VueI18n from '@intlify/unplugin-vue-i18n/vite'
 import { createStyleImportPlugin, ElementPlusResolve } from 'vite-plugin-style-import'
 import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
-import PurgeIcons from 'vite-plugin-purge-icons'
-import { viteMockServe } from 'vite-plugin-mock'
 import { createHtmlPlugin } from 'vite-plugin-html'
 import VueMarcos from 'unplugin-vue-macros/vite'
 
@@ -35,7 +33,13 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
   return {
     base: env.VITE_BASE_PATH,
     plugins: [
-      Vue(),
+      Vue({
+        template: {
+          compilerOptions: {
+            isCustomElement: tag => tag === 'iconify-icon'
+          }
+        }
+      }),
       VueJsx(),
       WindiCSS(),
       createStyleImportPlugin({
@@ -61,18 +65,6 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
         iconDirs: [pathResolve('src/assets/svgs')],
         symbolId: 'icon-[dir]-[name]',
         svgoOptions: true
-      }),
-      PurgeIcons(),
-      viteMockServe({
-        ignore: /^\_/,
-        mockPath: 'mock',
-        localEnabled: !isBuild,
-        prodEnabled: isBuild,
-        injectCode: `
-          import { setupProdMockServer } from '../mock/_createProductionServer'
-
-          setupProdMockServer()
-          `
       }),
       VueMarcos(),
       createHtmlPlugin({
@@ -123,7 +115,7 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
       proxy: {
         // 选项写法
         '/api': {
-          target: 'http://127.0.0.1:8000',
+          target: 'http://47.108.212.205:9527',
           changeOrigin: true,
           rewrite: path => path.replace(/^\/api/, '')
         }
@@ -140,7 +132,7 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
         'vue-types',
         'element-plus/es/locale/lang/zh-cn',
         'element-plus/es/locale/lang/en',
-        '@iconify/iconify',
+        'iconify-icon',
         '@vueuse/core',
         'axios',
         'qs',

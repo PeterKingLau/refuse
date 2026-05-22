@@ -14,7 +14,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue '
+import { ref, reactive } from 'vue'
 
 //#region  数据定义
 const formData = reactive({

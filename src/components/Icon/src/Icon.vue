@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, unref, ref, watch, nextTick } from 'vue'
+import { computed, unref } from 'vue'
 import { ElIcon } from 'element-plus'
 import { propTypes } from '@/utils/propTypes'
-import Iconify from '@purge-icons/generated'
+import 'iconify-icon'
 import { useDesign } from '@/hooks/web/useDesign'
 
 const { getPrefixCls } = useDesign()
@@ -18,8 +18,6 @@ const props = defineProps({
   size: propTypes.number.def(16)
 })
 
-const elRef = ref<ElRef>(null)
-
 const isLocal = computed(() => props.icon.startsWith('svg-icon:'))
 
 const symbolId = computed(() => {
@@ -30,39 +28,11 @@ const getIconifyStyle = computed(() => {
   const { color, size } = props
   return {
     fontSize: `${size}px`,
-    color
+    color,
+    width: `${size}px`,
+    height: `${size}px`
   }
 })
-
-const updateIcon = async (icon: string) => {
-  if (unref(isLocal)) return
-
-  const el = unref(elRef)
-  if (!el) return
-
-  await nextTick()
-
-  if (!icon) return
-
-  const svg = Iconify.renderSVG(icon, {})
-  if (svg) {
-    el.textContent = ''
-    el.appendChild(svg)
-  } else {
-    const span = document.createElement('span')
-    span.className = 'iconify'
-    span.dataset.icon = icon
-    el.textContent = ''
-    el.appendChild(span)
-  }
-}
-
-watch(
-  () => props.icon,
-  (icon: string) => {
-    updateIcon(icon)
-  }
-)
 </script>
 
 <template>
@@ -71,8 +41,6 @@ watch(
       <use :xlink:href="symbolId" />
     </svg>
 
-    <span v-else ref="elRef" :class="$attrs.class" :style="getIconifyStyle">
-      <span class="iconify" :data-icon="symbolId"></span>
-    </span>
+    <iconify-icon v-else :class="$attrs.class" :icon="symbolId" :style="getIconifyStyle" />
   </ElIcon>
 </template>

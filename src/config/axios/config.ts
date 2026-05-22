@@ -14,7 +14,7 @@ const config: {
    */
   base_url: {
     // 开发环境接口前缀
-    base: 'http://localhost:8080',
+    base: '/api',
 
     // 打包开发环境接口前缀
     dev: 'http://localhost:8080',

@@ -1,11 +1,15 @@
 /// <reference types="vite/client" />
+/// <reference types="vite-plugin-svg-icons/client" />
+/// <reference types="unplugin-vue-macros/macros-global" />
 
 declare module '*.vue' {
   import { DefineComponent } from 'vue'
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/ban-types
   const component: DefineComponent<{}, {}, any>
   export default component
 }
+
+declare module 'virtual:svg-icons-register'
+declare module 'virtual:windi-devtools'
 
 interface ImportMetaEnv {
   readonly VITE_APP_TITLE: string

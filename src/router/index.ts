@@ -23,7 +23,7 @@ export const constantRouterMap: AppRouteRecordRaw[] = [
     children: [
       {
         path: '/redirect/:path(.*)',
-        name: 'Redirect',
+        name: 'RedirectPath',
         component: () => import('@/views/Redirect/Redirect.vue'),
         meta: {}
       }
@@ -589,7 +589,9 @@ export const resetRouter = (): void => {
   router.getRoutes().forEach((route) => {
     const { name } = route
     if (name && !resetWhiteNameList.includes(name as string)) {
-      router.hasRoute(name) && router.removeRoute(name)
+      if (router.hasRoute(name)) {
+        router.removeRoute(name)
+      }
     }
   })
 }

@@ -24,17 +24,16 @@ const { loadStart, loadDone } = usePageLoading()
 
 const whiteList = ['/login'] // 不重定向白名单
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, from) => {
   start()
   loadStart()
 
   if (wsCache.get(appStore.getUserInfo)) {
     if (to.path === '/login') {
-      next({ path: '/' })
+      return { path: '/' }
     } else {
       if (permissionStore.getIsAddRouters) {
-        next()
-        return
+        return true
       }
 
       // if (!dictStore.getIsSetDict) {
@@ -68,13 +67,13 @@ router.beforeEach(async (to, from, next) => {
       const redirect = decodeURIComponent(redirectPath as string)
       const nextData = to.path === redirect ? { ...to, replace: true } : { path: redirect }
       permissionStore.setIsAddRouters(true)
-      next(nextData)
+      return nextData
     }
   } else {
     if (whiteList.indexOf(to.path) !== -1) {
-      next()
+      return true
     } else {
-      next(`/login?redirect=${to.path}`) // 否则全部重定向到登录页
+      return `/login?redirect=${to.path}` // 否则全部重定向到登录页
     }
   }
 })
