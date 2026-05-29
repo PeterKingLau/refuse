@@ -5,7 +5,7 @@ import { Table } from '@/components/Table'
 import { getTableListApi } from '@/api/table'
 import { TableData } from '@/api/table/types'
 import { ref, h, reactive, unref } from 'vue'
-import { ElTag, ElButton } from 'element-plus'
+import { Button as AButton, Tag as ATag } from 'ant-design-vue'
 import { useTable } from '@/hooks/web/useTable'
 import { Pagination, TableColumn, TableSlotDefault } from '@/types/table'
 
@@ -50,16 +50,11 @@ const columns = reactive<TableColumn[]>([
         label: t('tableDemo.importance'),
         formatter: (_: Recordable, __: TableColumn, cellValue: number) => {
           return h(
-            ElTag,
+            ATag,
             {
-              type: cellValue === 1 ? 'success' : cellValue === 2 ? 'warning' : 'danger'
+              color: cellValue === 1 ? 'success' : cellValue === 2 ? 'warning' : 'error'
             },
-            () =>
-              cellValue === 1
-                ? t('tableDemo.important')
-                : cellValue === 2
-                ? t('tableDemo.good')
-                : t('tableDemo.commonly')
+            () => (cellValue === 1 ? t('tableDemo.important') : cellValue === 2 ? t('tableDemo.good') : t('tableDemo.commonly'))
           )
         }
       },
@@ -133,25 +128,21 @@ const selectAllNone = () => {
 
 <template>
   <ContentWrap :title="`UseTable ${t('tableDemo.operate')}`">
-    <ElButton @click="showPagination(true)">
-      {{ t('tableDemo.show') }} {{ t('tableDemo.pagination') }}
-    </ElButton>
-    <ElButton @click="showPagination(false)">
-      {{ t('tableDemo.hidden') }} {{ t('tableDemo.pagination') }}
-    </ElButton>
+    <AButton @click="showPagination(true)"> {{ t('tableDemo.show') }} {{ t('tableDemo.pagination') }} </AButton>
+    <AButton @click="showPagination(false)"> {{ t('tableDemo.hidden') }} {{ t('tableDemo.pagination') }} </AButton>
 
-    <ElButton @click="reserveIndex(true)">{{ t('tableDemo.reserveIndex') }}</ElButton>
-    <ElButton @click="reserveIndex(false)">{{ t('tableDemo.restoreIndex') }}</ElButton>
+    <AButton @click="reserveIndex(true)">{{ t('tableDemo.reserveIndex') }}</AButton>
+    <AButton @click="reserveIndex(false)">{{ t('tableDemo.restoreIndex') }}</AButton>
 
-    <ElButton @click="showSelections(true)">{{ t('tableDemo.showSelections') }}</ElButton>
-    <ElButton @click="showSelections(false)">{{ t('tableDemo.hiddenSelections') }}</ElButton>
+    <AButton @click="showSelections(true)">{{ t('tableDemo.showSelections') }}</AButton>
+    <AButton @click="showSelections(false)">{{ t('tableDemo.hiddenSelections') }}</AButton>
 
-    <ElButton @click="changeTitle">{{ t('tableDemo.changeTitle') }}</ElButton>
+    <AButton @click="changeTitle">{{ t('tableDemo.changeTitle') }}</AButton>
 
-    <ElButton @click="showExpandedRows(true)">{{ t('tableDemo.showExpandedRows') }}</ElButton>
-    <ElButton @click="showExpandedRows(false)">{{ t('tableDemo.hiddenExpandedRows') }}</ElButton>
+    <AButton @click="showExpandedRows(true)">{{ t('tableDemo.showExpandedRows') }}</AButton>
+    <AButton @click="showExpandedRows(false)">{{ t('tableDemo.hiddenExpandedRows') }}</AButton>
 
-    <ElButton @click="selectAllNone">{{ t('tableDemo.selectAllNone') }}</ElButton>
+    <AButton @click="selectAllNone">{{ t('tableDemo.selectAllNone') }}</AButton>
   </ContentWrap>
   <ContentWrap :title="`UseTable ${t('tableDemo.example')}`">
     <Table
@@ -164,9 +155,9 @@ const selectAllNone = () => {
       @register="register"
     >
       <template #action="data">
-        <ElButton type="primary" @click="actionFn(data as TableSlotDefault)">
+        <AButton type="primary" @click="actionFn(data as TableSlotDefault)">
           {{ t('tableDemo.action') }}
-        </ElButton>
+        </AButton>
       </template>
 
       <template #expand="data">

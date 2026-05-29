@@ -1,321 +1,218 @@
 <template>
-  <el-row>
-    <el-form :model="searchFormData" label-width="100px" :inline="true" v-if="showSearchForm">
-      <el-form-item label="规则名称">
-        <el-input v-model="searchFormData.ruleName" class="eInput" placeholder="请输入规则名称" />
-      </el-form-item>
-      <el-form-item label="产品类型">
-        <el-select v-model="searchFormData.productId" placeholder="请选择产品类型">
-          <el-option
-            v-for="item in productArray"
-            :key="item.id"
-            :label="item.name"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="设备型号">
-        <el-input
-          v-model="searchFormData.deviceName"
-          class="eInput"
-          placeholder="请输入设备型号名称"
-        />
-      </el-form-item>
+  <div class="device-rule-page">
+    <AForm v-if="showSearchForm" :model="searchFormData" layout="horizontal" class="search-form">
+      <AFormItem label="规则名称" class="search-form-item">
+        <AInput v-model:value="searchFormData.ruleName" placeholder="请输入规则名称" />
+      </AFormItem>
 
-      <el-form-item>
-        <el-button type="primary" class="btn" @click="onSerach" v-hasPermi="Permission.sec">
-          <el-icon><Search /></el-icon>
-          搜索
-        </el-button>
-      </el-form-item>
+      <AFormItem label="产品类型" class="search-form-item">
+        <ASelect v-model:value="searchFormData.productId" :options="productOptions" allow-clear placeholder="请选择产品类型" />
+      </AFormItem>
 
-      <el-form-item>
-        <el-button class="btn" @click="onReset">
-          <el-icon class="el-icon--left"><RefreshRight /></el-icon>
-          重置
-        </el-button>
-      </el-form-item>
-    </el-form>
-  </el-row>
+      <AFormItem label="设备型号" class="search-form-item">
+        <AInput v-model:value="searchFormData.deviceName" placeholder="请输入设备型号名称" />
+      </AFormItem>
 
-  <el-row>
-    <el-col :span="18">
-      <el-button type="primary" class="btn" @click="OnClickAdd" v-hasPermi="Permission.add">
-        <el-icon><Plus /> </el-icon>
-        新增</el-button
-      >
+      <AFormItem class="search-form-actions">
+        <ASpace>
+          <AButton type="primary" class="icon-button" @click="onSearch" v-hasPermi="Permission.sec">
+            <template #icon>
+              <Icon icon="ant-design:search-outlined" />
+            </template>
+            搜索
+          </AButton>
+          <AButton class="icon-button" @click="onReset">
+            <template #icon>
+              <Icon icon="ant-design:reload-outlined" />
+            </template>
+            重置
+          </AButton>
+        </ASpace>
+      </AFormItem>
+    </AForm>
 
-      <el-button
-        type="success"
-        class="btn"
-        :disabled="disableUpdate"
-        v-if="false"
-        v-hasPermi="Permission.rev"
-        ><el-icon><EditPen /></el-icon>修改</el-button
-      >
-      <el-button
-        type="danger"
-        class="btn"
-        :disabled="disableRemove"
-        @click="deleteOfBatch"
-        v-hasPermi="Permission.del"
-        v-if="false"
-        ><el-icon><Close /></el-icon>删除</el-button
-      >
-    </el-col>
-    <el-col :span="6" style="text-align: right">
-      <el-tooltip content="隐藏搜索" placement="top-start">
-        <el-button circle @click="showSearchForm = !showSearchForm">
-          <el-icon><Search /></el-icon
-        ></el-button>
-      </el-tooltip>
-      <el-tooltip content="刷新" placement="top-start">
-        <el-button circle @click="onPageRest">
-          <el-icon><RefreshRight /></el-icon>
-        </el-button>
-      </el-tooltip>
-    </el-col>
-  </el-row>
-
-  <el-divider />
-  <el-row>
-    <el-table ref="TableRef" :data="TableData" style="width: 100%">
-      <el-table-column label="记录id" width="100" property="id" />
-      <el-table-column label="产品类型" width="180" property="product.name" />
-
-      <el-table-column label="规则名称" width="160" property="label" />
-      <el-table-column label="状态" width="100">
-        <template #default="scope">
-          {{ converStatus(scope.row.status) }}
-        </template>
-      </el-table-column>
-      <el-table-column label="设备类型" width="180" property="deviceType.name" />
-
-      <el-table-column label="创建时间" width="280" property="createTime" />
-      <el-table-column label="创建人" width="200" property="staff.name" />
-      <el-table-column label="操作时间" width="260" property="updateTime" />
-      <el-table-column label="操作" v-slot="scope">
-        <div class="buttonOfTables">
-          <el-link
-            class="item"
-            size="small"
-            type="success"
-            @click="handleDetail(scope.row)"
-            v-hasPermi="Permission.rev"
-            >修改</el-link
-          >
-          <el-link
-            class="item"
-            size="small"
-            type="primary"
-            @click="handlePublish(scope.row)"
-            v-hasPermi="Permission.puh"
-            >发布</el-link
-          >
-          <el-link
-            class="item"
-            size="small"
-            type="danger"
-            @click="handleRemove(scope.row)"
-            v-hasPermi="Permission.del"
-            >删除</el-link
-          >
-        </div>
-      </el-table-column>
-    </el-table>
-  </el-row>
-  <el-row style="width: 100%; text-align: right">
-    <el-col :span="8" />
-    <el-col :span="8" />
-    <el-col :span="8" style="text-align: right">
-      <el-pagination
-        v-model:current-page="currentPage"
-        v-model:page-size="pageSize"
-        :page-sizes="[5, 10, 15, 20]"
-        :small="small"
-        :disabled="disabled"
-        :background="background"
-        layout="total, sizes, prev, pager, next, jumper"
-        :total="total"
-        @size-change="getDeviceRuleTableData"
-        @current-change="getDeviceRuleTableData"
-      />
-    </el-col>
-  </el-row>
-
-  <el-dialog v-model="dialogTableVisible" :title="title">
-    <el-dialog
-      v-model="showImgBox"
-      class="imgBox"
-      width="40%"
-      title="图片选择"
-      append-to-body
-      top="530px"
-    >
-      <el-row style="width: 100%">
-        <ElImage
-          v-for="i in PicArray"
-          :src="getImageURL(i.pic)"
-          :key="i.id"
-          class="imgBoxList"
-          @click="PicSelect(i)"
-        />
-      </el-row>
-    </el-dialog>
-
-    <el-form :model="addRuleFormData">
-      <el-form-item label="规则名称" label-width="100">
-        <el-input v-model="addRuleFormData.ruleName" placeholder="请输入规则名称" />
-      </el-form-item>
-
-      <el-form-item label="所属运营商" label-width="100">
-        <el-select v-model="addRuleFormData.departmentId" placeholder="请选择运营商">
-          <el-option
-            v-for="item in DepartmentArray"
-            :key="item.id"
-            :value="item.id"
-            :label="item.platform_name"
-          />
-        </el-select>
-      </el-form-item>
-
-      <el-form-item label="产品类型" label-width="100">
-        <el-select
-          v-model="addRuleFormData.productId"
-          placeholder="请选择产品类型"
-          @change="productChange"
-        >
-          <el-option
-            v-for="item in productArray"
-            :key="item.id"
-            :label="item.name"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
-
-      <el-form-item label="设备类型" label-width="100">
-        <el-select
-          v-model="addRuleFormData.deviceId"
-          placeholder="请选择设备类型"
-          @change="deviceChange"
-        >
-          <el-option
-            v-for="item in deviceTypeArray"
-            :key="item.id"
-            :label="item.name"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
-
-      <el-form-item label="仓位设置：" label-width="100">
-        <el-scrollbar height="400px" style="width: 80%">
-          <div v-for="item in warehouseArray" :key="item.id" class="scrollbar-demo-item">
-            <el-row class="test">
-              <el-col :span="8">
-                <el-row>
-                  <el-image
-                    style="width: 100px; height: 100px"
-                    :src="getImageURL(item.pic)"
-                    fit="fill"
-                  />
-                </el-row>
-                <el-row>
-                  <el-button
-                    type="primary"
-                    @click="onClickChange(item)"
-                    style="width: 100px; margin-top: 5px"
-                  >
-                    更改</el-button
-                  >
-                </el-row>
-              </el-col>
-              <el-col :span="16">
-                <el-row>
-                  <el-col :span="8"> 仓位编号: </el-col>
-                  <el-col :span="16">
-                    {{ item.code }}
-                  </el-col>
-                </el-row>
-                <el-row>
-                  <el-col :span="8"> 类型名称: </el-col>
-                  <el-col :span="16">
-                    <el-select
-                      v-model="item.garbageType"
-                      class="m-2"
-                      placeholder="Select"
-                      size="small"
-                      clearable
-                    >
-                      <el-option
-                        v-for="gbg in garbageTypeArray"
-                        :key="gbg.id"
-                        :label="gbg.label"
-                        :value="gbg.id"
-                      />
-                    </el-select>
-                  </el-col>
-                </el-row>
-
-                <el-row>
-                  <el-col :span="8"> 投放价格: </el-col>
-                  <el-col :span="16">
-                    <el-input-number
-                      v-model="item.points"
-                      placeholder=""
-                      controls-position="right"
-                      :min="0"
-                      :max="9999"
-                    />
-                  </el-col>
-                </el-row>
-              </el-col>
-            </el-row>
-          </div>
-        </el-scrollbar>
-      </el-form-item>
-
-      <div style="width: 100%; margin-top: 10px; text-align: right">
-        <span class="dialog-footer">
-          <el-button @click="onCloseDialog">取消</el-button>
-          <el-button type="primary" @click="onAddConfirm"> 确认 </el-button>
-        </span>
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <AButton type="primary" class="icon-button" @click="OnClickAdd" v-hasPermi="Permission.add">
+          <template #icon>
+            <Icon icon="ant-design:plus-outlined" />
+          </template>
+          新增
+        </AButton>
       </div>
-    </el-form>
-  </el-dialog>
+
+      <div class="toolbar-right">
+        <ATooltip :title="showSearchForm ? '隐藏搜索' : '显示搜索'">
+          <AButton shape="circle" @click="showSearchForm = !showSearchForm">
+            <template #icon>
+              <Icon icon="ant-design:search-outlined" />
+            </template>
+          </AButton>
+        </ATooltip>
+        <ATooltip title="刷新">
+          <AButton shape="circle" @click="onPageRest">
+            <template #icon>
+              <Icon icon="ant-design:reload-outlined" />
+            </template>
+          </AButton>
+        </ATooltip>
+      </div>
+    </div>
+
+    <ATable row-key="id" :columns="columns" :data-source="TableData" :pagination="false" bordered>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'status'">
+          <ATag :color="record.status == 0 ? 'default' : 'success'">
+            {{ convertStatus(record.status) }}
+          </ATag>
+        </template>
+
+        <template v-else-if="column.key === 'action'">
+          <ASpace>
+            <AButton type="link" class="table-action action-edit" @click="handleDetail(record)" v-hasPermi="Permission.rev">
+              <template #icon>
+                <Icon icon="ant-design:edit-outlined" />
+              </template>
+              修改
+            </AButton>
+            <AButton type="link" class="table-action" @click="handlePublish(record)" v-hasPermi="Permission.puh">
+              <template #icon>
+                <Icon icon="ant-design:cloud-upload-outlined" />
+              </template>
+              发布
+            </AButton>
+            <AButton type="link" danger class="table-action" @click="handleRemove(record)" v-hasPermi="Permission.del">
+              <template #icon>
+                <Icon icon="ant-design:delete-outlined" />
+              </template>
+              删除
+            </AButton>
+          </ASpace>
+        </template>
+      </template>
+    </ATable>
+
+    <div class="pagination-wrap">
+      <APagination
+        v-model:current="currentPage"
+        v-model:page-size="pageSize"
+        :page-size-options="['5', '10', '15', '20']"
+        :show-size-changer="true"
+        :disabled="disabled"
+        :total="total"
+        :show-total="(totalCount) => `共 ${totalCount} 条`"
+        show-quick-jumper
+        @change="handlePageChange"
+        @show-size-change="handlePageChange"
+      />
+    </div>
+
+    <AModal v-model:open="dialogTableVisible" :title="title" width="820px" :destroy-on-close="true" @cancel="onCloseDialog">
+      <AForm :model="addRuleFormData" layout="vertical">
+        <ARow :gutter="16">
+          <ACol :span="12">
+            <AFormItem label="规则名称">
+              <AInput v-model:value="addRuleFormData.ruleName" placeholder="请输入规则名称" />
+            </AFormItem>
+          </ACol>
+
+          <ACol :span="12">
+            <AFormItem label="所属运营商">
+              <ASelect v-model:value="addRuleFormData.departmentId" :options="departmentOptions" placeholder="请选择运营商" />
+            </AFormItem>
+          </ACol>
+
+          <ACol :span="12">
+            <AFormItem label="产品类型">
+              <ASelect v-model:value="addRuleFormData.productId" :options="productOptions" placeholder="请选择产品类型" @change="productChange" />
+            </AFormItem>
+          </ACol>
+
+          <ACol :span="12">
+            <AFormItem label="设备类型">
+              <ASelect v-model:value="addRuleFormData.deviceId" :options="deviceTypeOptions" placeholder="请选择设备类型" @change="deviceChange" />
+            </AFormItem>
+          </ACol>
+        </ARow>
+
+        <AFormItem label="仓位设置">
+          <div class="warehouse-list">
+            <div v-for="item in warehouseArray" :key="item.code" class="warehouse-item">
+              <div class="warehouse-media">
+                <img v-if="item.pic" :src="getImageURL(item.pic)" class="warehouse-image" />
+                <div v-else class="warehouse-empty">暂无图片</div>
+                <AButton type="primary" class="change-image-button" @click="onClickChange(item)">更改</AButton>
+              </div>
+
+              <div class="warehouse-info">
+                <div class="warehouse-line">
+                  <span class="warehouse-label">仓位编号</span>
+                  <span>{{ item.code }}</span>
+                </div>
+
+                <div class="warehouse-line">
+                  <span class="warehouse-label">类型名称</span>
+                  <ASelect
+                    :value="item.garbageType ?? undefined"
+                    :options="garbageTypeOptions"
+                    allow-clear
+                    placeholder="请选择垃圾类型"
+                    class="warehouse-control"
+                    @change="(value) => handleWarehouseGarbageChange(item, value as number | undefined)"
+                  />
+                </div>
+
+                <div class="warehouse-line">
+                  <span class="warehouse-label">投放价格</span>
+                  <AInputNumber v-model:value="item.points" :min="0" :max="9999" class="warehouse-control" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </AFormItem>
+      </AForm>
+
+      <template #footer>
+        <ASpace>
+          <AButton @click="onCloseDialog">取消</AButton>
+          <AButton type="primary" @click="onAddConfirm">确认</AButton>
+        </ASpace>
+      </template>
+    </AModal>
+
+    <AModal v-model:open="showImgBox" title="图片选择" width="560px" :footer="null">
+      <div class="image-picker">
+        <img v-for="item in PicArray" :key="item.id" :src="getImageURL(item.pic)" class="image-picker-item" @click="PicSelect(item)" />
+        <AEmpty v-if="PicArray.length === 0" description="暂无图片" />
+      </div>
+    </AModal>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { PATH_URL, service } from '@/config/axios/service'
-import { onMounted, Ref, ref, computed, watch, unref, inject } from 'vue'
+import { computed, inject, onMounted, reactive, ref } from 'vue'
+import {
+  Button as AButton,
+  Col as ACol,
+  Empty as AEmpty,
+  Form as AForm,
+  FormItem as AFormItem,
+  Input as AInput,
+  InputNumber as AInputNumber,
+  Modal as AModal,
+  Pagination as APagination,
+  Row as ARow,
+  Select as ASelect,
+  Space as ASpace,
+  Table as ATable,
+  Tag as ATag,
+  Tooltip as ATooltip,
+  message
+} from 'ant-design-vue'
+import type { TableColumnsType } from 'ant-design-vue'
 import qs from 'qs'
-import { ElMessage, ElMessageBox, ElTable } from 'element-plus'
-
-const reload: any = inject('reload')
-
-const onPageRest = () => {
-  reload()
-}
-const Permission = ref({
-  add: 'mac_rul_add',
-  rev: 'mac_rul_rev',
-  del: 'mac_rul_del',
-  puh: 'mac_rul_puh',
-  sec: 'mac_rul_sec'
-})
-
-//#region  分页相关
-const currentPage = ref(1)
-const total = ref(0)
-const pageSize = ref(5)
-const small = ref(false)
-const background = ref(false)
-const disabled = ref(false)
-
-//#endregion
-
-//#region 数据结构定义
+import { PATH_URL, service } from '@/config/axios/service'
+import { Icon } from '@/components/Icon'
 
 interface PicStruct {
   id: number
@@ -330,7 +227,7 @@ interface GarbageTypeStruct {
 }
 
 interface SearchFormDataStruct {
-  productId: number | undefined
+  productId?: number
   ruleName: string
   deviceName: string
   page: number
@@ -342,13 +239,13 @@ interface SimpleProductTypeStruct {
   name: string
 }
 
-interface SimpleDeviceTypeStrcut {
+interface SimpleDeviceTypeStruct {
   id: number
   name: string
   warehouse: number
 }
 
-interface warehouseStruct {
+interface WarehouseStruct {
   id?: number
   code: number
   pic: string
@@ -359,13 +256,14 @@ interface warehouseStruct {
 interface AddRuleStruct {
   id: number
   ruleName: string
-  productId: number | undefined
-  deviceId: number | undefined
-  warehouse?: warehouseStruct[]
-  departmentId: number | undefined
+  productId?: number
+  deviceId?: number
+  warehouse?: WarehouseStruct[]
+  departmentId?: number
 }
 
 interface TableDataStruct {
+  [key: string]: any
   id: number
   label: string
   status: number
@@ -376,38 +274,52 @@ interface TableDataStruct {
   productType: any
 }
 
-//#endregion
+const reload = inject<() => void>('reload')
 
-//#region  钩子函数
-
-//获取图片的地址
-const getImageURL = computed(() => (imageURL) => {
-  return PATH_URL + '/Common/downLoadPic/' + imageURL
-})
-
-onMounted(() => {
-  getDeviceRuleTableData()
-  getProductType()
-  getGarbageType()
-  getDepartmnet()
-})
-//#endregion
-
-//#region 搜索框相关
-let showSearchForm = ref(true)
-let productArray: Ref<SimpleProductTypeStruct[]> = ref([])
-const onSerach = () => {
+const onPageRest = () => {
+  if (reload) {
+    reload()
+    return
+  }
   getDeviceRuleTableData()
 }
-const onReset = () => {
-  searchFormData.value.productId = undefined
-  searchFormData.value.page = 1
-  searchFormData.value.deviceName = ''
-  searchFormData.value.ruleName = ''
-  searchFormData.value.size = 5
-}
 
-let searchFormData: Ref<SearchFormDataStruct> = ref({
+const Permission = ref({
+  add: 'mac_rul_add',
+  rev: 'mac_rul_rev',
+  del: 'mac_rul_del',
+  puh: 'mac_rul_puh',
+  sec: 'mac_rul_sec'
+})
+
+const currentPage = ref(1)
+const total = ref(0)
+const pageSize = ref(5)
+const disabled = ref(false)
+
+const showSearchForm = ref(true)
+const productArray = ref<SimpleProductTypeStruct[]>([])
+const garbageTypeArray = ref<GarbageTypeStruct[]>([])
+const warehouseArray = ref<WarehouseStruct[]>([])
+const deviceTypeArray = ref<SimpleDeviceTypeStruct[]>([])
+const dialogTableVisible = ref(false)
+const title = ref('添加运营规则')
+const isUpdate = ref(false)
+const TableData = ref<TableDataStruct[]>([])
+const DepartmentArray = ref<any[]>([])
+const showImgBox = ref(false)
+const PicArray = ref<PicStruct[]>([])
+const SelectWarehouse = ref<WarehouseStruct>({
+  id: 0,
+  pic: '',
+  garbageType: null,
+  points: 0,
+  code: 0
+})
+
+let selectedTable: TableDataStruct | undefined
+
+const searchFormData = reactive<SearchFormDataStruct>({
   productId: undefined,
   ruleName: '',
   deviceName: '',
@@ -415,78 +327,95 @@ let searchFormData: Ref<SearchFormDataStruct> = ref({
   size: 5
 })
 
-const getProductType = () => {
-  let parm = {
-    id: 0,
-    name: '',
-    page: 1,
-    size: 99999
-  }
-  service.post(PATH_URL + '/MachineMange/getProduct', parm).then((res) => {
-    console.log(res)
-    productArray.value = res.data
-  })
-}
-
-//#endregion
-
-//#region  中间按钮处理
-let disableUpdate = ref(true)
-let disableRemove = ref(true)
-let deleteOfBatch = () => {}
-
-const OnClickAdd = () => {
-  isUpdate.value = false
-  initAddRuleData()
-  dialogTableVisible.value = true
-}
-
-//#endregion
-
-//#region  dialog 相关
-
-let garbageTypeArray: Ref<GarbageTypeStruct[]> = ref([])
-
-let warehouseArray: Ref<warehouseStruct[]> = ref([])
-
-let deviceTypeArray: Ref<SimpleDeviceTypeStrcut[]> = ref([])
-let dialogTableVisible = ref(false)
-let title = ref('添加运营规则')
-let addRuleFormData: Ref<AddRuleStruct> = ref({
+const addRuleFormData = reactive<AddRuleStruct>({
   id: 0,
   ruleName: '',
   productId: undefined,
   deviceId: undefined,
-  departmentId: undefined
+  departmentId: undefined,
+  warehouse: []
 })
 
-const initAddRuleData = () => {
-  addRuleFormData.value.id = 0
-  addRuleFormData.value.deviceId = undefined
-  addRuleFormData.value.productId = undefined
-  addRuleFormData.value.ruleName = ''
-  addRuleFormData.value.departmentId = undefined
-  addRuleFormData.value.warehouse = []
+const columns: TableColumnsType<TableDataStruct> = [
+  { title: '产品类型', dataIndex: ['product', 'name'], key: 'productName', width: 180 },
+  { title: '规则名称', dataIndex: 'label', key: 'label', width: 180 },
+  { title: '状态', dataIndex: 'status', key: 'status', width: 110 },
+  { title: '设备类型', dataIndex: ['deviceType', 'name'], key: 'deviceTypeName', width: 180 },
+  { title: '创建时间', dataIndex: 'createTime', key: 'createTime', width: 220 },
+  { title: '创建人', dataIndex: ['staff', 'name'], key: 'staffName', width: 160 },
+  { title: '操作时间', dataIndex: 'updateTime', key: 'updateTime', width: 220 },
+  { title: '操作', key: 'action', width: 220 }
+]
+
+const productOptions = computed(() => productArray.value.map((item) => ({ label: item.name, value: item.id })))
+const deviceTypeOptions = computed(() => deviceTypeArray.value.map((item) => ({ label: item.name, value: item.id })))
+const garbageTypeOptions = computed(() => garbageTypeArray.value.map((item) => ({ label: item.label, value: item.id })))
+const departmentOptions = computed(() => DepartmentArray.value.map((item) => ({ label: item.platform_name, value: item.id })))
+
+const getImageURL = (imageURL?: string) => {
+  return imageURL ? PATH_URL + '/Common/downLoadPic/' + imageURL : ''
 }
 
-const productChange = (val) => {
+const onSearch = () => {
+  currentPage.value = 1
+  getDeviceRuleTableData()
+}
+
+const onReset = () => {
+  searchFormData.productId = undefined
+  searchFormData.page = 1
+  searchFormData.deviceName = ''
+  searchFormData.ruleName = ''
+  searchFormData.size = 5
+  currentPage.value = 1
+  pageSize.value = 5
+  getDeviceRuleTableData()
+}
+
+const getProductType = () => {
   service
-    .post(
-      PATH_URL + '/MachineMange/getDeviceTypeByProductId',
-      qs.stringify({ ProductId: val }, { arrayFormat: 'brackets' })
-    )
-    .then((res) => {
-      addRuleFormData.value.deviceId = undefined
-      deviceTypeArray.value = res.data
+    .post(PATH_URL + '/MachineMange/getProduct', {
+      id: 0,
+      name: '',
+      page: 1,
+      size: 99999
+    })
+    .then((res: any) => {
+      productArray.value = res.data || []
     })
 }
 
-const deviceChange = (val) => {
-  deviceTypeArray.value.forEach((element) => {
-    if (element.id == val) {
-      warehouseFactory(element.warehouse)
-    }
+const OnClickAdd = () => {
+  isUpdate.value = false
+  title.value = '添加运营规则'
+  initAddRuleData()
+  dialogTableVisible.value = true
+}
+
+const initAddRuleData = () => {
+  addRuleFormData.id = 0
+  addRuleFormData.deviceId = undefined
+  addRuleFormData.productId = undefined
+  addRuleFormData.ruleName = ''
+  addRuleFormData.departmentId = undefined
+  addRuleFormData.warehouse = []
+  warehouseArray.value = []
+  deviceTypeArray.value = []
+}
+
+const productChange = (val: number) => {
+  service.post(PATH_URL + '/MachineMange/getDeviceTypeByProductId', qs.stringify({ ProductId: val }, { arrayFormat: 'brackets' })).then((res: any) => {
+    addRuleFormData.deviceId = undefined
+    warehouseArray.value = []
+    deviceTypeArray.value = res.data || []
   })
+}
+
+const deviceChange = (val: number) => {
+  const matchedDevice = deviceTypeArray.value.find((item) => item.id === val)
+  if (matchedDevice) {
+    warehouseFactory(matchedDevice.warehouse)
+  }
 }
 
 const warehouseFactory = (val: number) => {
@@ -502,53 +431,23 @@ const warehouseFactory = (val: number) => {
 }
 
 const getGarbageType = () => {
-  let parm = { typeName: '' }
-  service.post(PATH_URL + '/MachineMange/getGarbageType', parm).then((res) => {
-    garbageTypeArray.value = res.data
+  service.post(PATH_URL + '/MachineMange/getGarbageType', { typeName: '' }).then((res: any) => {
+    garbageTypeArray.value = res.data || []
   })
 }
 
-watch(
-  () => JSON.parse(JSON.stringify(warehouseArray.value)),
-  (newdata: warehouseStruct[], olddata: warehouseStruct[]) => {
-    for (let i = 0; i < newdata.length; i++) {
-      let n = newdata[i]
-      let o = olddata[i]
+const getGarbageTypePic = (id?: number | null) => {
+  if (id == null) return ''
+  return garbageTypeArray.value.find((item) => item.id === id)?.pic || ''
+}
 
-      if (n == undefined || o == undefined) {
-        continue
-      }
-
-      console.log('oldData', o)
-      if (n.garbageType !== o.garbageType) {
-        console.log('war', warehouseArray.value[i])
-        warehouseArray.value[i].pic = getGarbageTypePic(newdata[i].garbageType)
-      }
-    }
-  },
-  { deep: true }
-)
-
-const getGarbageTypePic = (id: number | null): string => {
-  let temp = ''
-  if (id === null) {
-    return temp
-  }
-
-  console.log('id = ', id)
-  garbageTypeArray.value.forEach((item) => {
-    if (item.id === id) {
-      temp = item.pic
-    }
-  })
-  return temp
+const handleWarehouseGarbageChange = (warehouse: WarehouseStruct, value?: number) => {
+  warehouse.garbageType = value ?? null
+  warehouse.pic = getGarbageTypePic(warehouse.garbageType)
 }
 
 const onCloseDialog = () => {
-  addRuleFormData.value.deviceId = undefined
-  addRuleFormData.value.productId = undefined
-  addRuleFormData.value.ruleName = ''
-  warehouseArray.value = []
+  initAddRuleData()
   dialogTableVisible.value = false
   showImgBox.value = false
 }
@@ -559,268 +458,359 @@ const onAddConfirm = () => {
     return
   }
 
-  let title = '您确定要添加一个运营规则吗？'
-  ElMessageBox.confirm(title, '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    let addRuleParm = {
-      ruleName: addRuleFormData.value.ruleName,
-      productId: addRuleFormData.value.productId,
-      deviceId: addRuleFormData.value.deviceId,
-      warehouse: warehouseArray.value,
-      departmentId: addRuleFormData.value.departmentId
-    }
-
-    addRuleFormData.value.warehouse = unref(warehouseArray)
-    console.log('addRuleformData', addRuleFormData)
-    service.post(PATH_URL + '/MachineMange/addRule', addRuleParm).then(() => {
-      ElMessage('操作成功')
+  AModal.confirm({
+    title: '提示',
+    content: '确定要添加一个运营规则吗？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      await service.post(PATH_URL + '/MachineMange/addRule', {
+        ruleName: addRuleFormData.ruleName,
+        productId: addRuleFormData.productId,
+        deviceId: addRuleFormData.deviceId,
+        warehouse: warehouseArray.value,
+        departmentId: addRuleFormData.departmentId
+      })
+      message.success('操作成功')
       onCloseDialog()
       getDeviceRuleTableData()
-    })
+    }
   })
 }
 
 const onUpdateRule = () => {
-  let title = '您确定要修改这个运营规则吗？'
-  ElMessageBox.confirm(title, '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    console.log('dsdsd', addRuleFormData)
-    let addRuleParm = {
-      ruleName: addRuleFormData.value.ruleName,
-      productId: addRuleFormData.value.productId,
-      deviceId: (addRuleFormData.value.deviceId as any).id,
-      warehouse: warehouseArray.value,
-      id: addRuleFormData.value.id
-    }
-
-    addRuleFormData.value.warehouse = unref(warehouseArray)
-    console.log(addRuleFormData)
-    service.post(PATH_URL + '/MachineMange/updateRule', addRuleParm).then(() => {
-      ElMessage('操作成功')
+  AModal.confirm({
+    title: '提示',
+    content: '确定要修改这个运营规则吗？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      await service.post(PATH_URL + '/MachineMange/updateRule', {
+        ruleName: addRuleFormData.ruleName,
+        productId: addRuleFormData.productId,
+        deviceId: addRuleFormData.deviceId,
+        warehouse: warehouseArray.value,
+        id: addRuleFormData.id
+      })
+      message.success('操作成功')
       onCloseDialog()
       getDeviceRuleTableData()
-    })
+    }
   })
 }
 
-let showImgBox = ref(false)
-
-//图片数组
-let PicArray: Ref<PicStruct[]> = ref([])
-
-let SelectWarehouse: Ref<warehouseStruct> = ref({
-  id: 0,
-  pic: '',
-  garbageType: null,
-  points: 0,
-  code: 0
-})
-
-const getPicArray = (val: number) => {
+const getPicArray = (val?: number | null) => {
   if (val == null) {
+    message.warning('请先选择垃圾类型')
     return
   }
 
-  service
-    .post(
-      PATH_URL + '/MachineMange/getGarbagePic',
-      qs.stringify({ garbageId: val }, { arrayFormat: 'brackets' })
-    )
-    .then((res) => {
-      console.log(res)
-      PicArray.value = res.data
-      showImgBox.value = true
-    })
+  service.post(PATH_URL + '/MachineMange/getGarbagePic', qs.stringify({ garbageId: val }, { arrayFormat: 'brackets' })).then((res: any) => {
+    PicArray.value = res.data || []
+    showImgBox.value = true
+  })
 }
 
-const onClickChange = (val) => {
-  console.log(val)
-
+const onClickChange = (val: WarehouseStruct) => {
   SelectWarehouse.value = val
   getPicArray(val.garbageType)
 }
 
-const PicSelect = (val) => {
-  console.log(val)
-  if (!!SelectWarehouse.value) {
-    SelectWarehouse.value.pic = val.pic
-  }
+const PicSelect = (val: PicStruct) => {
+  SelectWarehouse.value.pic = val.pic
   showImgBox.value = false
 }
 
-//#endregion
-
-//#region  表格相关
-let TableData: Ref<TableDataStruct[]> = ref([])
-let isUpdate = ref(false)
-let TableRef = ref(ElTable)
-let selectTable: TableDataStruct = {
-  id: 0,
-  label: '',
-  status: 0,
-  createTime: '',
-  deviceType: 0,
-  productType: 0,
-  warehouse: []
+const handlePageChange = (page: number, size: number) => {
+  currentPage.value = page
+  pageSize.value = size
+  getDeviceRuleTableData()
 }
 
 const getDeviceRuleTableData = () => {
-  searchFormData.value.page = currentPage.value
-  searchFormData.value.size = pageSize.value
-  console.log(searchFormData.value)
-  service.post(PATH_URL + '/MachineMange/getDeviceRule', searchFormData.value).then((res) => {
-    console.log(res)
-    TableData.value = res.data.records
-    total.value = res.data.total
+  searchFormData.page = currentPage.value
+  searchFormData.size = pageSize.value
+  service.post(PATH_URL + '/MachineMange/getDeviceRule', searchFormData).then((res: any) => {
+    TableData.value = res.data?.records || []
+    total.value = res.data?.total || 0
   })
 }
 
-let DepartmentArray: Ref<any[]> = ref([])
-
-const getDepartmnet = () => {
+const getDepartment = () => {
   service.get(PATH_URL + '/Permission/getDepartmentForSelect').then((res: any) => {
-    console.log(res)
-    DepartmentArray.value = res.data
+    DepartmentArray.value = res.data || []
   })
 }
 
-const handleDetail = (val) => {
-  console.log('xiuggai', val)
+const handleDetail = (record: Record<string, any>) => {
+  const val = record as TableDataStruct
   isUpdate.value = true
-  addRuleFormData.value.id = val.id
-
-  addRuleFormData.value.productId = val.productId
-  addRuleFormData.value.departmentId = val.departmentId
-  selectTable = val
+  title.value = '修改运营规则'
+  addRuleFormData.id = val.id
+  addRuleFormData.productId = val.productId
+  addRuleFormData.departmentId = val.departmentId
+  selectedTable = val
   updateProductBind(val.productId)
 }
 
-const updateProductBind = (val) => {
-  service
-    .post(
-      PATH_URL + '/MachineMange/getDeviceTypeByProductId',
-      qs.stringify({ ProductId: val }, { arrayFormat: 'brackets' })
-    )
-    .then((res) => {
-      deviceTypeArray.value = res.data
-      addRuleFormData.value.ruleName = selectTable.label
-      addRuleFormData.value.deviceId = selectTable.deviceType?.id
-      warehouseArray.value = []
-      console.log('seletcTable', selectTable)
+const updateProductBind = (val: number) => {
+  service.post(PATH_URL + '/MachineMange/getDeviceTypeByProductId', qs.stringify({ ProductId: val }, { arrayFormat: 'brackets' })).then((res: any) => {
+    if (!selectedTable) return
 
-      for (let i = 0; i < selectTable.warehouse.length; i++) {
-        console.log(selectTable.warehouse[i])
-        warehouseArray.value.push({
-          code: selectTable.warehouse[i].code,
-          pic: selectTable.warehouse[i].pic,
-          garbageType: selectTable.warehouse[i].garbageType,
-          points: selectTable.warehouse[i].points
-        })
-      }
-      console.log('dsds', warehouseArray)
-      dialogTableVisible.value = true
-    })
-}
-
-const handleRemove = (val) => {
-  ElMessageBox.confirm('您确定要删除这条运营规则？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    service
-      .post(
-        PATH_URL + '/MachineMange/deleteRule',
-        qs.stringify({ ruleId: val.id }, { arrayFormat: 'brackets' })
-      )
-      .then(() => {
-        ElMessage('操作成功')
-        getDeviceRuleTableData()
-      })
+    deviceTypeArray.value = res.data || []
+    addRuleFormData.ruleName = selectedTable.label
+    addRuleFormData.deviceId = selectedTable.deviceType?.id
+    warehouseArray.value = selectedTable.warehouse.map((item) => ({
+      code: item.code,
+      pic: item.pic,
+      garbageType: item.garbageType,
+      points: item.points
+    }))
+    dialogTableVisible.value = true
   })
 }
 
-const converStatus = (val) => {
-  let title = '已发布'
-  if (val == 0) {
-    title = '未发布'
-  }
-  return title
-}
-
-const handlePublish = (val) => {
-  ElMessageBox.confirm('您确定要发布这条运营规则？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    service
-      .post(
-        PATH_URL + '/MachineMange/publishRule',
-        qs.stringify({ ruleId: val.id }, { arrayFormat: 'brackets' })
-      )
-      .then(() => {
-        ElMessage('操作成功')
-        getDeviceRuleTableData()
-      })
+const handleRemove = (record: Record<string, any>) => {
+  const val = record as TableDataStruct
+  AModal.confirm({
+    title: '提示',
+    content: '确定要删除这条运营规则吗？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      await service.post(PATH_URL + '/MachineMange/deleteRule', qs.stringify({ ruleId: val.id }, { arrayFormat: 'brackets' }))
+      message.success('操作成功')
+      getDeviceRuleTableData()
+    }
   })
 }
 
-//#endregion
+const convertStatus = (val: number) => {
+  return val == 0 ? '未发布' : '已发布'
+}
+
+const handlePublish = (record: Record<string, any>) => {
+  const val = record as TableDataStruct
+  AModal.confirm({
+    title: '提示',
+    content: '确定要发布这条运营规则吗？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      await service.post(PATH_URL + '/MachineMange/publishRule', qs.stringify({ ruleId: val.id }, { arrayFormat: 'brackets' }))
+      message.success('操作成功')
+      getDeviceRuleTableData()
+    }
+  })
+}
+
+onMounted(() => {
+  getDeviceRuleTableData()
+  getProductType()
+  getGarbageType()
+  getDepartment()
+})
 </script>
 
 <style lang="less" scoped>
-.scrollbar-demo-item {
+.device-rule-page {
   display: flex;
-  height: 150px;
-  margin: 15px;
-  color: var(--el-color-primary);
-  text-align: center;
-  background: var(--el-color-primary-light-9);
-  border-radius: 4px;
-  align-items: center;
-  justify-content: center;
+  width: 100%;
+  flex-direction: column;
+  gap: 16px;
+}
 
-  .img {
-    width: 160px;
-    height: 160px;
-    background-color: aquamarine;
+.search-form {
+  display: grid;
+  padding: 16px;
+  background-color: #fff;
+  border-radius: 6px;
+  gap: 14px 16px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  align-items: end;
+
+  :deep(.ant-form-item) {
+    display: flex;
+    margin-bottom: 0;
+    align-items: center;
+    flex-wrap: nowrap;
+  }
+
+  :deep(.ant-form-item-label) {
+    flex: 0 0 72px;
+    padding: 0 10px 0 0;
+    line-height: 1;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  :deep(.ant-form-item-label > label) {
+    height: 32px;
+    color: #262626;
+    font-weight: 500;
+  }
+
+  :deep(.ant-form-item-control) {
+    min-width: 0;
+    flex: 1;
+  }
+
+  :deep(.ant-input),
+  :deep(.ant-select) {
+    width: 100%;
   }
 }
 
-.test {
-  width: 80%;
+.search-form-item,
+.search-form-actions {
+  min-width: 0;
 }
 
-.imgBox {
-  position: absolute;
-  // right: v-bind(cssRight);
-  // top: v-bind(cssTop);git
-  z-index: 9999;
-  width: 500px;
-  height: 140px;
-  background-color: #8c939d;
+.search-form-actions {
+  :deep(.ant-form-item-control-input-content) {
+    display: flex;
+    align-items: center;
+  }
 }
 
-.imgBoxList {
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.toolbar-left,
+.toolbar-right {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.icon-button,
+.table-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  :deep(.v-icon),
+  :deep(iconify-icon) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+}
+
+.table-action {
+  height: 24px;
+  padding: 0;
+  gap: 4px;
+}
+
+.action-edit {
+  color: #52c41a;
+}
+
+.pagination-wrap {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.warehouse-list {
+  display: flex;
+  max-height: 420px;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.warehouse-item {
+  display: grid;
+  min-height: 132px;
+  padding: 12px;
+  background-color: #f5fbff;
+  border: 1px solid #e6f4ff;
+  border-radius: 6px;
+  grid-template-columns: 120px 1fr;
+  gap: 16px;
+}
+
+.warehouse-media {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.warehouse-image,
+.warehouse-empty {
   width: 100px;
   height: 100px;
-  margin-left: 2px;
+  border-radius: 6px;
 }
 
-.buttonOfTables {
-  padding-left: 10px;
-  margin-right: 3px;
-  margin-left: 3px;
+.warehouse-image {
+  display: block;
+  object-fit: contain;
+  background-color: #fff;
+  border: 1px solid #e5e7eb;
 }
 
-.item {
-  margin-left: 10px;
+.warehouse-empty {
+  display: flex;
+  color: #8c8c8c;
+  background-color: #fff;
+  border: 1px dashed #d9d9d9;
+  align-items: center;
+  justify-content: center;
+}
+
+.change-image-button {
+  width: 100px;
+}
+
+.warehouse-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+}
+
+.warehouse-line {
+  display: grid;
+  align-items: center;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.warehouse-label {
+  color: #595959;
+}
+
+.warehouse-control {
+  width: 240px;
+  max-width: 100%;
+}
+
+.image-picker {
+  display: grid;
+  max-height: 360px;
+  overflow-y: auto;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 12px;
+}
+
+.image-picker-item {
+  width: 104px;
+  height: 104px;
+  object-fit: contain;
+  cursor: pointer;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  transition: border-color 0.2s cubic-bezier(0, 0, 1, 1);
+
+  &:hover {
+    border-color: #1677ff;
+  }
 }
 </style>

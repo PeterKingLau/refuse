@@ -1,15 +1,15 @@
 import { defineStore } from 'pinia'
 import { store } from '../index'
-import zhCn from 'element-plus/es/locale/lang/zh-cn'
-import en from 'element-plus/es/locale/lang/en'
 import { useCache } from '@/hooks/web/useCache'
 import { LocaleDropdownType } from '@/types/localeDropdown'
+import zhCN from 'ant-design-vue/es/locale/zh_CN'
+import enUS from 'ant-design-vue/es/locale/en_US'
 
 const { wsCache } = useCache()
 
 const elLocaleMap = {
-  'zh-CN': zhCn,
-  en: en
+  'zh-CN': zhCN,
+  en: enUS
 }
 interface LocaleState {
   currentLocale: LocaleDropdownType

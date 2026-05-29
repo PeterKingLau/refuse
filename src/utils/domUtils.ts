@@ -135,22 +135,14 @@ export function getViewportOffset(element: Element): ViewportOffsetResult {
 }
 
 /* istanbul ignore next */
-export const on = function (
-  element: HTMLElement | Document | Window,
-  event: string,
-  handler: EventListenerOrEventListenerObject
-): void {
+export const on = function (element: HTMLElement | Document | Window, event: string, handler: EventListenerOrEventListenerObject): void {
   if (element && event && handler) {
     element.addEventListener(event, handler, false)
   }
 }
 
 /* istanbul ignore next */
-export const off = function (
-  element: HTMLElement | Document | Window,
-  event: string,
-  handler: any
-): void {
+export const off = function (element: HTMLElement | Document | Window, event: string, handler: any): void {
   if (element && event && handler) {
     element.removeEventListener(event, handler, false)
   }
@@ -187,9 +179,7 @@ export const getStyle =
                 return 1.0
               }
             default:
-              return element.style[styleName] || element.currentStyle
-                ? element.currentStyle[styleName]
-                : null
+              return element.style[styleName] || element.currentStyle ? element.currentStyle[styleName] : null
           }
         } catch (e) {
           return element.style[styleName]
@@ -235,11 +225,7 @@ export const isScroll = (el: Element, vertical: any) => {
   if (isServer) return
 
   const determinedDirection = vertical !== null || vertical !== undefined
-  const overflow = determinedDirection
-    ? vertical
-      ? getStyle(el, 'overflow-y')
-      : getStyle(el, 'overflow-x')
-    : getStyle(el, 'overflow')
+  const overflow = determinedDirection ? (vertical ? getStyle(el, 'overflow-y') : getStyle(el, 'overflow-x')) : getStyle(el, 'overflow')
 
   return overflow.match(/(scroll|auto)/)
 }
@@ -280,10 +266,5 @@ export const isInContainer = (el: Element, container: any) => {
     containerRect = container.getBoundingClientRect()
   }
 
-  return (
-    elRect.top < containerRect.bottom &&
-    elRect.bottom > containerRect.top &&
-    elRect.right > containerRect.left &&
-    elRect.left < containerRect.right
-  )
+  return elRect.top < containerRect.bottom && elRect.bottom > containerRect.top && elRect.right > containerRect.left && elRect.left < containerRect.right
 }

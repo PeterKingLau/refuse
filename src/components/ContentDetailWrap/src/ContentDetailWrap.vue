@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ElCard, ElButton } from 'element-plus'
+import { Button as AButton, Card as ACard } from 'ant-design-vue'
 import { propTypes } from '@/utils/propTypes'
 import { useDesign } from '@/hooks/web/useDesign'
 import { ref, onMounted, defineEmits } from 'vue'
@@ -26,17 +26,12 @@ onMounted(() => {
 <template>
   <div :class="[`${prefixCls}-container`, 'relative bg-[#fff]']" ref="contentDetailWrap">
     <Sticky :offset="offset">
-      <div
-        :class="[
-          `${prefixCls}-header`,
-          'flex border-bottom-1 h-50px items-center text-center bg-white pr-10px'
-        ]"
-      >
+      <div :class="[`${prefixCls}-header`, 'flex border-bottom-1 h-50px items-center text-center bg-white pr-10px']">
         <div :class="[`${prefixCls}-header__back`, 'flex pl-10px pr-10px ']">
-          <el-button @click="emit('back')">
+          <AButton @click="emit('back')">
             <Icon icon="ep:arrow-left" class="mr-5px" />
             {{ t('common.back') }}
-          </el-button>
+          </AButton>
         </div>
         <div :class="[`${prefixCls}-header__title`, 'flex flex-1  justify-center']">
           <slot name="title">
@@ -49,11 +44,11 @@ onMounted(() => {
       </div>
     </Sticky>
     <div style="padding: var(--app-content-padding)">
-      <ElCard :class="[`${prefixCls}-body`, 'mb-20px']" shadow="never">
+      <ACard :class="[`${prefixCls}-body`, 'mb-20px']" :bordered="true">
         <div>
           <slot></slot>
         </div>
-      </ElCard>
+      </ACard>
     </div>
   </div>
 </template>

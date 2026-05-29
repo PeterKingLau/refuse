@@ -1,432 +1,566 @@
 <template>
-  <el-form :model="QueryParm" :inline="true">
-    <el-row>
-      <el-col :span="8">
-        <el-form-item label="商品名称" label-width="200">
-          <el-input v-model="QueryParm.name" placeholder="请输入商品名称" />
-        </el-form-item>
-      </el-col>
-      <el-col :span="8">
-        <el-form-item label="商品类别" label-width="200">
-          <el-select v-model="QueryParm.parentId" clearable placeholder="请选择商品类别">
-            <el-option
-              v-for="item in malTypeList"
-              :key="item.id"
-              :label="item.mal_type_name"
-              :value="item.id"
-            />
-          </el-select>
-        </el-form-item>
-      </el-col>
+  <div class="goods-manage-page">
+    <AForm :model="queryForm" layout="inline" class="search-form">
+      <AFormItem label="商品名称">
+        <AInput v-model:value="queryForm.name" allow-clear class="search-control" placeholder="请输入商品名称" />
+      </AFormItem>
+      <AFormItem label="商品类别">
+        <ASelect v-model:value="queryForm.parentId" allow-clear :options="goodsTypeOptions" class="search-control" placeholder="请选择商品类别" />
+      </AFormItem>
+      <AFormItem>
+        <ASpace>
+          <AButton type="primary" class="icon-button" v-hasPermi="Permission.sec" @click="onQuery">
+            <template #icon>
+              <Icon icon="ant-design:search-outlined" />
+            </template>
+            搜索
+          </AButton>
+          <AButton class="icon-button" @click="onReset">
+            <template #icon>
+              <Icon icon="ant-design:reload-outlined" />
+            </template>
+            重置
+          </AButton>
+        </ASpace>
+      </AFormItem>
+    </AForm>
 
-      <el-col :span="5" style="text-align: right">
-        <el-button type="primary" v-hasPermi="Permission.sec" @click="onQuery">
-          <el-icon><Search /></el-icon>搜索
-        </el-button>
-        <el-button type="default" @click="onReset">
-          <el-icon class="el-icon--left"><RefreshRight /></el-icon>重置
-        </el-button>
-      </el-col>
-    </el-row>
-  </el-form>
-  <el-divider />
+    <ADivider />
 
-  <el-row>
-    <el-col :span="12">
-      <el-button type="primary" class="btn" @click="showAddUi">
-        <el-icon><Plus /> </el-icon>新增</el-button
-      >
-      <el-button type="danger" class="btn" @click="disableBatch">
-        <el-icon><Close /></el-icon>禁用</el-button
-      >
-      <el-button type="success" class="btn" @click="enableBatch">
-        <el-icon><EditPen /></el-icon>启用</el-button
-      >
-    </el-col>
-  </el-row>
-  <el-divider />
-  <el-row>
-    <el-table
-      :data="ResultData"
-      ref="TableRef"
-      style="width: 100%"
-      @selection-change="handleSelectionChange"
-    >
-      <el-table-column type="selection" width="55" />
-      <el-table-column label="记录编号" property="id" />
-      <el-table-column label="商品名称" property="goodsName" />
-      <el-table-column label="兑换积分" property="point" />
-      <el-table-column label="库存数量" property="number" />
-      <el-table-column label="状态" v-slot="scope">
-        {{ scope.row.status == 1 ? '正常' : '禁用' }}
-      </el-table-column>
-      <el-table-column label="商品图片" v-slot="scope">
-        <img :src="GetImageURL(scope.row.pic)" class="image" />
-      </el-table-column>
-      <el-table-column label="操作" v-slot="scope">
-        <el-link type="primary" @click="showUpdateUi(scope.row)">编辑</el-link>
-        <el-link type="warning" @click="disableRow(scope.row.id)">禁用</el-link>
-        <el-link type="success" @click="enableRow(scope.row.id)">启用</el-link>
-      </el-table-column>
-    </el-table>
-  </el-row>
+    <div class="toolbar">
+      <ASpace>
+        <AButton type="primary" class="icon-button" v-hasPermi="Permission.add" @click="showAddUi">
+          <template #icon>
+            <Icon icon="ant-design:plus-outlined" />
+          </template>
+          新增
+        </AButton>
+        <AButton danger class="icon-button" :disabled="selectedIds.length === 0" @click="disableBatch">
+          <template #icon>
+            <Icon icon="ant-design:close-outlined" />
+          </template>
+          禁用
+        </AButton>
+        <AButton class="icon-button success-button" :disabled="selectedIds.length === 0" @click="enableBatch">
+          <template #icon>
+            <Icon icon="ant-design:check-outlined" />
+          </template>
+          启用
+        </AButton>
+      </ASpace>
+    </div>
 
-  <el-row>
-    <el-col :span="18">
-      <el-pagination
-        v-model:current-page="QueryParm.page"
-        v-model:page-size="QueryParm.size"
-        :small="small"
-        :disabled="disabled"
-        layout="total, sizes, prev, pager, next, jumper"
+    <ATable row-key="id" :columns="columns" :data-source="resultData" :loading="tableLoading" :pagination="false" :row-selection="rowSelection" :scroll="{ x: 1080 }" bordered>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'status'">
+          <ATag :color="record.status === 1 ? 'success' : 'error'" :bordered="false">
+            {{ record.status === 1 ? '正常' : '禁用' }}
+          </ATag>
+        </template>
+
+        <template v-else-if="column.key === 'pic'">
+          <AImage v-if="record.pic" :src="GetImageURL(record.pic)" :width="44" :height="44" class="goods-image" />
+          <span v-else class="empty-text">-</span>
+        </template>
+
+        <template v-else-if="column.key === 'action'">
+          <ASpace>
+            <AButton type="link" class="table-action" @click="showUpdateUi(toGoodsRecord(record))">
+              <template #icon>
+                <Icon icon="ant-design:edit-outlined" />
+              </template>
+              编辑
+            </AButton>
+            <AButton type="link" danger class="table-action" @click="disableRow(record.id)">
+              <template #icon>
+                <Icon icon="ant-design:stop-outlined" />
+              </template>
+              禁用
+            </AButton>
+            <AButton type="link" class="table-action success-link" @click="enableRow(record.id)">
+              <template #icon>
+                <Icon icon="ant-design:check-circle-outlined" />
+              </template>
+              启用
+            </AButton>
+          </ASpace>
+        </template>
+      </template>
+    </ATable>
+
+    <div class="pagination-wrap">
+      <APagination
+        v-model:current="currentPage"
+        v-model:page-size="queryForm.size"
+        :disabled="paginationDisabled"
+        :page-size-options="['10', '20', '30', '50']"
+        :show-size-changer="true"
+        :show-total="(totalCount) => `共 ${totalCount} 条`"
         :total="total"
-        @size-change="GetGoods"
-        @current-change="GetGoods"
+        show-quick-jumper
+        @change="getGoods"
+        @show-size-change="getGoods"
       />
-    </el-col>
-  </el-row>
+    </div>
 
-  <el-dialog title="添加商品" v-model="showAdd" style="width: 30%">
-    <el-form :model="addParm">
-      <el-form-item label="商品类别">
-        <el-select v-model="addParm.type" placeholder="请选择商品类别">
-          <el-option
-            v-for="item in malTypeList"
-            :key="item.id"
-            :label="item.mal_type_name"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="商品名称">
-        <el-input v-model="addParm.name" placeholder="请输入商品名称" />
-      </el-form-item>
-
-      <el-form-item label="商品图片">
-        <el-upload
-          class="avatar-uploader"
-          :action="UpImageURL"
-          :show-file-list="false"
-          :on-success="handleAvatarSuccess"
-          :before-upload="beforeAvatarUpload"
-          :headers="headObject"
-        >
-          <img v-if="showImage" :src="GetImageURL(addParm.fileName)" class="avatar" />
-
-          <el-icon v-if="showPlus" class="avatar-uploader-icon"><Plus /></el-icon>
-        </el-upload>
-      </el-form-item>
-      <el-form-item label="积分数量">
-        <el-input v-model="addParm.point" placeholder="请输入需要兑换的积分数量" />
-      </el-form-item>
-
-      <el-form-item label="库存数量">
-        <el-input v-model="addParm.number" placeholder="请输入库存数量" />
-      </el-form-item>
-      <el-divider />
-      <el-row>
-        <el-col :span="24" style="text-align: right">
-          <el-button type="primary" :loading="loading" @click="addOradd">提交</el-button>
-          <el-button type="default" @click="cleanAdd">取消</el-button>
-        </el-col>
-      </el-row>
-    </el-form>
-  </el-dialog>
+    <AModal v-model:open="dialogVisible" :title="isUpdate ? '编辑商品' : '添加商品'" width="520px" :confirm-loading="submitLoading" @ok="addOrUpdate" @cancel="cleanAdd">
+      <AForm :model="goodsForm" layout="vertical">
+        <AFormItem label="商品类别">
+          <ASelect v-model:value="goodsForm.type" allow-clear :options="goodsTypeOptions" placeholder="请选择商品类别" />
+        </AFormItem>
+        <AFormItem label="商品名称">
+          <AInput v-model:value="goodsForm.name" allow-clear placeholder="请输入商品名称" />
+        </AFormItem>
+        <AFormItem label="商品图片">
+          <AUpload class="avatar-uploader" :action="uploadImageUrl" :show-upload-list="false" :before-upload="beforeAvatarUpload" :headers="headObject" @change="handleAvatarSuccess">
+            <img v-if="goodsForm.fileName" :src="GetImageURL(goodsForm.fileName)" class="avatar" />
+            <div v-else class="upload-placeholder">
+              <Icon icon="ant-design:plus-outlined" />
+            </div>
+          </AUpload>
+        </AFormItem>
+        <AFormItem label="积分数量">
+          <AInputNumber v-model:value="goodsForm.point" class="w-full" :min="0" placeholder="请输入需要兑换的积分数量" />
+        </AFormItem>
+        <AFormItem label="库存数量">
+          <AInputNumber v-model:value="goodsForm.number" class="w-full" :min="0" placeholder="请输入库存数量" />
+        </AFormItem>
+      </AForm>
+    </AModal>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { PATH_URL, service } from '@/config/axios/service'
-import { ref, onMounted, computed, Ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import {
+  Button as AButton,
+  Divider as ADivider,
+  Form as AForm,
+  FormItem as AFormItem,
+  Image as AImage,
+  Input as AInput,
+  InputNumber as AInputNumber,
+  Modal as AModal,
+  Pagination as APagination,
+  Select as ASelect,
+  Space as ASpace,
+  Table as ATable,
+  Tag as ATag,
+  Upload as AUpload,
+  message
+} from 'ant-design-vue'
+import type { TableColumnsType, TableProps, UploadChangeParam } from 'ant-design-vue'
 import qs from 'qs'
-import { ElMessage } from 'element-plus'
+import { PATH_URL, service } from '@/config/axios/service'
+import { Icon } from '@/components/Icon'
 import { GetImageURL } from '@/utils/tools'
-const Permission = ref({
+
+interface GoodsTypeRecord {
+  id: number
+  mal_type_name?: string
+  malTypeName?: string
+}
+
+interface GoodsRecord {
+  id: number
+  goodsName: string
+  goodsType: number
+  point: number
+  number: number
+  status: number
+  pic?: string
+}
+
+interface GoodsForm {
+  id?: number
+  type?: number
+  name: string
+  fileName?: string
+  point?: number
+  number?: number
+  status?: number
+}
+
+const Permission = {
   add: 'mal_typ_add',
   rev: 'mal_typ_rev',
   del: 'mal_typ_del',
   sec: 'mal_typ_sec'
-})
-let TableRef: any = ref({})
-let malTypeList: any = ref([])
-let showPlus = ref(true)
-let showImage = ref(false)
-let loading = ref(false)
-let total: Ref<number> = ref(0)
-let disabled = ref(false)
-let small = ref(false)
-let isUpdate = false
+}
 
-let QueryParm: any = ref({
-  page: 0,
+const queryForm = reactive({
   size: 10,
   name: '',
-  parentId: undefined
+  parentId: undefined as number | undefined
 })
 
-let showAdd: Ref<boolean> = ref(false)
-let addParm: any = ref({})
+const currentPage = ref(1)
+const total = ref(0)
+const tableLoading = ref(false)
+const submitLoading = ref(false)
+const paginationDisabled = ref(false)
+const dialogVisible = ref(false)
+const isUpdate = ref(false)
+const selectedIds = ref<number[]>([])
+const goodsTypeList = ref<GoodsTypeRecord[]>([])
+const resultData = ref<GoodsRecord[]>([])
+
+const goodsForm = reactive<GoodsForm>({
+  type: undefined,
+  name: '',
+  fileName: undefined,
+  point: undefined,
+  number: undefined
+})
+
+const columns: TableColumnsType<GoodsRecord> = [
+  { title: '记录编号', dataIndex: 'id', key: 'id', width: 110 },
+  { title: '商品名称', dataIndex: 'goodsName', key: 'goodsName', width: 180 },
+  { title: '兑换积分', dataIndex: 'point', key: 'point', width: 120 },
+  { title: '库存数量', dataIndex: 'number', key: 'number', width: 120 },
+  { title: '状态', dataIndex: 'status', key: 'status', width: 100, align: 'center' },
+  { title: '商品图片', dataIndex: 'pic', key: 'pic', width: 120, align: 'center' },
+  { title: '操作', key: 'action', width: 220, fixed: 'right', align: 'center' }
+]
+
+const goodsTypeOptions = computed(() =>
+  goodsTypeList.value.map((item) => ({
+    label: item.mal_type_name || item.malTypeName || '',
+    value: item.id
+  }))
+)
+
+const rowSelection = computed<TableProps['rowSelection']>(() => ({
+  selectedRowKeys: selectedIds.value,
+  onChange: (keys) => {
+    selectedIds.value = keys.map(Number)
+  }
+}))
+
+const toGoodsRecord = (record: Record<string, any>) => record as GoodsRecord
+
+const headObject = computed(() => ({
+  Authorization: localStorage.getItem('token') || ''
+}))
+
+const uploadImageUrl = computed(() => PATH_URL + '/Common/upLoadImage')
+
+const resetGoodsForm = () => {
+  goodsForm.id = undefined
+  goodsForm.type = undefined
+  goodsForm.name = ''
+  goodsForm.fileName = undefined
+  goodsForm.point = undefined
+  goodsForm.number = undefined
+  goodsForm.status = undefined
+}
+
+const handleBatchStatus = async (url: string) => {
+  if (selectedIds.value.length === 0) {
+    message.warning('请选择商品')
+    return
+  }
+
+  const res: any = await service.post(
+    PATH_URL + url,
+    qs.stringify(
+      {
+        ids: selectedIds.value
+      },
+      { arrayFormat: 'brackets' }
+    )
+  )
+
+  message[res.code === 200 ? 'success' : 'error'](res.code === 200 ? '操作成功' : '操作失败')
+  selectedIds.value = []
+  getGoods()
+}
+
+const handleRowStatus = async (id: number, url: string) => {
+  const res: any = await service.post(
+    PATH_URL + url,
+    qs.stringify(
+      {
+        ids: [id]
+      },
+      { arrayFormat: 'brackets' }
+    )
+  )
+
+  message[res.code === 200 ? 'success' : 'error'](res.code === 200 ? '操作成功' : '操作失败')
+  getGoods()
+}
 
 const disableRow = (id: number) => {
-  let temp: number[] = []
-  temp.push(id)
-  service
-    .post(
-      PATH_URL + '/mal/malGoods/DisableGoods',
-      qs.stringify(
-        {
-          ids: temp
-        },
-        { arrayFormat: 'brackets' }
-      )
-    )
-    .then((res: any) => {
-      let message = '操作失败'
-      if (res.code == 200) {
-        message = '操作成功'
-      }
-      ElMessage(message)
-      GetGoods()
-    })
+  handleRowStatus(id, '/mal/malGoods/DisableGoods')
 }
 
 const enableRow = (id: number) => {
-  let temp: number[] = []
-  temp.push(id)
-  service
-    .post(
-      PATH_URL + '/mal/malGoods/EnableGoods',
-      qs.stringify(
-        {
-          ids: temp
-        },
-        { arrayFormat: 'brackets' }
-      )
-    )
-    .then((res: any) => {
-      let message = '操作失败'
-      if (res.code == 200) {
-        message = '操作成功'
-      }
-      ElMessage(message)
-      GetGoods()
-    })
-}
-
-const showAddUi = () => {
-  addParm.value.type = undefined
-  addParm.value.name = ''
-  addParm.value.fileName = undefined
-  showImage.value = false
-  showPlus.value = true
-  showAdd.value = true
-  isUpdate = false
-}
-
-const addOradd = () => {
-  if (isUpdate) {
-    updateSubmit()
-  } else {
-    submitAdd()
-  }
-}
-
-const showUpdateUi = (row: any) => {
-  console.log('row', row)
-  addParm.value.type = row.goodsType
-  addParm.value.name = row.goodsName
-  addParm.value.fileName = row.pic
-  addParm.value.point = row.point
-  addParm.value.number = row.number
-  addParm.value.id = row.id
-  addParm.value.status = row.status
-  showImage.value = true
-  showPlus.value = false
-  showAdd.value = true
-  isUpdate = false
-}
-
-const updateSubmit = () => {
-  service
-    .post(
-      PATH_URL + '/mal/malGoods/UpdateGoods',
-      qs.stringify({
-        goodsName: addParm.value.name,
-        goodsType: addParm.value.type,
-        point: addParm.value.point,
-        pic: addParm.value.fileName,
-        number: addParm.value.number,
-        status: addParm.value.status
-      })
-    )
-    .then((res: any) => {
-      loading.value = false
-      let message = '操作失败'
-      if (res.code == 200) {
-        message = '操作成功'
-      }
-      showAdd.value = false
-      ElMessage(message)
-      GetGoods()
-    })
-}
-
-const submitAdd = () => {
-  loading.value = true
-  service
-    .post(
-      PATH_URL + '/mal/malGoods/addGoods',
-      qs.stringify({
-        goodsName: addParm.value.name,
-        goodsType: addParm.value.type,
-        point: addParm.value.point,
-        pic: addParm.value.fileName,
-        number: addParm.value.number
-      })
-    )
-    .then((res: any) => {
-      loading.value = false
-      let message = '操作失败'
-      if (res.code == 200) {
-        message = '操作成功'
-      }
-      showAdd.value = false
-      ElMessage(message)
-      GetGoods()
-    })
-}
-
-const cleanAdd = () => {
-  showAdd.value = false
-  loading.value = false
-}
-
-let ResultData: any = ref([])
-const onReset = () => {
-  QueryParm.value.name = ''
-  QueryParm.value.parentId = undefined
-}
-const onQuery = () => {
-  GetGoods()
-}
-
-onMounted(() => {
-  GetGoodsType()
-  GetGoods()
-})
-
-const GetGoodsType = () => {
-  service.get(PATH_URL + '/mal/malType/GetMalTypeForSelect').then((res: any) => {
-    malTypeList.value = res.data
-  })
-}
-
-const GetGoods = () => {
-  service
-    .post(
-      PATH_URL + '/mal/malGoods/GetGoods',
-      qs.stringify({
-        page: QueryParm.value.page,
-        size: QueryParm.value.size,
-        content: QueryParm.value.name,
-        parentId: QueryParm.value.parentId
-      })
-    )
-    .then((res: any) => {
-      if (res.code == 200) {
-        total.value = res.data.total
-        ResultData.value = res.data.records
-      }
-    })
-}
-
-const headObject = {
-  Authorization: localStorage.getItem('token')
-}
-const beforeAvatarUpload = () => {}
-const handleAvatarSuccess = (respon) => {
-  if (respon.code == 200) {
-    console.log('update', respon)
-    addParm.value.fileName = respon.data
-    showImage.value = true
-    showPlus.value = false
-  } else {
-    ElMessage('上传图片出错了')
-  }
+  handleRowStatus(id, '/mal/malGoods/EnableGoods')
 }
 
 const disableBatch = () => {
-  service
-    .post(
-      PATH_URL + '/mal/malGoods/DisableGoods',
-      qs.stringify(
-        {
-          ids: SelectIds
-        },
-        { arrayFormat: 'brackets' }
-      )
-    )
-    .then((res: any) => {
-      let message = '操作失败'
-      if (res.code == 200) {
-        message = '操作成功'
-      }
-      ElMessage(message)
-      GetGoods()
-    })
+  handleBatchStatus('/mal/malGoods/DisableGoods')
 }
 
 const enableBatch = () => {
-  service
-    .post(
-      PATH_URL + '/mal/malGoods/EnableGoods',
-      qs.stringify(
-        {
-          ids: SelectIds
-        },
-        { arrayFormat: 'brackets' }
-      )
-    )
-    .then((res: any) => {
-      let message = '操作失败'
-      if (res.code == 200) {
-        message = '操作成功'
-      }
-      ElMessage(message)
-      GetGoods()
-    })
+  handleBatchStatus('/mal/malGoods/EnableGoods')
 }
 
-// 上传图片地址
-const UpImageURL = computed(() => {
-  return PATH_URL + '/Common/upLoadImage'
-})
-let SelectIds: number[] = []
-const handleSelectionChange = (val: any) => {
-  SelectIds = []
-  val.forEach((row) => {
-    SelectIds.push(row.id)
-  })
+const showAddUi = () => {
+  resetGoodsForm()
+  isUpdate.value = false
+  dialogVisible.value = true
 }
+
+const showUpdateUi = (row: GoodsRecord) => {
+  goodsForm.id = row.id
+  goodsForm.type = row.goodsType
+  goodsForm.name = row.goodsName
+  goodsForm.fileName = row.pic
+  goodsForm.point = row.point
+  goodsForm.number = row.number
+  goodsForm.status = row.status
+  isUpdate.value = true
+  dialogVisible.value = true
+}
+
+const validateGoodsForm = () => {
+  if (!goodsForm.type) {
+    message.warning('请选择商品类别')
+    return false
+  }
+  if (!goodsForm.name.trim()) {
+    message.warning('请输入商品名称')
+    return false
+  }
+  return true
+}
+
+const addOrUpdate = () => {
+  if (!validateGoodsForm()) return
+
+  if (isUpdate.value) {
+    updateSubmit()
+    return
+  }
+
+  submitAdd()
+}
+
+const updateSubmit = async () => {
+  submitLoading.value = true
+
+  try {
+    const res: any = await service.post(
+      PATH_URL + '/mal/malGoods/UpdateGoods',
+      qs.stringify({
+        id: goodsForm.id,
+        goodsName: goodsForm.name,
+        goodsType: goodsForm.type,
+        point: goodsForm.point,
+        pic: goodsForm.fileName,
+        number: goodsForm.number,
+        status: goodsForm.status
+      })
+    )
+
+    message[res.code === 200 ? 'success' : 'error'](res.code === 200 ? '操作成功' : '操作失败')
+    dialogVisible.value = false
+    getGoods()
+  } finally {
+    submitLoading.value = false
+  }
+}
+
+const submitAdd = async () => {
+  submitLoading.value = true
+
+  try {
+    const res: any = await service.post(
+      PATH_URL + '/mal/malGoods/addGoods',
+      qs.stringify({
+        goodsName: goodsForm.name,
+        goodsType: goodsForm.type,
+        point: goodsForm.point,
+        pic: goodsForm.fileName,
+        number: goodsForm.number
+      })
+    )
+
+    message[res.code === 200 ? 'success' : 'error'](res.code === 200 ? '操作成功' : '操作失败')
+    dialogVisible.value = false
+    getGoods()
+  } finally {
+    submitLoading.value = false
+  }
+}
+
+const cleanAdd = () => {
+  dialogVisible.value = false
+  submitLoading.value = false
+}
+
+const onReset = () => {
+  queryForm.name = ''
+  queryForm.parentId = undefined
+  currentPage.value = 1
+  getGoods()
+}
+
+const onQuery = () => {
+  currentPage.value = 1
+  getGoods()
+}
+
+const getGoodsType = async () => {
+  const res: any = await service.get(PATH_URL + '/mal/malType/GetMalTypeForSelect')
+  goodsTypeList.value = res.data || []
+}
+
+const getGoods = async () => {
+  tableLoading.value = true
+
+  try {
+    const res: any = await service.post(
+      PATH_URL + '/mal/malGoods/GetGoods',
+      qs.stringify({
+        page: currentPage.value - 1,
+        size: queryForm.size,
+        content: queryForm.name,
+        parentId: queryForm.parentId
+      })
+    )
+
+    if (res.code == 200) {
+      total.value = res.data?.total || 0
+      resultData.value = res.data?.records || []
+    }
+  } finally {
+    tableLoading.value = false
+  }
+}
+
+const beforeAvatarUpload = () => true
+
+const handleAvatarSuccess = (info: UploadChangeParam) => {
+  const response = info.file.response as any
+
+  if (!response) return
+
+  if (response.code == 200) {
+    goodsForm.fileName = response.data
+    return
+  }
+
+  message.error('上传图片出错了')
+}
+
+onMounted(() => {
+  getGoodsType()
+  getGoods()
+})
 </script>
 
 <style lang="less" scoped>
-.btn {
-  width: 80px;
-  padding-left: 20px;
+.goods-manage-page {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.avatar-uploader .el-upload:hover {
-  border-color: var(--el-color-primary);
+.search-form {
+  display: flex;
+  padding: 16px;
+  background: #fff;
+  border-radius: 6px;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+
+  :deep(.ant-form-item) {
+    margin-bottom: 0;
+  }
 }
+
+.search-control {
+  width: 220px;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.icon-button,
+.table-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  :deep(.ant-btn-icon),
+  :deep(.v-icon),
+  :deep(iconify-icon) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+}
+
+.success-button,
+.success-link {
+  color: #52c41a;
+}
+
+.table-action {
+  height: 24px;
+  padding: 0;
+  gap: 4px;
+}
+
+.goods-image {
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.empty-text {
+  color: rgb(0 0 0 / 35%);
+}
+
+.pagination-wrap {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.avatar-uploader {
+  :deep(.ant-upload) {
+    width: 96px;
+    height: 96px;
+    overflow: hidden;
+    border: 1px dashed #d9d9d9;
+    border-radius: 6px;
+  }
+}
+
 .avatar {
-  width: 50%;
-  text-align: left;
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
 }
-.image {
-  width: 40px;
-  height: 40px;
+
+.upload-placeholder {
+  display: flex;
+  width: 96px;
+  height: 96px;
+  color: rgb(0 0 0 / 45%);
+  background: #fafafa;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
 }
-.el-link {
-  padding-left: 20px;
+
+.w-full {
+  width: 100%;
 }
 </style>

@@ -1,967 +1,492 @@
 <template>
-  <!--- 搜索框-->
-  <el-row class="rr">
-    <el-form
-      :model="SearchFormData"
-      label-width="100px"
-      :inline="true"
-      v-if="showSearchForm"
-      class="frame"
-    >
-      <el-form-item label="设备编号:" label-width="90">
-        <el-input v-model="SearchFormData.deviceNumber" placeholder="请输入设备编号" />
-      </el-form-item>
+  <div class="device-distribution-page">
+    <AForm v-if="showSearchForm" :model="SearchFormData" layout="horizontal" class="search-form">
+      <AFormItem label="设备编号" class="search-form-item">
+        <AInput v-model:value="SearchFormData.deviceNumber" placeholder="请输入设备编号" />
+      </AFormItem>
 
-      <el-form-item label="设备名称:" label-width="90">
-        <el-input v-model="SearchFormData.deviceName" placeholder="请输入设备名称" />
-      </el-form-item>
+      <AFormItem label="设备名称" class="search-form-item">
+        <AInput v-model:value="SearchFormData.deviceName" placeholder="请输入设备名称" />
+      </AFormItem>
 
-      <el-form-item label="设备区域" label-width="90">
-        <el-select v-model="SearchFormData.deviceArea" placeholder="请选择设备区域">
-          <el-option
-            v-for="item in deviceAreaArray"
-            :key="item.id"
-            :label="item.areaName"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
+      <AFormItem label="设备区域" class="search-form-item">
+        <ASelect v-model:value="SearchFormData.deviceArea" :options="deviceAreaOptions" allow-clear placeholder="请选择设备区域" />
+      </AFormItem>
 
-      <el-form-item label="设备型号" label-width="90">
-        <el-select v-model="SearchFormData.deviceType" placeholder="请选择设备型号">
-          <el-option
-            v-for="item in deviceTypeArray"
-            :key="item.id"
-            :label="item.name"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
+      <AFormItem label="设备型号" class="search-form-item">
+        <ASelect v-model:value="SearchFormData.deviceType" :options="deviceTypeOptions" allow-clear placeholder="请选择设备型号" />
+      </AFormItem>
 
-      <el-form-item label="运营商" label-width="90">
-        <el-select v-model="SearchFormData.departmentId" placeholder="请选择运营商">
-          <el-option
-            v-for="item in departmentArray"
-            :key="item.id"
-            :label="item.platform_name"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
+      <AFormItem label="运营商" class="search-form-item">
+        <ASelect v-model:value="SearchFormData.departmentId" :options="departmentOptions" allow-clear placeholder="请选择运营商" />
+      </AFormItem>
 
-      <el-form-item label="设备状态" label-width="90">
-        <el-select
-          v-model="SearchFormData.deviceStatus"
-          placeholder="请选择设备状态"
-          ref="pointTpteSelectRef"
-        >
-          <el-option
-            v-for="item in deviceStatusArray"
-            :key="item.id"
-            :label="item.label"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
+      <AFormItem label="设备状态" class="search-form-item">
+        <ASelect v-model:value="SearchFormData.deviceStatus" :options="deviceStatusOptions" allow-clear placeholder="请选择设备状态" />
+      </AFormItem>
 
-      <el-form-item label="在线状态" label-width="90">
-        <el-select
-          v-model="SearchFormData.deviceOnLine"
-          placeholder="请选择在线状态"
-          ref="pointTpteSelectRef"
-        >
-          <el-option
-            v-for="item in OnLineOption"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="激活" label-width="90">
-        <el-select
-          v-model="SearchFormData.deviceAtivation"
-          placeholder="请选择设备激活状态"
-          ref="pointTpteSelectRef"
-        >
-          <el-option
-            v-for="item in Activation"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="IMEI:" label-width="90">
-        <el-input v-model="SearchFormData.IMEI" placeholder="请输入设备IMEI" />
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" class="btn" @click="onSearch" v-hasPermi="Permission.sec">
-          <el-icon><Search /></el-icon>
-          搜索
-        </el-button>
-      </el-form-item>
+      <AFormItem label="在线状态" class="search-form-item">
+        <ASelect v-model:value="SearchFormData.deviceOnLine" :options="OnLineOption" allow-clear placeholder="请选择在线状态" />
+      </AFormItem>
 
-      <el-form-item>
-        <el-button class="btn" @click="onReset">
-          <el-icon class="el-icon--left"><RefreshRight /></el-icon>
-          重置
-        </el-button>
-      </el-form-item>
-    </el-form>
-  </el-row>
+      <AFormItem label="激活" class="search-form-item">
+        <ASelect v-model:value="SearchFormData.deviceAtivation" :options="Activation" allow-clear placeholder="请选择设备激活状态" />
+      </AFormItem>
 
-  <!-- 操作按钮-->
-  <el-row>
-    <el-col :span="18">
-      <el-button type="primary" class="btn" @click="OnClickAdd" v-hasPermi="Permission.add">
-        <el-icon><Plus /> </el-icon>
-        新增</el-button
-      >
+      <AFormItem label="IMEI" class="search-form-item">
+        <AInput v-model:value="SearchFormData.IMEI" placeholder="请输入设备 IMEI" />
+      </AFormItem>
 
-      <el-button type="primary" class="btn" @click="addBatch" v-hasPermi="Permission.add">
-        <el-icon><Plus /> </el-icon>
-        批量导入</el-button
-      >
+      <AFormItem class="search-form-actions">
+        <ASpace>
+          <AButton type="primary" class="icon-button" @click="onSearch" v-hasPermi="Permission.sec">
+            <template #icon>
+              <Icon icon="ant-design:search-outlined" />
+            </template>
+            搜索
+          </AButton>
 
-      <el-button
-        type="success"
-        class="btn"
-        :disabled="disableLed"
-        @click="setLedBatch"
-        v-hasPermi="Permission.add"
-      >
-        <el-icon><Plus /> </el-icon>
-        批量设置走字灯</el-button
-      >
+          <AButton class="icon-button" @click="onReset">
+            <template #icon>
+              <Icon icon="ant-design:reload-outlined" />
+            </template>
+            重置
+          </AButton>
+        </ASpace>
+      </AFormItem>
+    </AForm>
 
-      <el-button
-        type="primary"
-        class="btn"
-        :disabled="setBatchStatusDisable"
-        @click="setStatusBatch"
-        v-hasPermi="Permission.add"
-      >
-        <el-icon><Plus /> </el-icon>
-        批量设置状态</el-button
-      >
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <AButton type="primary" class="icon-button" @click="OnClickAdd" v-hasPermi="Permission.add">
+          <template #icon>
+            <Icon icon="ant-design:plus-outlined" />
+          </template>
+          新增
+        </AButton>
 
-      <el-button
-        type="success"
-        class="btn"
-        :disabled="setBatchStatusDisable"
-        @click="doSetRuleBatch"
-        v-hasPermi="Permission.add"
-      >
-        <el-icon><Plus /> </el-icon>
-        批量设置运营规则</el-button
-      >
+        <AButton type="primary" class="icon-button" @click="addBatch" v-hasPermi="Permission.add">
+          <template #icon>
+            <Icon icon="ant-design:import-outlined" />
+          </template>
+          批量导入
+        </AButton>
 
-      <el-button
-        type="success"
-        class="btn"
-        :disabled="disableUpdate"
-        v-hasPermi="Permission.rev"
-        @click="doSetNotActive"
-        ><el-icon><EditPen /></el-icon>批量设置未激活</el-button
-      >
-      <el-button
-        type="danger"
-        class="btn"
-        :disabled="disableRemove"
-        @click="deleteOfDetail"
-        v-hasPermi="Permission.del"
-        ><el-icon><Close /></el-icon>删除</el-button
-      >
+        <AButton class="icon-button" :disabled="disableLed" @click="setLedBatch" v-hasPermi="Permission.add">
+          <template #icon>
+            <Icon icon="ant-design:highlight-outlined" />
+          </template>
+          批量设置走字灯
+        </AButton>
 
-      <el-button type="success" class="btn" @click="onClickExport" v-hasPermi="Permission.rev"
-        ><el-icon><EditPen /></el-icon>导出</el-button
-      >
-    </el-col>
+        <AButton type="primary" class="icon-button" :disabled="setBatchStatusDisable" @click="setStatusBatch" v-hasPermi="Permission.add">
+          <template #icon>
+            <Icon icon="ant-design:setting-outlined" />
+          </template>
+          批量设置状态
+        </AButton>
 
-    <el-col :span="6" style="text-align: right">
-      <el-tooltip content="隐藏搜索" placement="top-start">
-        <el-button circle @click="OnClickOfShowForm">
-          <el-icon><Search /></el-icon
-        ></el-button>
-      </el-tooltip>
-      <el-tooltip content="刷新" placement="top-start">
-        <el-button circle @click="onPageRest">
-          <el-icon><RefreshRight /></el-icon>
-        </el-button>
-      </el-tooltip>
-    </el-col>
-  </el-row>
+        <AButton class="icon-button" :disabled="setBatchStatusDisable" @click="doSetRuleBatch" v-hasPermi="Permission.add">
+          <template #icon>
+            <Icon icon="ant-design:deployment-unit-outlined" />
+          </template>
+          批量设置运营规则
+        </AButton>
 
-  <el-divider />
-  <el-row>
-    <el-table
-      ref="areaTableRef"
-      :data="TableData"
-      style="width: 100%"
-      @selection-change="handleSelectionChange"
-    >
-      <el-table-column type="selection" width="55" />
-      <el-table-column label="运营商" width="100" property="department.platformName" />
+        <AButton class="icon-button" :disabled="disableUpdate" @click="doSetNotActive" v-hasPermi="Permission.rev">
+          <template #icon>
+            <Icon icon="ant-design:stop-outlined" />
+          </template>
+          批量设置未激活
+        </AButton>
 
-      <el-table-column label="设备编号" width="160" property="serialNumber" />
-      <el-table-column label="设备名称" width="100" property="name" />
-      <el-table-column label="设备区域" width="100" property="area.areaName" />
-      <el-table-column label="设备地址" width="160" property="address" />
-      <el-table-column label="是否在线" width="160" property="isOnline" />
-      <el-table-column label="imei" width="160" property="imei" />
-      <el-table-column label="在线时间" width="160" v-slot="scope">
-        {{ FormatDate(scope.row.onlineTime) }}
-      </el-table-column>
-      <el-table-column label="是否校准" width="160" v-slot="scope">
-        <el-link type="primary" @click="onCorrect(scope.row)">{{
-          ConvertCorrect(scope.row.correct)
-        }}</el-link>
-      </el-table-column>
-      <el-table-column label="型号名称" width="180" property="deviceType.name" />
-      <el-table-column label="数据大屏" width="180" v-slot="scope">
-        <el-link type="primary" :src="scope.row.dd">数据大屏</el-link>
-      </el-table-column>
-      <el-table-column label="是否激活" width="160" v-slot="scope">
-        {{ scope.row.activation == 0 ? '未激活' : '激活' }}
-      </el-table-column>
-      <el-table-column label="状态" width="180" v-slot="scope">
-        {{ ConverStatus(scope.row.status) }}
-      </el-table-column>
-      <el-table-column label="修改时间" width="180" property="updateTime" />
-      <el-table-column label="DTU固件编号" width="180" property="userSerial" />
-      <el-table-column label="固件版本" width="180" property="version" />
-      <el-table-column label="操作" v-slot="scope" width="150" fixed="right">
-        <div class="buttonOfTables">
-          <!-- <el-button size="small" type="success" @click="handleDetail(scope.row)">修改</el-button>
-          <el-button size="small" type="danger" @click="handleRemove(scope.row)">删除</el-button> -->
-          <el-link type="primary" @click="handleDetail(scope.row)" v-hasPermi="Permission.rev"
-            >修改</el-link
-          >
-          <el-link type="primary" @click="handleRemove(scope.row)" v-hasPermi="Permission.del"
-            >删除</el-link
-          >
-          <el-link type="primary" @click="setRule(scope.row)" v-hasPermi="Permission.rul"
-            >运营规则</el-link
-          >
-          <el-link type="primary" @click="setNoWork(scope.row)" v-hasPermi="Permission.reg"
-            >设置为未激活</el-link
-          >
-          <!-- <el-link type="primary" @click="upgrade(scope.row)">测试硬件升级</el-link> -->
-          <el-link type="primary" @click="toDetail(scope.row)">详情</el-link>
-          <el-link type="primary" @click="showMedium(scope.row)">广告媒体</el-link>
-        </div>
-      </el-table-column>
-    </el-table>
-  </el-row>
-  <el-row>
-    <el-col :span="18">
-      <el-pagination
-        v-model:current-page="currentPage"
-        v-model:page-size="pageSize"
-        :small="small"
-        :disabled="disabled"
-        layout="total, sizes, prev, pager, next, jumper"
-        :total="total"
-        @size-change="handleSizeChange"
-        @current-change="handleSizeChange"
-      />
-    </el-col>
-  </el-row>
+        <AButton danger class="icon-button" :disabled="disableRemove" @click="deleteOfDetail" v-hasPermi="Permission.del">
+          <template #icon>
+            <Icon icon="ant-design:delete-outlined" />
+          </template>
+          删除
+        </AButton>
 
-  <el-dialog v-model="dialogTableVisible" :title="dialogTitle">
-    <el-form :model="AddDataForm" label-width="100px">
-      <el-form-item label="设备型号">
-        <el-select
-          v-model="AddDataForm.deviceType"
-          placeholder="请选择设备型号"
-          ref="pointTpteSelectRef"
-        >
-          <el-option
-            v-for="item in deviceTypeArray"
-            :key="item.id"
-            :label="item.name"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
-
-      <el-form-item label="设备编号">
-        <el-row>
-          <!-- {{ prefix }} -->
-          <el-input
-            v-model="AddDataForm.SerialNumber"
-            placeholder="请输入串号"
-            style="width: 80%"
-          />
-        </el-row>
-      </el-form-item>
-      <el-form-item label="DTU固件编号">
-        <el-input
-          v-model="AddDataForm.userSerial"
-          placeholder="请输入DTU固件编号(全智能安卓可不填写)"
-        />
-      </el-form-item>
-      <el-form-item label="设备名称">
-        <el-input v-model="AddDataForm.name" placeholder="请输入设备名称" />
-      </el-form-item>
-
-      <el-form-item label="LOGO">
-        <el-upload
-          class="avatar-uploader"
-          :action="UpImageURL"
-          :show-file-list="false"
-          :on-success="handleUpdateSuccess"
-          :before-upload="beforeAvatarUpload"
-          :headers="headObject"
-        >
-          <img v-if="AddDataForm.pic" :src="getImageURL(AddDataForm.pic)" class="avatar" />
-          <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
-        </el-upload>
-      </el-form-item>
-
-      <el-form-item label="登录方式">
-        <el-checkbox v-model="AddDataForm.face" label="人脸认证" size="large" />
-        <el-checkbox v-model="AddDataForm.phone" label="手机认证" size="large" />
-        <el-checkbox v-model="AddDataForm.qcode" label="二维码认证" size="large" />
-        <el-checkbox v-model="AddDataForm.card" label="刷卡认证" size="large" />
-      </el-form-item>
-
-      <el-form-item label="设备区域">
-        <el-select
-          v-model="AddDataForm.deviceArea"
-          placeholder="请选择设备区域"
-          ref="pointTpteSelectRef"
-        >
-          <el-option
-            v-for="item in deviceAreaArray"
-            :key="item.id"
-            :label="item.areaName"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
-
-      <el-form-item label="运维人员">
-        <el-select
-          v-model="AddDataForm.mStaff"
-          placeholder="请选择运维人员"
-          ref="pointTpteSelectRef"
-        >
-          <el-option
-            v-for="item in staffArray"
-            :key="item.id"
-            :label="item.name"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
-
-      <el-form-item label="运营人员">
-        <el-select
-          v-model="AddDataForm.wStaff"
-          placeholder="请选择运营人员"
-          ref="pointTpteSelectRef"
-        >
-          <el-option
-            v-for="item in staffArray"
-            :key="item.id"
-            :label="item.name"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
-
-      <el-form-item label="设备状态">
-        <el-radio-group v-model="AddDataForm.status" class="ml-4">
-          <el-radio :label="item.id" :key="item.id" v-for="item in statusList">
-            {{ item.label }}
-          </el-radio>
-        </el-radio-group>
-      </el-form-item>
-    </el-form>
-
-    <div style="width: 100%; margin-top: 10px; text-align: right">
-      <span class="dialog-footer">
-        <el-button @click="onCloseDialog">取消</el-button>
-        <el-button type="primary" @click="onAddConfirm"> 确认 </el-button>
-      </span>
-    </div>
-  </el-dialog>
-
-  <el-dialog v-model="MapdialogVisible" title="校准" width="70%">
-    <div class="map" id="container"> </div>
-    <el-row class="inputRow">
-      <el-col :span="23">
-        <el-input v-model="markerAddr" class="addressInput" />
-      </el-col>
-      <el-col :span="1">
-        <el-button type="default" @click="doAddressToCoordinate"
-          ><el-icon><search /></el-icon
-        ></el-button>
-      </el-col>
-    </el-row>
-    <template #footer>
-      <span class="dialog-footer">
-        <el-button @click="MapdialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="DoCorrect"> 确认 </el-button>
-      </span>
-    </template>
-  </el-dialog>
-
-  <!--设置运营规则dialog-->
-
-  <el-dialog v-model="ruleDialogVisible" title="运营规则" width="50%">
-    <el-form :model="ruleData" label-width="120px" class="frame">
-      <el-row>
-        <el-col>
-          <el-form-item label="规则名称">
-            <el-select
-              v-model="ruleData.ruleId"
-              placeholder="请选择运营规则"
-              @change="onRuleSelect"
-            >
-              <el-option
-                v-for="item in RuleArray"
-                :key="item.id"
-                :label="item.label"
-                :value="item.id"
-              />
-            </el-select>
-          </el-form-item>
-        </el-col>
-      </el-row>
-
-      <div style="width: 100%">
-        <el-scrollbar height="400px" style="width: 80%">
-          <div v-for="item in warehouseRef" :key="item.id" class="scrollbar-demo-item">
-            <el-row class="test">
-              <el-col :span="8">
-                <el-row>
-                  <el-image
-                    style="width: 300px; height: 150px"
-                    :src="getImageURL(item.pic)"
-                    fit="fill"
-                  />
-                </el-row>
-              </el-col>
-              <el-col :span="16">
-                <el-row>
-                  <el-col :span="8"> 仓位编号: </el-col>
-                  <el-col :span="16"> {{ item.code }} </el-col>
-                </el-row>
-                <el-row>
-                  <el-col :span="8"> 类型名称: </el-col>
-                  <el-col :span="16">
-                    {{ item.macGarbageType.label }}
-                  </el-col>
-                </el-row>
-
-                <el-row>
-                  <el-col :span="8"> 投放价格: </el-col>
-                  <el-col :span="16">
-                    {{ item.points }}
-                  </el-col>
-                </el-row>
-              </el-col>
-            </el-row>
-          </div>
-        </el-scrollbar>
+        <AButton class="icon-button" @click="onClickExport" v-hasPermi="Permission.rev">
+          <template #icon>
+            <Icon icon="ant-design:export-outlined" />
+          </template>
+          导出
+        </AButton>
       </div>
-    </el-form>
 
-    <template #footer>
-      <span class="dialog-footer">
-        <el-button @click="onRuleDialogClose">取消</el-button>
-        <el-button type="primary" @click="onRuleDialogConfirm"> 设置 </el-button>
-      </span>
-    </template>
-  </el-dialog>
+      <div class="toolbar-right">
+        <ATooltip :title="showSearchForm ? '隐藏搜索' : '显示搜索'">
+          <AButton shape="circle" @click="OnClickOfShowForm">
+            <template #icon>
+              <Icon icon="ant-design:search-outlined" />
+            </template>
+          </AButton>
+        </ATooltip>
+        <ATooltip title="刷新">
+          <AButton shape="circle" @click="onPageRest">
+            <template #icon>
+              <Icon icon="ant-design:reload-outlined" />
+            </template>
+          </AButton>
+        </ATooltip>
+      </div>
+    </div>
 
-  <!-- 设置广告媒体-->
-  <el-dialog title="广告媒体" v-model="mediumvisible" width="60%">
-    <el-tabs v-model="activeName" class="demo-tabs" @tab-click="handleClick" type="card">
-      <el-tab-pane label="待机" name="1">
-        <el-table :data="awaitTableData" stripe style="width: 90%">
-          <el-table-column label="媒体链接" width="180" v-slot="scope">
-            <img
-              :src="GetImageURL(scope.row.file_name)"
-              class="image"
-              v-if="scope.row.file_type == 1"
-            />
-            <Cvideo
-              v-show="true"
-              :videoUrl="GetVideoURL(scope.row.file_name)"
-              :width="200"
-              :height="200"
-              :autoplay="false"
-              :controls="true"
-              :loop="false"
-              :muted="false"
-              preload="auto"
-              :showPlay="true"
-              :playWidth="96"
-              zoom="cotain"
-              v-if="scope.row.file_type == 2"
-            />
-          </el-table-column>
-          <el-table-column label="类型" width="180" v-slot="scope">
-            {{ ConvertMediumType(scope.row.file_type) }}
-          </el-table-column>
-          <el-table-column label="发布时间" v-slot="scope">
-            {{ FormatDate(scope.row.create_time) }}
-          </el-table-column>
-          <el-table-column label="操作员" property="username" />
-          <el-table-column label="操作" v-slot="scope">
-            <el-link type="primary" @click="deleteMedium(scope.row)">删除</el-link>
-          </el-table-column>
-        </el-table>
-      </el-tab-pane>
-      <el-tab-pane label="首页" name="2">
-        <el-table :data="HomePageTableData" stripe style="width: 90%">
-          <el-table-column label="媒体链接" width="180" v-slot="scope">
-            <img
-              :src="GetImageURL(scope.row.file_name)"
-              class="image"
-              v-if="scope.row.file_type == 1"
-            />
-            <Cvideo
-              v-show="true"
-              :videoUrl="GetVideoURL(scope.row.file_name)"
-              :width="200"
-              :height="200"
-              :autoplay="false"
-              :controls="true"
-              :loop="false"
-              :muted="false"
-              preload="auto"
-              :showPlay="true"
-              :playWidth="96"
-              zoom="cotain"
-              v-if="scope.row.file_type == 2"
-            />
-          </el-table-column>
-          <el-table-column label="类型" width="180" v-slot="scope">
-            {{ ConvertMediumType(scope.row.file_type) }}
-          </el-table-column>
-          <el-table-column label="发布时间" v-slot="scope">
-            {{ FormatDate(scope.row.create_time) }}
-          </el-table-column>
-          <el-table-column label="操作员" property="username" />
-          <el-table-column label="操作" v-slot="scope">
-            <el-link type="primary" @click="deleteMedium(scope.row)">删除</el-link>
-          </el-table-column>
-        </el-table>
-      </el-tab-pane>
-      <el-tab-pane label="走字灯" name="3">
-        <el-row v-for="item in ledContenData" :key="item" style="margin-top: 10px">
-          <el-col :span="10">
-            <el-input v-model="item.content" placeholder="请输入显示的内容" />
-          </el-col>
-          <el-col :span="8" style="padding-left: 20px">
-            <el-button type="primary" @click="ledAddRecord">+</el-button>
-            <el-button type="danger" v-if="item.id != 0" @click="delItem(item)">-</el-button>
-          </el-col>
-          <el-col :span="3">
-            <el-button type="primary" @click="pushOne(item)">推送</el-button>
-          </el-col>
-        </el-row>
-        <el-row style="margin-top: 10px">
-          <el-col :span="12" />
-          <el-col :span="12" style="padding-right: 156px; text-align: right">
-            <el-button type="success" @click="pushBatch" v-if="false">一键推送</el-button>
-          </el-col>
-        </el-row>
-      </el-tab-pane>
-    </el-tabs>
-  </el-dialog>
-
-  <!-- 详情-->
-
-  <el-dialog v-model="DetaildialogVisible" title="设备详细信息" width="90%">
-    <MacDetail :row="currentDetailData" @do-rule="doEvent" />
-    <template #footer>
-      <span class="dialog-footer">
-        <el-button type="primary" @click="DetaildialogVisible = false"> 关闭 </el-button>
-      </span>
-    </template>
-  </el-dialog>
-
-  <!-- 批量导入 -->
-  <el-drawer
-    v-model="showDrawer"
-    title="批量导入"
-    direction="rtl"
-    :before-close="DrawerhandleClose"
-  >
-    <div class="drawerContent">
-      <el-upload
-        ref="uploadRef"
-        class="upload-demo"
-        drag
-        :action="GetUpLoadExcelURL()"
-        multiple
-        :limit="1"
-        :headers="headObject"
-        :on-remove="deleteFile"
-        :on-success="handleAvatarSuccess"
-      >
-        <el-icon class="el-icon--upload"><upload-filled /></el-icon>
-        <div class="el-upload__text"> 拖放文件到这里 <em>或者点击这里来上传</em> </div>
-        <template #tip>
-          <div class="el-upload__tip"> 仅限 .xls 和 .xlsx 文件 </div>
+    <ATable row-key="id" :columns="deviceColumns" :data-source="TableData" :pagination="false" :row-selection="rowSelection" :scroll="{ x: 2300 }" bordered>
+      <template #bodyCell="{ column: deviceColumn, record: deviceRecord }">
+        <template v-if="deviceColumn.key === 'onlineTime'">
+          {{ FormatDate(deviceRecord.onlineTime) }}
         </template>
-      </el-upload>
-      <el-button type="primary" @click="doAddBatch">确定</el-button>
+
+        <template v-else-if="deviceColumn.key === 'correct'">
+          <AButton type="link" class="table-action" @click="onCorrect(deviceRecord)">
+            {{ ConvertCorrect(deviceRecord.correct) }}
+          </AButton>
+        </template>
+
+        <template v-else-if="deviceColumn.key === 'screen'">
+          <AButton type="link" class="table-action">数据大屏</AButton>
+        </template>
+
+        <template v-else-if="deviceColumn.key === 'activation'">
+          {{ deviceRecord.activation == 0 ? '未激活' : '激活' }}
+        </template>
+
+        <template v-else-if="deviceColumn.key === 'status'">
+          {{ ConverStatus(deviceRecord.status) }}
+        </template>
+
+        <template v-else-if="deviceColumn.key === 'action'">
+          <ASpace wrap>
+            <AButton type="link" class="table-action action-edit" @click="handleDetail(deviceRecord)" v-hasPermi="Permission.rev"> 修改 </AButton>
+            <AButton type="link" danger class="table-action" @click="handleRemove(deviceRecord)" v-hasPermi="Permission.del"> 删除 </AButton>
+            <AButton type="link" class="table-action" @click="setRule(deviceRecord)" v-hasPermi="Permission.rul"> 运营规则 </AButton>
+            <AButton type="link" class="table-action" @click="setNoWork(deviceRecord)" v-hasPermi="Permission.reg"> 设置为未激活 </AButton>
+            <AButton type="link" class="table-action" @click="toDetail(deviceRecord)">详情</AButton>
+            <AButton type="link" class="table-action" @click="showMedium(deviceRecord)">广告媒体</AButton>
+          </ASpace>
+        </template>
+      </template>
+    </ATable>
+
+    <div class="pagination-wrap">
+      <APagination
+        v-model:current="currentPage"
+        v-model:page-size="pageSize"
+        :page-size-options="['5', '10', '15', '20']"
+        :show-size-changer="true"
+        :disabled="disabled"
+        :total="total"
+        :show-total="(totalCount) => `共 ${totalCount} 条`"
+        show-quick-jumper
+        @change="handlePageChange"
+        @show-size-change="handlePageChange"
+      />
     </div>
-  </el-drawer>
 
-  <!-- 批量设置 走字灯-->
-  <el-drawer
-    v-model="showLedDrawer"
-    title="批量设置走字灯"
-    direction="rtl"
-    :before-close="LedDrawerhandleClose"
-  >
-    <div class="ledMain">
-      <el-form :model="BatcLedContent" label-width="120px">
-        <el-form-item label="走字灯内容">
-          <el-input v-model="BatcLedContent.content" />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="onBatchLed">一键推送</el-button>
-        </el-form-item>
-      </el-form>
-    </div>
-  </el-drawer>
-  <!--- 批量设置规则-->
-  <el-dialog v-model="BatchRulesdialogVisible" title="批量设置规则" width="30%">
-    <el-row>
-      <el-form :model="BatcLedContent" label-width="120px">
-        <el-form-item label="运营规则">
-          <el-select v-model="batchRuleSelect" placeholder="请选择运营规则">
-            <el-option v-for="item in rules" :key="item.id" :label="item.label" :value="item.id" />
-          </el-select>
-        </el-form-item>
-      </el-form>
-    </el-row>
-    <template #footer>
-      <span class="dialog-footer">
-        <el-button @click="BatchRulesdialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="doSetBatchRules"> 确定 </el-button>
-      </span>
-    </template>
-  </el-dialog>
+    <AModal v-model:open="dialogTableVisible" :title="dialogTitle" width="720px" :destroy-on-close="true">
+      <AForm :model="AddDataForm" layout="vertical">
+        <ARow :gutter="16">
+          <ACol :span="12">
+            <AFormItem label="设备型号">
+              <ASelect v-model:value="AddDataForm.deviceType" :options="deviceTypeOptions" placeholder="请选择设备型号" />
+            </AFormItem>
+          </ACol>
 
-  <!-- 批量设置状态-->
-  <el-drawer
-    v-model="setBatchStatusVisiable"
-    title="批量设置状态"
-    direction="rtl"
-    :before-close="statusDrawerHandleClose"
-  >
-    <div class="ledMain">
-      <el-form :model="BatchStatusData" class="demo-form-inline">
-        <el-form-item label="设备状态" label-width="100">
-          <el-radio-group v-model="BatchStatusData.status" class="ml-4">
-            <el-radio v-for="item in statusList" :label="item.id" :value="item.id" :key="item.id">{{
-              item.label
-            }}</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="运维人员" label-width="100">
-          <el-select v-model="BatchStatusData.maintenanceStaff" placeholder="请选择运维人员">
-            <el-option
-              v-for="item in staffArray"
-              :label="item.name"
-              :value="item.id"
-              :key="item.id"
-            />
-          </el-select>
-        </el-form-item>
+          <ACol :span="12">
+            <AFormItem label="设备编号">
+              <AInput v-model:value="AddDataForm.SerialNumber" placeholder="请输入串号" />
+            </AFormItem>
+          </ACol>
 
-        <el-form-item label="运营人员" label-width="100">
-          <el-select v-model="BatchStatusData.operation" placeholder="请选择运营人员">
-            <el-option
-              v-for="item in staffArray"
-              :label="item.name"
-              :value="item.id"
-              :key="item.id"
-            />
-          </el-select>
-        </el-form-item>
+          <ACol :span="12">
+            <AFormItem label="DTU固件编号">
+              <AInput v-model:value="AddDataForm.userSerial" placeholder="请输入DTU固件编号(全智能安卓可不填写)" />
+            </AFormItem>
+          </ACol>
 
-        <el-form-item label="LOGO" label-width="100">
-          <el-upload
-            class="avatar-uploader"
-            :action="UpImageURL"
-            :show-file-list="false"
-            :on-success="BatchHandleUpdateSuccess"
-            :before-upload="beforeAvatarUpload"
-            :headers="headObject"
-          >
-            <img
-              v-if="BatchStatusData.pic"
-              :src="getImageURL(BatchStatusData.pic)"
-              class="avatar"
-            />
-            <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
-          </el-upload>
-        </el-form-item>
-        <el-form-item label="登录方式" label-width="100">
-          <el-checkbox
-            v-model="BatchStatusData.face"
-            true-label="1"
-            false-label="0"
-            label="人脸认证"
-            size="large"
-          />
-          <el-checkbox
-            v-model="BatchStatusData.phone"
-            true-label="1"
-            false-label="0"
-            label="手机认证"
-            size="large"
-          />
-          <el-checkbox
-            v-model="BatchStatusData.qcode"
-            label="二维码认证"
-            size="large"
-            true-label="1"
-            false-label="0"
-          />
-          <el-checkbox
-            v-model="BatchStatusData.card"
-            label="刷卡认证"
-            size="large"
-            true-label="1"
-            false-label="0"
-          />
-        </el-form-item>
+          <ACol :span="12">
+            <AFormItem label="设备名称">
+              <AInput v-model:value="AddDataForm.name" placeholder="请输入设备名称" />
+            </AFormItem>
+          </ACol>
 
-        <el-form-item label="登录方式" label-width="100">
-          <el-select
-            v-model="BatchStatusData.deviceArea"
-            placeholder="请选择设备区域"
-            ref="pointTpteSelectRef"
-          >
-            <el-option
-              v-for="item in deviceAreaArray"
-              :key="item.id"
-              :label="item.areaName"
-              :value="item.id"
-            />
-          </el-select>
-        </el-form-item>
+          <ACol :span="12">
+            <AFormItem label="设备区域">
+              <ASelect v-model:value="AddDataForm.deviceArea" :options="deviceAreaOptions" placeholder="请选择设备区域" />
+            </AFormItem>
+          </ACol>
 
-        <el-form-item>
-          <el-button type="primary" @click="doBatchSetStatus">确定</el-button>
-        </el-form-item>
-      </el-form>
-    </div>
-  </el-drawer>
+          <ACol :span="12">
+            <AFormItem label="运维人员">
+              <ASelect v-model:value="AddDataForm.mStaff" :options="staffOptions" placeholder="请选择运维人员" />
+            </AFormItem>
+          </ACol>
+
+          <ACol :span="12">
+            <AFormItem label="运营人员">
+              <ASelect v-model:value="AddDataForm.wStaff" :options="staffOptions" placeholder="请选择运营人员" />
+            </AFormItem>
+          </ACol>
+
+          <ACol :span="12">
+            <AFormItem label="设备状态">
+              <ARadioGroup v-model:value="AddDataForm.status" :options="statusOptions" option-type="button" button-style="solid" class="status-radio-group" />
+            </AFormItem>
+          </ACol>
+
+          <ACol :span="24">
+            <AFormItem label="登录方式">
+              <ASpace wrap>
+                <ACheckbox v-model:checked="AddDataForm.face">人脸认证</ACheckbox>
+                <ACheckbox v-model:checked="AddDataForm.phone">手机认证</ACheckbox>
+                <ACheckbox v-model:checked="AddDataForm.qcode">二维码认证</ACheckbox>
+                <ACheckbox v-model:checked="AddDataForm.card">刷卡认证</ACheckbox>
+              </ASpace>
+            </AFormItem>
+          </ACol>
+
+          <ACol :span="12">
+            <AFormItem label="LOGO">
+              <AUpload class="avatar-uploader" :action="UpImageURL" :show-upload-list="false" :before-upload="beforeAvatarUpload" :headers="headObject" @change="handleDeviceUploadChange">
+                <img v-if="AddDataForm.pic" :src="getImageURL(AddDataForm.pic)" class="avatar" />
+                <div v-else class="upload-placeholder">
+                  <Icon icon="ant-design:plus-outlined" :size="24" />
+                </div>
+              </AUpload>
+            </AFormItem>
+          </ACol>
+        </ARow>
+      </AForm>
+
+      <template #footer>
+        <ASpace>
+          <AButton @click="onCloseDialog">取消</AButton>
+          <AButton type="primary" @click="onAddConfirm">确认</AButton>
+        </ASpace>
+      </template>
+    </AModal>
+
+    <AModal v-model:open="MapdialogVisible" title="校准" width="70%" @cancel="onCloseMapDialog">
+      <div id="container" class="map"></div>
+      <div class="map-search">
+        <AInput v-model:value="markerAddr" class="address-input" />
+        <AButton @click="doAddressToCoordinate">
+          <template #icon>
+            <Icon icon="ant-design:search-outlined" />
+          </template>
+        </AButton>
+      </div>
+      <template #footer>
+        <ASpace>
+          <AButton @click="onCloseMapDialog">取消</AButton>
+          <AButton type="primary" @click="DoCorrect">确认</AButton>
+        </ASpace>
+      </template>
+    </AModal>
+
+    <AModal v-model:open="ruleDialogVisible" title="运营规则" width="720px" @cancel="onRuleDialogClose">
+      <AForm :model="ruleData" layout="vertical">
+        <AFormItem label="规则名称">
+          <ASelect v-model:value="ruleData.ruleId" :options="ruleOptions" placeholder="请选择运营规则" @change="onRuleSelect" />
+        </AFormItem>
+
+        <div class="rule-scroll">
+          <div v-for="item in warehouseRef" :key="item.id" class="warehouse-rule-item">
+            <img :src="getImageURL(item.pic)" class="warehouse-rule-image" />
+            <div class="warehouse-rule-info">
+              <div>仓位编号：{{ item.code }}</div>
+              <div>类型名称：{{ item.macGarbageType?.label }}</div>
+              <div>投放价格：{{ item.points }}</div>
+            </div>
+          </div>
+        </div>
+      </AForm>
+
+      <template #footer>
+        <ASpace>
+          <AButton @click="onRuleDialogClose">取消</AButton>
+          <AButton type="primary" @click="onRuleDialogConfirm">设置</AButton>
+        </ASpace>
+      </template>
+    </AModal>
+
+    <AModal v-model:open="mediumvisible" title="广告媒体" width="80%" :footer="null">
+      <ATabs v-model:activeKey="mediumActiveName" type="card" @change="handleMediumTabChange">
+        <ATabPane key="1" tab="待机">
+          <ATable row-key="md_id" :columns="mediumColumns" :data-source="awaitTableData" :pagination="false" bordered>
+            <template #bodyCell="slotProps">
+              <MediaBodyCell v-bind="slotProps" />
+            </template>
+          </ATable>
+        </ATabPane>
+
+        <ATabPane key="2" tab="首页">
+          <ATable row-key="md_id" :columns="mediumColumns" :data-source="HomePageTableData" :pagination="false" bordered>
+            <template #bodyCell="slotProps">
+              <MediaBodyCell v-bind="slotProps" />
+            </template>
+          </ATable>
+        </ATabPane>
+
+        <ATabPane key="3" tab="走字灯">
+          <div class="led-list">
+            <ARow v-for="item in ledContenData" :key="item.index" :gutter="12" class="led-row">
+              <ACol :span="12">
+                <AInput v-model:value="item.content" placeholder="请输入显示的内容" />
+              </ACol>
+              <ACol :span="8">
+                <ASpace>
+                  <AButton type="primary" @click="ledAddRecord">+</AButton>
+                  <AButton v-if="item.id != 0" danger @click="delItem(item)">-</AButton>
+                </ASpace>
+              </ACol>
+              <ACol :span="4">
+                <AButton type="primary" @click="pushOne(item)">推送</AButton>
+              </ACol>
+            </ARow>
+          </div>
+        </ATabPane>
+      </ATabs>
+    </AModal>
+
+    <AModal v-model:open="DetaildialogVisible" title="设备详细信息" width="1200px" wrap-class-name="device-detail-modal-wrap" :destroy-on-close="true" centered>
+      <MacDetail :row="currentDetailData" @do-rule="doEvent" />
+      <template #footer>
+        <AButton type="primary" @click="DetaildialogVisible = false">关闭</AButton>
+      </template>
+    </AModal>
+
+    <ADrawer v-model:open="showDrawer" title="批量导入" placement="right" width="420px" @close="DrawerhandleClose">
+      <div class="drawer-content">
+        <AUploadDragger v-model:file-list="batchUploadFileList" :action="GetUpLoadExcelURL()" :max-count="1" :headers="headObject" @remove="deleteFile" @change="handleAvatarSuccess">
+          <p class="upload-icon">
+            <Icon icon="ant-design:inbox-outlined" :size="36" />
+          </p>
+          <p>拖放文件到这里，或者点击这里上传</p>
+          <p class="upload-tip">仅限 .xls 和 .xlsx 文件</p>
+        </AUploadDragger>
+        <AButton type="primary" class="drawer-submit" @click="doAddBatch">确定</AButton>
+      </div>
+    </ADrawer>
+
+    <ADrawer v-model:open="showLedDrawer" title="批量设置走字灯" placement="right" width="420px" @close="LedDrawerhandleClose">
+      <AForm :model="BatcLedContent" layout="vertical">
+        <AFormItem label="走字灯内容">
+          <AInput v-model:value="BatcLedContent.content" />
+        </AFormItem>
+        <AFormItem>
+          <AButton type="primary" @click="onBatchLed">一键推送</AButton>
+        </AFormItem>
+      </AForm>
+    </ADrawer>
+
+    <AModal v-model:open="BatchRulesdialogVisible" title="批量设置规则" width="420px">
+      <AForm :model="BatcLedContent" layout="vertical">
+        <AFormItem label="运营规则">
+          <ASelect v-model:value="batchRuleSelect" :options="batchRuleOptions" placeholder="请选择运营规则" />
+        </AFormItem>
+      </AForm>
+      <template #footer>
+        <ASpace>
+          <AButton @click="BatchRulesdialogVisible = false">取消</AButton>
+          <AButton type="primary" @click="doSetBatchRules">确定</AButton>
+        </ASpace>
+      </template>
+    </AModal>
+
+    <ADrawer v-model:open="setBatchStatusVisiable" title="批量设置状态" placement="right" width="480px" @close="statusDrawerHandleClose">
+      <AForm :model="BatchStatusData" layout="vertical">
+        <AFormItem label="设备状态">
+          <ARadioGroup v-model:value="BatchStatusData.status" :options="statusOptions" option-type="button" button-style="solid" class="status-radio-group" />
+        </AFormItem>
+
+        <AFormItem label="运维人员">
+          <ASelect v-model:value="BatchStatusData.maintenanceStaff" :options="staffOptions" placeholder="请选择运维人员" />
+        </AFormItem>
+
+        <AFormItem label="运营人员">
+          <ASelect v-model:value="BatchStatusData.operation" :options="staffOptions" placeholder="请选择运营人员" />
+        </AFormItem>
+
+        <AFormItem label="LOGO">
+          <AUpload class="avatar-uploader" :action="UpImageURL" :show-upload-list="false" :before-upload="beforeAvatarUpload" :headers="headObject" @change="BatchHandleUploadChange">
+            <img v-if="BatchStatusData.pic" :src="getImageURL(BatchStatusData.pic)" class="avatar" />
+            <div v-else class="upload-placeholder">
+              <Icon icon="ant-design:plus-outlined" :size="24" />
+            </div>
+          </AUpload>
+        </AFormItem>
+
+        <AFormItem label="登录方式">
+          <div class="checkbox-group">
+            <ACheckbox :checked="BatchStatusData.face === '1'" @change="setBatchAuth('face', $event)">人脸认证</ACheckbox>
+            <ACheckbox :checked="BatchStatusData.phone === '1'" @change="setBatchAuth('phone', $event)">手机认证</ACheckbox>
+            <ACheckbox :checked="BatchStatusData.qcode === '1'" @change="setBatchAuth('qcode', $event)">二维码认证</ACheckbox>
+            <ACheckbox :checked="BatchStatusData.card === '1'" @change="setBatchAuth('card', $event)">刷卡认证</ACheckbox>
+          </div>
+        </AFormItem>
+
+        <AFormItem label="设备区域">
+          <ASelect v-model:value="BatchStatusData.deviceArea" :options="deviceAreaOptions" placeholder="请选择设备区域" />
+        </AFormItem>
+
+        <AFormItem>
+          <AButton type="primary" @click="doBatchSetStatus">确定</AButton>
+        </AFormItem>
+      </AForm>
+    </ADrawer>
+  </div>
 </template>
 
-<script setup lang="ts">
-import { PATH_URL, service } from '@/config/axios/service'
-import { ref, Ref, onMounted, computed, inject } from 'vue'
-import { ElSelect, ElMessage, ElMessageBox, TabsPaneContext, UploadInstance } from 'element-plus'
-import { FormatDate, GetImageURL, GetVideoURL, GetUpLoadExcelURL } from '@/utils/tools'
-
+<script setup lang="tsx">
+import { computed, defineComponent, inject, nextTick, onMounted, reactive, ref, shallowRef } from 'vue'
+import {
+  Button as AButton,
+  Checkbox as ACheckbox,
+  Col as ACol,
+  Drawer as ADrawer,
+  Form as AForm,
+  FormItem as AFormItem,
+  Input as AInput,
+  Modal as AModal,
+  Pagination as APagination,
+  RadioGroup as ARadioGroup,
+  Row as ARow,
+  Select as ASelect,
+  Space as ASpace,
+  Table as ATable,
+  TabPane as ATabPane,
+  Tabs as ATabs,
+  Tooltip as ATooltip,
+  Upload as AUpload,
+  message
+} from 'ant-design-vue'
+import type { TableColumnsType, UploadChangeParam } from 'ant-design-vue'
 import AMapLoader from '@amap/amap-jsapi-loader'
-import { shallowRef } from 'vue'
 import axios from 'axios'
 import qs from 'qs'
+import { PATH_URL, service } from '@/config/axios/service'
+import { FormatDate, GetImageURL, GetVideoURL, GetUpLoadExcelURL } from '@/utils/tools'
 import { Cvideo } from '@/views/video/components'
 import { MacDetail } from './Components'
+import { Icon } from '@/components/Icon'
 
-const reload: any = inject('reload')
+const AUploadDragger = AUpload.Dragger
 
-const onPageRest = () => {
-  reload()
-}
-
-//#region  设置广告媒体
-let currentDeviceId = 0
-let hp_page = ref(1)
-let hp_size = ref(5)
-
-const ConvertMediumType = (type: number): string => {
-  let temp = '未知'
-  switch (type) {
-    case 1:
-      temp = '图片'
-      break
-    case 2:
-      temp = '视频'
-      break
-  }
-  return temp
-}
-
-let awaitTableData: Ref<any[]> = ref([])
-let HomePageTableData: Ref<any[]> = ref([])
-
-let ledContenData: Ref<any[]> = ref([])
-
-let mediumvisible = ref(false)
-let activeName = ref('2')
-const handleClick = (tab: TabsPaneContext) => {
-  let pageSign = tab.paneName
-  console.log(pageSign)
-  switch (pageSign) {
-    case '1':
-      GetMediumOfAwait()
-      break
-    case '2':
-      GetMediumOfHomePage()
-      break
-    case '3':
-      GetLedContent()
-      break
-  }
-}
-
-const deleteMedium = (row: any) => {
-  let param = {
-    id: row.md_id
-  }
-  service.post(PATH_URL + '/MachineMange/deleteMedium', param).then((res: any) => {
-    ElMessage(res.message)
-    GetMediumOfHomePage()
-    GetMediumOfAwait()
-  })
-}
-
-//获取首页画面
-const GetMediumOfHomePage = () => {
-  let param = {
-    deviceId: currentDeviceId,
-    location: 1,
-    page: hp_page.value,
-    size: hp_size.value
-  }
-
-  service.post(PATH_URL + '/MachineMange/GetMedium', param).then((res: any) => {
-    console.log('hp', res)
-    HomePageTableData.value = res.data.records
-  })
-}
-
-//获取待机画面
-const GetMediumOfAwait = () => {
-  let param = {
-    deviceId: currentDeviceId,
-    location: 2,
-    page: hp_page.value,
-    size: hp_size.value
-  }
-
-  service.post(PATH_URL + '/MachineMange/GetMedium', param).then((res: any) => {
-    console.log('hp', res)
-    awaitTableData.value = res.data.records
-  })
-}
-
-const delItem = (row: any) => {
-  let parm = {
-    id: row.id
-  }
-
-  service.post(PATH_URL + '/MachineMange/DeleteDeviceLedContent', parm).then(() => {
-    ElMessage('操作成功')
-    GetLedContent()
-  })
-}
-
-//获取走字灯数据
-const GetLedContent = () => {
-  let param = {
-    deviceId: currentDeviceId
-  }
-
-  service.post(PATH_URL + '/MachineMange/getLedContent', param).then((res: any) => {
-    let temp = res.data
-
-    if (temp == undefined || temp.length == 0) {
-      ledContenData.value = []
-      ledAddRecord()
-    } else {
-      ledContenData.value = []
-      temp.forEach((element, index) => {
-        ledContenData.value.push({
-          id: element.id,
-          content: element.content,
-          index: index
-        })
-      })
-    }
-  })
-}
-
-const ledAddRecord = () => {
-  ledContenData.value.push({
-    content: '',
-    id: 0,
-    index: ledContenData.value.length
-  })
-  console.log('sdsdsd', ledContenData.value)
-}
-
-const showMedium = (row: any) => {
-  currentDeviceId = row.id
-  GetMediumOfHomePage()
-  mediumvisible.value = true
-}
-
-const pushOne = (row: any) => {
-  console.log(row)
-  let str: string = row.content.trim()
-  if (str.trim().length == 0) {
-    ElMessage('发送内容不能为空')
-    return
-  }
-
-  let parm = {
-    deviceId: currentDeviceId,
-    content: row.content,
-    id: row.id
-  }
-
-  service.post(PATH_URL + '/MachineMange/AddDeviceLedContent', parm).then(() => {
-    ElMessage('推送成功')
-  })
-}
-
-const pushBatch = () => {
-  console.log(ledContenData)
-}
-
-//#endregion
-
-const Permission = ref({
-  add: 'mac_dvp_add',
-  rev: 'mac_dvp_rev',
-  del: 'mac_dvp_del',
-  rul: 'mac_dvp_rul',
-  reg: 'mac_dvp_reg',
-  sec: 'mac_dvp_sec'
-})
-
-let getAddr = 'https://restapi.amap.com/v3/geocode/regeo'
-
-//#region   数据结构
+type TableKey = string | number
 
 interface SearchDataStruct {
   deviceNumber: string
   deviceName: string
-  deviceArea: number | null
-  deviceType: number | null
-  departmentId: number | null
-  deviceStatus: number | null
-  deviceOnLine: number | null
-  deviceAtivation: number | null
-  IMEI: string | null
+  deviceArea?: number
+  deviceType?: number
+  departmentId?: number
+  deviceStatus?: number
+  deviceOnLine?: number
+  deviceAtivation?: number
+  IMEI?: string
 }
 
 interface DeviceAreaStruct {
@@ -969,7 +494,7 @@ interface DeviceAreaStruct {
   areaName: string
 }
 
-interface DeviceTypeStrcut {
+interface DeviceTypeStruct {
   id: number
   name: string
 }
@@ -993,109 +518,288 @@ interface RuleDataStruct {
   id: number
   label: string
 }
-const Activation = [
-  {
-    value: 0,
-    label: '未激活'
-  },
-  {
-    value: 1,
-    label: '激活'
+
+interface DeviceRecord {
+  [key: string]: any
+  id: number
+}
+
+const reload = inject<() => void>('reload')
+
+const onPageRest = () => {
+  if (reload) {
+    reload()
+    return
   }
+  getDeviceData()
+}
+
+const Permission = ref({
+  add: 'mac_dvp_add',
+  rev: 'mac_dvp_rev',
+  del: 'mac_dvp_del',
+  rul: 'mac_dvp_rul',
+  reg: 'mac_dvp_reg',
+  sec: 'mac_dvp_sec'
+})
+
+let currentDeviceId = 0
+const hp_page = ref(1)
+const hp_size = ref(5)
+const awaitTableData = ref<any[]>([])
+const HomePageTableData = ref<any[]>([])
+const ledContenData = ref<any[]>([])
+const mediumvisible = ref(false)
+const mediumActiveName = ref('2')
+
+const ConvertMediumType = (type: number): string => {
+  switch (type) {
+    case 1:
+      return '图片'
+    case 2:
+      return '视频'
+    default:
+      return '未知'
+  }
+}
+
+const deleteMedium = (row: any) => {
+  service.post(PATH_URL + '/MachineMange/deleteMedium', { id: row.md_id }).then((res: any) => {
+    message.success(res.message || '操作成功')
+    GetMediumOfHomePage()
+    GetMediumOfAwait()
+  })
+}
+
+const MediaBodyCell = defineComponent({
+  props: {
+    column: {
+      type: Object,
+      required: true
+    },
+    record: {
+      type: Object,
+      required: true
+    }
+  },
+  setup(props) {
+    return () => {
+      const column = props.column as any
+      const record = props.record as any
+
+      if (column.key === 'media') {
+        if (record.file_type == 1) {
+          return <img src={GetImageURL(record.file_name)} class="media-image" />
+        }
+        if (record.file_type == 2) {
+          return (
+            <Cvideo
+              videoUrl={GetVideoURL(record.file_name)}
+              width={200}
+              height={200}
+              autoplay={false}
+              controls={true}
+              loop={false}
+              muted={false}
+              preload="auto"
+              showPlay={true}
+              playWidth={96}
+              zoom="cotain"
+            />
+          )
+        }
+        return <span class="empty-text">暂无</span>
+      }
+
+      if (column.key === 'file_type') {
+        return ConvertMediumType(record.file_type)
+      }
+
+      if (column.key === 'create_time') {
+        return FormatDate(record.create_time)
+      }
+
+      if (column.key === 'action') {
+        return (
+          <AButton type="link" danger class="table-action" onClick={() => deleteMedium(record)}>
+            删除
+          </AButton>
+        )
+      }
+
+      return record[column.dataIndex]
+    }
+  }
+})
+
+const mediumColumns: TableColumnsType<any> = [
+  { title: '媒体链接', key: 'media', width: 240 },
+  { title: '类型', dataIndex: 'file_type', key: 'file_type', width: 120 },
+  { title: '发布时间', dataIndex: 'create_time', key: 'create_time', width: 180 },
+  { title: '操作员', dataIndex: 'username', key: 'username', width: 120 },
+  { title: '操作', key: 'action', width: 100 }
+]
+
+const handleMediumTabChange = (pageSign: string | number) => {
+  switch (pageSign) {
+    case '1':
+      GetMediumOfAwait()
+      break
+    case '2':
+      GetMediumOfHomePage()
+      break
+    case '3':
+      GetLedContent()
+      break
+  }
+}
+
+const GetMediumOfHomePage = () => {
+  service
+    .post(PATH_URL + '/MachineMange/GetMedium', {
+      deviceId: currentDeviceId,
+      location: 1,
+      page: hp_page.value,
+      size: hp_size.value
+    })
+    .then((res: any) => {
+      HomePageTableData.value = res.data?.records || []
+    })
+}
+
+const GetMediumOfAwait = () => {
+  service
+    .post(PATH_URL + '/MachineMange/GetMedium', {
+      deviceId: currentDeviceId,
+      location: 2,
+      page: hp_page.value,
+      size: hp_size.value
+    })
+    .then((res: any) => {
+      awaitTableData.value = res.data?.records || []
+    })
+}
+
+const delItem = (row: any) => {
+  service.post(PATH_URL + '/MachineMange/DeleteDeviceLedContent', { id: row.id }).then(() => {
+    message.success('操作成功')
+    GetLedContent()
+  })
+}
+
+const GetLedContent = () => {
+  service.post(PATH_URL + '/MachineMange/getLedContent', { deviceId: currentDeviceId }).then((res: any) => {
+    const temp = res.data
+
+    if (!temp || temp.length === 0) {
+      ledContenData.value = []
+      ledAddRecord()
+      return
+    }
+
+    ledContenData.value = temp.map((element, index) => ({
+      id: element.id,
+      content: element.content,
+      index
+    }))
+  })
+}
+
+const ledAddRecord = () => {
+  ledContenData.value.push({
+    content: '',
+    id: 0,
+    index: ledContenData.value.length
+  })
+}
+
+const showMedium = (row: any) => {
+  currentDeviceId = row.id
+  mediumActiveName.value = '2'
+  GetMediumOfHomePage()
+  mediumvisible.value = true
+}
+
+const pushOne = (row: any) => {
+  const content = row.content?.trim()
+  if (!content) {
+    message.warning('发送内容不能为空')
+    return
+  }
+
+  service
+    .post(PATH_URL + '/MachineMange/AddDeviceLedContent', {
+      deviceId: currentDeviceId,
+      content,
+      id: row.id
+    })
+    .then(() => {
+      message.success('推送成功')
+    })
+}
+
+const getAddr = 'https://restapi.amap.com/v3/geocode/regeo'
+const Activation = [
+  { value: 0, label: '未激活' },
+  { value: 1, label: '激活' }
 ]
 
 const OnLineOption = [
-  {
-    value: 0,
-    label: '离线'
-  },
-  {
-    value: 1,
-    label: '在线'
-  }
+  { value: 0, label: '离线' },
+  { value: 1, label: '在线' }
 ]
 
-//#endregion
-
-//当前校准地图的设备id
 const statusList = [
-  {
-    label: '待使用',
-    id: '1'
-  },
-  {
-    label: '使用中',
-    id: '2'
-  },
-  {
-    label: '已禁用',
-    id: '3'
-  },
-  {
-    label: '故障',
-    id: '4'
-  },
-  {
-    label: '已欠费',
-    id: '5'
-  }
+  { label: '待使用', id: '1' },
+  { label: '使用中', id: '2' },
+  { label: '已禁用', id: '3' },
+  { label: '故障', id: '4' },
+  { label: '已欠费', id: '5' }
 ]
+
+const statusOptions = computed(() => statusList.map((item) => ({ label: item.label, value: item.id })))
 
 let idOfCorrent = 0
+const map = shallowRef<any>(null)
+const currentPage = ref(1)
+const pageSize = ref(5)
+const disabled = ref(false)
+const total = ref(0)
+let marker: any
+const markerAddr = ref('')
+let _AMap: any
 
-const onCorrect = (val) => {
+const onCorrect = (val: any) => {
   idOfCorrent = val.id
   markerAddr.value = ''
   MapdialogVisible.value = true
-
-  console.log('initMap', val.lat, val.lng)
-  initMap(val.lat, val.lng)
+  nextTick(() => initMap(val.lat, val.lng))
 }
 
-const ConvertCorrect = (val) => {
-  if (val === 0) {
-    return '未校准'
-  } else {
-    return '已校准'
-  }
+const ConvertCorrect = (val: number) => {
+  return val === 0 ? '未校准' : '已校准'
 }
 
-const ConverStatus = (val) => {
-  let temp = ''
-  switch (val) {
+const ConverStatus = (val: number | string) => {
+  switch (Number(val)) {
     case 1:
-      temp = '待使用'
-      break
+      return '待使用'
     case 2:
-      temp = '使用中'
-      break
+      return '使用中'
     case 3:
-      temp = '已禁用'
-      break
+      return '已禁用'
     case 4:
-      temp = '故障'
-      break
+      return '故障'
     case 5:
-      temp = '已欠费'
-      break
+      return '已欠费'
     default:
-      temp = '未知'
-      break
+      return '未知'
   }
-
-  return temp
 }
 
-const map = shallowRef(null)
-let currentPage = ref(1)
-let pageSize = ref(5)
-let small = ref(false)
-let disabled = ref(false)
-let total = ref(0)
-let marker: any
-let markerAddr = ref('')
-let _AMap: any
-const handleSizeChange = () => {
+const handlePageChange = (page: number, size: number) => {
+  currentPage.value = page
+  pageSize.value = size
   getDeviceData()
 }
 
@@ -1110,7 +814,7 @@ const initMap = (lat: number, lng: number) => {
     version: '2.0',
     plugins: ['AMap.ToolBar', 'AMap.Driving']
   })
-    .then((AMap) => {
+    .then((AMap: any) => {
       _AMap = AMap
       map.value = new AMap.Map('container', {
         viewMode: '3D',
@@ -1124,9 +828,8 @@ const initMap = (lat: number, lng: number) => {
         title: '自定义',
         draggable: true
       })
-      ;(map.value as any).add(marker)
+      map.value.add(marker)
       marker.on('dragend', () => {
-        console.log(marker.getPosition())
         getMapAddress()
       })
       getMapAddress()
@@ -1137,12 +840,7 @@ const initMap = (lat: number, lng: number) => {
 }
 
 const getMapAddress = () => {
-  let url =
-    getAddr +
-    '?key=2ad12f130081a5e44748c8bd3da23d07&location=' +
-    marker.getPosition().lng +
-    ',' +
-    marker.getPosition().lat
+  const url = getAddr + '?key=2ad12f130081a5e44748c8bd3da23d07&location=' + marker.getPosition().lng + ',' + marker.getPosition().lat
   axios.get(url).then((res) => {
     markerAddr.value = res.data.regeocode.formatted_address
   })
@@ -1153,278 +851,251 @@ const doAddressToCoordinate = () => {
 }
 
 const addressToCoordinate = (addr: string) => {
-  let url =
-    'https://restapi.amap.com/v3/geocode/geo' +
-    '?key=2ad12f130081a5e44748c8bd3da23d07&address=' +
-    addr
+  const url = 'https://restapi.amap.com/v3/geocode/geo' + '?key=2ad12f130081a5e44748c8bd3da23d07&address=' + addr
 
   axios.get(url).then((res: any) => {
-    console.log('addrss', res.data.geocodes[0].location)
     if (map.value != null) {
-      let temp = res.data.geocodes[0].location.split(',')
-      let lng = temp[0]
-      let lat = temp[1]
-      ;(map.value as any).setCenter([lng, lat])
-      console.log(marker)
-      let ponsiton = new _AMap.LngLat(lng, lat)
+      const temp = res.data.geocodes[0].location.split(',')
+      const lng = temp[0]
+      const lat = temp[1]
+      map.value.setCenter([lng, lat])
+      const position = new _AMap.LngLat(lng, lat)
       if (marker == undefined) {
         marker = new _AMap.Marker({
-          ponsiton: ponsiton,
+          position,
           draggable: true,
           title: '自定义'
         })
         marker.on('dragend', () => {
           getMapAddress()
         })
-        ;(map.value as any).add(marker)
+        map.value.add(marker)
       } else {
-        marker.setPosition(ponsiton)
+        marker.setPosition(position)
       }
       marker.setPosition([lng, lat])
     }
   })
 }
 
-//#region  初始化
-onMounted(() => {
-  getDeviceData()
-  getDevcieType()
-  getDeviceStatus()
-  getDepartment()
-  getDeviceArea()
-  getStaff()
-  getRules()
-})
+const deviceAreaArray = ref<DeviceAreaStruct[]>([])
+const deviceTypeArray = ref<DeviceTypeStruct[]>([])
+const departmentArray = ref<DepartmentStruct[]>([])
+const deviceStatusArray = ref<DeviceStatusStruct[]>([])
+const staffArray = ref<StaffStruct[]>([])
+const showSearchForm = ref(true)
 
-//设备区域
-let deviceAreaArray: Ref<DeviceAreaStruct[]> = ref([])
-
-let deviceTypeArray: Ref<DeviceTypeStrcut[]> = ref([])
-
-let departmentArray: Ref<DepartmentStruct[]> = ref([])
-
-let deviceStatusArray: Ref<DeviceStatusStruct[]> = ref([])
-
-let staffArray: Ref<StaffStruct[]> = ref([])
-
-let showSearchForm = ref(true)
-
-let SearchFormData: Ref<SearchDataStruct> = ref({
+const SearchFormData = reactive<SearchDataStruct>({
   deviceNumber: '',
   deviceName: '',
-  deviceArea: null,
-  deviceType: null,
-  departmentId: null,
-  deviceStatus: null,
-  deviceOnLine: null,
-  deviceAtivation: null,
-  IMEI: null
+  deviceArea: undefined,
+  deviceType: undefined,
+  departmentId: undefined,
+  deviceStatus: undefined,
+  deviceOnLine: undefined,
+  deviceAtivation: undefined,
+  IMEI: undefined
 })
 
+const deviceAreaOptions = computed(() => deviceAreaArray.value.map((item) => ({ label: item.areaName, value: item.id })))
+const deviceTypeOptions = computed(() => deviceTypeArray.value.map((item) => ({ label: item.name, value: item.id })))
+const departmentOptions = computed(() => departmentArray.value.map((item) => ({ label: item.platform_name, value: item.id })))
+const deviceStatusOptions = computed(() => deviceStatusArray.value.map((item) => ({ label: item.label, value: item.id })))
+const staffOptions = computed(() => staffArray.value.map((item) => ({ label: item.name, value: item.id })))
+
 const getDeviceData = () => {
-  let parm = {
-    id: SearchFormData.value.deviceNumber,
-    deviceName: SearchFormData.value.deviceName,
-    deviceArea: SearchFormData.value.deviceArea,
-    deviceType: SearchFormData.value.deviceType,
-    departmentId: SearchFormData.value.departmentId,
-    status: SearchFormData.value.deviceStatus,
-    onLine: SearchFormData.value.deviceOnLine,
-    activation: SearchFormData.value.deviceAtivation,
+  const parm = {
+    id: SearchFormData.deviceNumber,
+    deviceName: SearchFormData.deviceName,
+    deviceArea: SearchFormData.deviceArea,
+    deviceType: SearchFormData.deviceType,
+    departmentId: SearchFormData.departmentId,
+    status: SearchFormData.deviceStatus,
+    onLine: SearchFormData.deviceOnLine,
+    activation: SearchFormData.deviceAtivation,
     page: currentPage.value,
     size: pageSize.value,
-    imei: SearchFormData.value.IMEI
+    imei: SearchFormData.IMEI
   }
 
-  service.post(PATH_URL + '/MachineMange/getDevice', parm).then((res) => {
-    //  console.log('device', res)
-    TableData.value = res.data.records
-    total.value = res.data.total
+  service.post(PATH_URL + '/MachineMange/getDevice', parm).then((res: any) => {
+    TableData.value = res.data?.records || []
+    total.value = res.data?.total || 0
+    selectedRowKeys.value = []
+    DeleteIdArray = []
   })
 }
 
 const onSearch = () => {
+  currentPage.value = 1
   getDeviceData()
 }
 
 const onReset = () => {
-  SearchFormData.value.deviceNumber = ''
-  SearchFormData.value.deviceName = ''
-  SearchFormData.value.deviceArea = null
-  SearchFormData.value.deviceType = null
-  SearchFormData.value.departmentId = null
-  SearchFormData.value.deviceStatus = null
-  SearchFormData.value.deviceOnLine = null
-  SearchFormData.value.deviceAtivation = null
-  SearchFormData.value.IMEI = null
+  SearchFormData.deviceNumber = ''
+  SearchFormData.deviceName = ''
+  SearchFormData.deviceArea = undefined
+  SearchFormData.deviceType = undefined
+  SearchFormData.departmentId = undefined
+  SearchFormData.deviceStatus = undefined
+  SearchFormData.deviceOnLine = undefined
+  SearchFormData.deviceAtivation = undefined
+  SearchFormData.IMEI = undefined
+  currentPage.value = 1
+  getDeviceData()
 }
 
 const getStaff = () => {
-  service.get(PATH_URL + '/Permission/getUsableStaff').then((res) => {
-    console.log('staff', res)
-    staffArray.value = res.data
+  service.get(PATH_URL + '/Permission/getUsableStaff').then((res: any) => {
+    staffArray.value = res.data || []
   })
 }
 
 const getDevcieType = () => {
-  service.post(PATH_URL + '/MachineMange/getDeviceType').then((res) => {
-    deviceTypeArray.value = res.data
+  service.post(PATH_URL + '/MachineMange/getDeviceType').then((res: any) => {
+    deviceTypeArray.value = res.data || []
   })
 }
 
 const getDeviceStatus = () => {
-  service.get(PATH_URL + '/MachineMange/getDeviceStatus').then((res) => {
-    deviceStatusArray.value = res.data
+  service.get(PATH_URL + '/MachineMange/getDeviceStatus').then((res: any) => {
+    deviceStatusArray.value = res.data || []
   })
 }
 
 const getDepartment = () => {
-  service.get(PATH_URL + '/Permission/getDepartmentForSelect').then((res) => {
-    departmentArray.value = res.data
+  service.get(PATH_URL + '/Permission/getDepartmentForSelect').then((res: any) => {
+    departmentArray.value = res.data || []
   })
 }
-const getDeviceArea = () => {
-  service.post(PATH_URL + '/Permission/getDeviceArea').then((res) => {
-    deviceAreaArray.value = res.data
-  })
-}
-//#endregion
 
-//#region  新增按钮
-let disableUpdate = ref(true)
-let disableRemove = ref(true)
+const getDeviceArea = () => {
+  service.post(PATH_URL + '/Permission/getDeviceArea').then((res: any) => {
+    deviceAreaArray.value = res.data || []
+  })
+}
+
+const selectedRowKeys = ref<TableKey[]>([])
+let DeleteIdArray: number[] = []
+
+const disableRemove = computed(() => selectedRowKeys.value.length === 0)
+const disableLed = computed(() => selectedRowKeys.value.length === 0)
+const setBatchStatusDisable = computed(() => selectedRowKeys.value.length === 0)
+const disableUpdate = computed(() => selectedRowKeys.value.length === 0)
+
+const rowSelection = computed(() => ({
+  selectedRowKeys: selectedRowKeys.value,
+  onChange: (keys: TableKey[], rows: DeviceRecord[]) => {
+    selectedRowKeys.value = keys
+    DeleteIdArray = rows.map((row) => row.id)
+  }
+}))
+
 const OnClickAdd = () => {
-  isUpdate = false
+  isUpdate.value = false
   dialogTitle.value = '添加设备'
   initAddDeviceData()
   dialogTableVisible.value = true
 }
 
 const initAddDeviceData = () => {
-  AddDataForm.value.deviceType = undefined
-  AddDataForm.value.SerialNumber = ''
-  AddDataForm.value.name = ''
-  AddDataForm.value.pic = ''
-  AddDataForm.value.face = false
-  AddDataForm.value.phone = false
-  AddDataForm.value.qcode = false
-  AddDataForm.value.card = false
-  AddDataForm.value.deviceArea = undefined
-  AddDataForm.value.mStaff = undefined
-  AddDataForm.value.wStaff = undefined
-  AddDataForm.value.status = '1'
-  AddDataForm.value.sNumber = ''
+  AddDataForm.deviceType = undefined
+  AddDataForm.SerialNumber = ''
+  AddDataForm.name = ''
+  AddDataForm.pic = ''
+  AddDataForm.face = false
+  AddDataForm.phone = false
+  AddDataForm.qcode = false
+  AddDataForm.card = false
+  AddDataForm.deviceArea = undefined
+  AddDataForm.mStaff = undefined
+  AddDataForm.wStaff = undefined
+  AddDataForm.status = '1'
+  AddDataForm.sNumber = ''
+  AddDataForm.userSerial = ''
+  AddDataForm.id = 0
 }
 
 const deleteOfDetail = () => {
-  ElMessageBox.confirm('确定要删除这些设备吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    service
-      .post(
-        PATH_URL + '/MachineMange/deleteDevice',
-        qs.stringify(
-          {
-            ids: DeleteIdArray
-          },
-          { arrayFormat: 'brackets' }
-        )
-      )
-      .then(() => {
-        ElMessage('操作成功')
-        getDeviceData()
-      })
-  })
+  deleteDevice([...DeleteIdArray], '确定要删除这些设备吗？')
 }
 
 const OnClickOfShowForm = () => {
   showSearchForm.value = !showSearchForm.value
 }
 
-//#endregion
+const TableData = ref<DeviceRecord[]>([])
 
-//#region 表格相关
-let TableData = ref([])
-let DeleteIdArray: number[] = []
-const handleSelectionChange = (val) => {
-  if (val.length > 0) {
-    disableRemove.value = false
-    disableLed.value = false
-    setBatchStatusDisable.value = false
-    disableUpdate.value = false
-  } else {
-    disableRemove.value = true
-    disableLed.value = true
-    setBatchStatusDisable.value = true
-    disableUpdate.value = true
-  }
+const deviceColumns: TableColumnsType<DeviceRecord> = [
+  { title: '运营商', dataIndex: ['department', 'platformName'], key: 'departmentName', width: 120 },
+  { title: '设备编号', dataIndex: 'serialNumber', key: 'serialNumber', width: 160 },
+  { title: '设备名称', dataIndex: 'name', key: 'name', width: 120 },
+  { title: '设备区域', dataIndex: ['area', 'areaName'], key: 'areaName', width: 120 },
+  { title: '设备地址', dataIndex: 'address', key: 'address', width: 180 },
+  { title: '是否在线', dataIndex: 'isOnline', key: 'isOnline', width: 120 },
+  { title: 'IMEI', dataIndex: 'imei', key: 'imei', width: 160 },
+  { title: '在线时间', dataIndex: 'onlineTime', key: 'onlineTime', width: 180 },
+  { title: '是否校准', dataIndex: 'correct', key: 'correct', width: 120 },
+  { title: '型号名称', dataIndex: ['deviceType', 'name'], key: 'deviceTypeName', width: 160 },
+  { title: '数据大屏', key: 'screen', width: 120 },
+  { title: '是否激活', dataIndex: 'activation', key: 'activation', width: 120 },
+  { title: '状态', dataIndex: 'status', key: 'status', width: 120 },
+  { title: '修改时间', dataIndex: 'updateTime', key: 'updateTime', width: 180 },
+  { title: 'DTU固件编号', dataIndex: 'userSerial', key: 'userSerial', width: 180 },
+  { title: '固件版本', dataIndex: 'version', key: 'version', width: 140 },
+  { title: '操作', key: 'action', width: 360, fixed: 'right' }
+]
 
-  DeleteIdArray = []
-  val.forEach((row) => {
-    DeleteIdArray.push(row.id)
-  })
-}
-
-const handleDetail = (val) => {
-  console.log(val)
+const handleDetail = (val: any) => {
   initAddDeviceData()
-  isUpdate = true
-  AddDataForm.value.deviceType = val.deviceType?.id
-  AddDataForm.value.SerialNumber = val.serialNumber
-  AddDataForm.value.name = val.name
-  AddDataForm.value.pic = val.pic
-  AddDataForm.value.face = val.face == 1 ? true : false
-  AddDataForm.value.card = val.card == 1 ? true : false
-  AddDataForm.value.phone = val.phone == 1 ? true : false
-  AddDataForm.value.qcode = val.qrcode == 1 ? true : false
-  AddDataForm.value.status = val.status + ''
-  AddDataForm.value.deviceArea = val.area?.id
-  AddDataForm.value.mStaff = val.maintenanceStaff
-  AddDataForm.value.wStaff = val.operators
-  AddDataForm.value.id = val.id
-  AddDataForm.value.userSerial = val.userSerial
+  isUpdate.value = true
+  AddDataForm.deviceType = val.deviceType?.id
+  AddDataForm.SerialNumber = val.serialNumber
+  AddDataForm.name = val.name
+  AddDataForm.pic = val.pic
+  AddDataForm.face = val.face == 1
+  AddDataForm.card = val.card == 1
+  AddDataForm.phone = val.phone == 1
+  AddDataForm.qcode = val.qrcode == 1
+  AddDataForm.status = val.status + ''
+  AddDataForm.deviceArea = val.area?.id
+  AddDataForm.mStaff = val.maintenanceStaff
+  AddDataForm.wStaff = val.operators
+  AddDataForm.id = val.id
+  AddDataForm.userSerial = val.userSerial
+  dialogTitle.value = '修改设备'
   dialogTableVisible.value = true
 }
 
-const handleRemove = (val) => {
-  ElMessageBox.confirm('确定要删除这台设备吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    let ids = []
-    ids.push(val.id as never)
+const handleRemove = (val: any) => {
+  deleteDevice([val.id], '确定要删除这台设备吗？')
+}
 
-    service
-      .post(
-        PATH_URL + '/MachineMange/deleteDevice',
-        qs.stringify(
-          {
-            ids: ids
-          },
-          { arrayFormat: 'brackets' }
-        )
-      )
-      .then(() => {
-        ElMessage('操作成功')
-        getDeviceData()
-      })
+const deleteDevice = (ids: number[], content: string) => {
+  if (ids.length === 0) {
+    message.warning('请选择要删除的设备')
+    return
+  }
+
+  AModal.confirm({
+    title: '提示',
+    content,
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      await service.post(PATH_URL + '/MachineMange/deleteDevice', qs.stringify({ ids }, { arrayFormat: 'brackets' }))
+      message.success('操作成功')
+      getDeviceData()
+    }
   })
 }
 
-//#endregion
+const isUpdate = ref(false)
+const dialogTitle = ref('')
+const dialogTableVisible = ref(false)
 
-//#region  添加 dialog
-let isUpdate = false
-// let prefix: Ref<string> = ref('00000')
-
-let dialogTitle = ref('')
-
-let dialogTableVisible = ref(false)
-let AddDataForm = ref({
-  deviceType: undefined,
+const AddDataForm = reactive({
+  deviceType: undefined as number | undefined,
   SerialNumber: '',
   name: '',
   pic: '',
@@ -1432,9 +1103,9 @@ let AddDataForm = ref({
   phone: false,
   qcode: false,
   card: false,
-  deviceArea: undefined,
-  mStaff: undefined,
-  wStaff: undefined,
+  deviceArea: undefined as number | undefined,
+  mStaff: undefined as number | undefined,
+  wStaff: undefined as number | undefined,
   status: '1',
   sNumber: '',
   id: 0,
@@ -1445,58 +1116,66 @@ const onCloseDialog = () => {
   dialogTableVisible.value = false
 }
 
-// 上传图片地址
-const UpImageURL = computed(() => {
-  return PATH_URL + '/Common/upLoadImage'
-})
+const UpImageURL = computed(() => PATH_URL + '/Common/upLoadImage')
 
-//获取图片的地址
-const getImageURL = computed(() => (imageURL) => {
-  return PATH_URL + '/Common/downLoadPic/' + imageURL
-})
+const getImageURL = (imageURL?: string) => {
+  return imageURL ? PATH_URL + '/Common/downLoadPic/' + imageURL : ''
+}
 
-const handleUpdateSuccess = (respon) => {
-  if (respon.code == 200) {
-    AddDataForm.value.pic = respon.data
+const handleDeviceUploadChange = (info: UploadChangeParam) => {
+  if (info.file.status !== 'done') return
+  const response = info.file.response
+  if (response?.code == 200) {
+    AddDataForm.pic = response.data
   } else {
-    ElMessage('上传图片出错了')
+    message.error('上传图片出错了')
   }
 }
-const beforeAvatarUpload = () => {}
+
+const beforeAvatarUpload = () => true
 
 const onAddConfirm = () => {
-  if (isUpdate) {
+  if (isUpdate.value) {
     updateDevice()
     return
   }
-  ElMessageBox.confirm('你确认添加这台设备吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    AddDataForm.value.sNumber = AddDataForm.value.SerialNumber
-    service.post(PATH_URL + '/MachineMange/addDevice', AddDataForm.value).then((res: any) => {
-      ElMessage(res.message)
+
+  AModal.confirm({
+    title: '提示',
+    content: '确定要添加这台设备吗？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      AddDataForm.sNumber = AddDataForm.SerialNumber
+      const res: any = await service.post(PATH_URL + '/MachineMange/addDevice', AddDataForm)
+      message.success(res.message || '操作成功')
       getDeviceData()
       onCloseDialog()
-    })
+    }
   })
 }
 
 const updateDevice = () => {
-  ElMessageBox.confirm('你确认修改这台设备吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    AddDataForm.value.sNumber = AddDataForm.value.SerialNumber
-    service.post(PATH_URL + '/MachineMange/updateDevice', AddDataForm.value).then(() => {
-      ElMessage('操作成功')
+  AModal.confirm({
+    title: '提示',
+    content: '确定要修改这台设备吗？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      AddDataForm.sNumber = AddDataForm.SerialNumber
+      await service.post(PATH_URL + '/MachineMange/updateDevice', AddDataForm)
+      message.success('操作成功')
       getDeviceData()
       onCloseDialog()
-    })
+    }
   })
 }
+
+const MapdialogVisible = ref(false)
+const ruleData = ref<Record<string, any>>({})
+const ruleDialogVisible = ref(false)
+const RuleArray = ref<RuleDataStruct[]>([])
+const warehouseRef = ref<any[]>([])
 
 const onCloseMapDialog = () => {
   MapdialogVisible.value = false
@@ -1505,63 +1184,42 @@ const onCloseMapDialog = () => {
 }
 
 const DoCorrect = () => {
-  ElMessageBox.confirm('你确认校准这台设备吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    let param = {
-      id: idOfCorrent,
-      lat: marker.getPosition().lat,
-      lng: marker.getPosition().lng,
-      addr: markerAddr.value
-    }
-
-    service.post(PATH_URL + '/MachineMange/CalibrationAddressOfDevice', param).then(() => {
-      ElMessage('操作成功')
+  AModal.confirm({
+    title: '提示',
+    content: '确定要校准这台设备吗？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      await service.post(PATH_URL + '/MachineMange/CalibrationAddressOfDevice', {
+        id: idOfCorrent,
+        lat: marker.getPosition().lat,
+        lng: marker.getPosition().lng,
+        addr: markerAddr.value
+      })
+      message.success('操作成功')
       getDeviceData()
       onCloseMapDialog()
-    })
+    }
   })
 }
 
-//#endregion
+const ruleOptions = computed(() => RuleArray.value.map((item) => ({ label: item.label, value: item.id })))
 
-let MapdialogVisible = ref(false)
-let ruleData: any = ref({})
-//#region 地图dialog
-
-//#endregion
-let ruleDialogVisible = ref(false)
-
-let RuleArray: Ref<RuleDataStruct[]> = ref([])
-
-const setRule = (val) => {
-  console.log(val)
+const setRule = (val: any) => {
   ruleData.value.DeviceId = val.id
-  let param = {
-    deviceTypeId: val.deviceType.id
-  }
-  service.post(PATH_URL + '/MachineMange/getWorkableDeviceRule', param).then((res) => {
-    RuleArray.value = res.data
+  service.post(PATH_URL + '/MachineMange/getWorkableDeviceRule', { deviceTypeId: val.deviceType.id }).then((res: any) => {
+    RuleArray.value = res.data || []
     if (RuleArray.value.length > 0) {
-      if (val.ruleId == null || val.ruleId == '' || val.ruleId == undefined) {
-        ruleData.value.ruleId = (RuleArray.value[0] as any).id
-      } else {
-        ruleData.value.ruleId = val.ruleId
-      }
+      ruleData.value.ruleId = val.ruleId || (RuleArray.value[0] as any).id
       onRuleSelect(ruleData.value.ruleId)
     }
     ruleDialogVisible.value = true
   })
 }
-let warehouseRef: Ref<any[]> = ref([])
-const onRuleSelect = (val) => {
-  RuleArray.value.forEach((item) => {
-    if (item.id == val) {
-      warehouseRef.value = (item as any).warehouse
-    }
-  })
+
+const onRuleSelect = (val: any) => {
+  const matchedRule = RuleArray.value.find((item) => item.id == val)
+  warehouseRef.value = (matchedRule as any)?.warehouse || []
 }
 
 const onRuleDialogClose = () => {
@@ -1569,76 +1227,50 @@ const onRuleDialogClose = () => {
 }
 
 const onRuleDialogConfirm = () => {
-  console.log('ruleData', ruleData)
-  ElMessageBox.confirm('你确认要修改这台设备的运营规则吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    let parm = {
-      deviceId: ruleData.value.DeviceId,
-      ruleId: ruleData.value.ruleId
-    }
-    console.log('parm', parm)
-    service.post(PATH_URL + '/MachineMange/setRule', parm).then(() => {
-      ElMessage('操作成功')
+  AModal.confirm({
+    title: '提示',
+    content: '确定要修改这台设备的运营规则吗？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      await service.post(PATH_URL + '/MachineMange/setRule', {
+        deviceId: ruleData.value.DeviceId,
+        ruleId: ruleData.value.ruleId
+      })
+      message.success('操作成功')
       getDeviceData()
       onRuleDialogClose()
-    })
-  })
-}
-
-const setNoWork = (val) => {
-  console.log(val)
-
-  ElMessageBox.confirm('你确认要把这台设备设置为未激活吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    let parm = {
-      deviceId: val.id
     }
-    console.log('parm', parm)
-    service.post(PATH_URL + '/MachineMange/setDeviceNoWork', parm).then(() => {
-      ElMessage('操作成功')
-      getDeviceData()
-    })
   })
 }
 
-//const router = useRouter()
+const setNoWork = (val: any) => {
+  AModal.confirm({
+    title: '提示',
+    content: '确定要把这台设备设置为未激活吗？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      await service.post(PATH_URL + '/MachineMange/setDeviceNoWork', { deviceId: val.id })
+      message.success('操作成功')
+      getDeviceData()
+    }
+  })
+}
 
 const toDetail = (row: any) => {
-  console.log(row)
   currentDetailData.value = row
   DetaildialogVisible.value = true
 }
 
-// const upgrade = (row: any) => {
-//   let param = {
-//     deviceId: row.id
-//   }
-//   service.post(PATH_URL + '/MachineMange/test', param).then(() => {
-//     ElMessage('消息已推送')
-//   })
-// }
-
-//#region  设备详情相关
-
-let DetaildialogVisible = ref(false)
-let currentDetailData: Ref<any> = ref({})
-
-//#endregion
+const DetaildialogVisible = ref(false)
+const currentDetailData = ref<any>({})
 
 const doEvent = () => {
   setRule(currentDetailData.value)
 }
 
-//#region 批量添加相关
-
 const addBatch = () => {
-  console.log('url', GetUpLoadExcelURL())
   showDrawer.value = true
 }
 
@@ -1646,43 +1278,42 @@ const DrawerhandleClose = () => {
   showDrawer.value = false
 }
 
-let showDrawer = ref(false)
+const showDrawer = ref(false)
+const batchUploadFileList = ref<any[]>([])
+let fileName: string | undefined = ''
+
 const doAddBatch = () => {
   service.get(PATH_URL + '/MachineMange/addDeviceBatch?fileName=' + fileName).then(() => {
     getDeviceData()
     showDrawer.value = false
-    uploadRef.value!.clearFiles()
-    ElMessage('导入成功')
+    batchUploadFileList.value = []
+    message.success('导入成功')
   })
 }
 
-const headObject = {
-  Authorization: localStorage.getItem('token')
+const headObject = computed(() => ({
+  Authorization: localStorage.getItem('token') || ''
+}))
+
+const deleteFile = (file: any) => {
+  service.get(PATH_URL + '/Common/deleteHardwarePackage?fileName=' + file.name)
+  return true
 }
 
-const deleteFile = (file) => {
-  service.get(PATH_URL + '/Common/deleteHardwarePackage?fileName=' + file.name).then((res: any) => {
-    console.log(res)
-  })
-}
+const handleAvatarSuccess = (info: UploadChangeParam) => {
+  if (info.file.status !== 'done') return
 
-let fileName: string | undefined = ''
-const uploadRef = ref<UploadInstance>()
-const handleAvatarSuccess = (res: any) => {
-  if (res.data == undefined) {
-    ElMessage(res.message)
-    uploadRef.value!.clearFiles()
+  const res = info.file.response
+  if (res?.data == undefined) {
+    message.warning(res?.message || '上传失败')
+    batchUploadFileList.value = []
     fileName = undefined
   } else {
     fileName = res.data
   }
 }
 
-//#endregion
-
-//#region 批量设置走字灯
-let disableLed = ref(true)
-let showLedDrawer = ref(false)
+const showLedDrawer = ref(false)
 const setLedBatch = () => {
   BatcLedContent.value.content = ''
   showLedDrawer.value = true
@@ -1692,12 +1323,8 @@ const LedDrawerhandleClose = () => {
   showLedDrawer.value = false
 }
 
-//#endregion
-
-//#region 批量设置状态
-let BatchStatusData: Ref<any> = ref({})
-let setBatchStatusVisiable = ref(false)
-let setBatchStatusDisable = ref(true)
+const BatchStatusData = ref<Record<string, any>>({})
+const setBatchStatusVisiable = ref(false)
 const setStatusBatch = () => {
   setBatchStatusVisiable.value = true
   BatchStatusData.value = {}
@@ -1708,54 +1335,58 @@ const statusDrawerHandleClose = () => {
 }
 
 const doBatchSetStatus = () => {
-  let param = {
-    ids: DeleteIdArray,
-    param: BatchStatusData.value
-  }
-
-  service.post(PATH_URL + '/MachineMange/SetStatusWithBatch', param).then(() => {
-    ElMessage('操作成功')
-    getDeviceData()
-    setBatchStatusVisiable.value = false
-  })
+  service
+    .post(PATH_URL + '/MachineMange/SetStatusWithBatch', {
+      ids: DeleteIdArray,
+      param: BatchStatusData.value
+    })
+    .then(() => {
+      message.success('操作成功')
+      getDeviceData()
+      setBatchStatusVisiable.value = false
+    })
 }
 
-const BatchHandleUpdateSuccess = (respon) => {
-  console.log('res', respon)
-  if (respon.code == 200) {
-    BatchStatusData.value.pic = respon.data
+const BatchHandleUploadChange = (info: UploadChangeParam) => {
+  if (info.file.status !== 'done') return
+
+  const response = info.file.response
+  if (response?.code == 200) {
+    BatchStatusData.value.pic = response.data
   } else {
-    ElMessage('上传图片出错了')
+    message.error('上传图片出错了')
   }
 }
 
-//#endregion
+const setBatchAuth = (field: string, event: any) => {
+  BatchStatusData.value[field] = event.target.checked ? '1' : '0'
+}
 
-//#region 批量设置走字灯
-let BatcLedContent: Ref<any> = ref({})
+const BatcLedContent = ref<Record<string, any>>({})
 const onBatchLed = () => {
-  let param = {
-    ids: DeleteIdArray,
-    content: BatcLedContent.value.content
-  }
-
-  service.post(PATH_URL + '/MachineMange/setLedContent', param).then(() => {
-    ElMessage('操作成功')
-    showLedDrawer.value = false
-  })
+  service
+    .post(PATH_URL + '/MachineMange/setLedContent', {
+      ids: DeleteIdArray,
+      content: BatcLedContent.value.content
+    })
+    .then(() => {
+      message.success('操作成功')
+      showLedDrawer.value = false
+    })
 }
 
 const onClickExport = () => {
-  let parm = {
-    id: SearchFormData.value.deviceNumber,
-    deviceName: SearchFormData.value.deviceName,
-    deviceArea: SearchFormData.value.deviceArea,
-    deviceType: SearchFormData.value.deviceType,
-    departmentId: SearchFormData.value.departmentId,
-    status: SearchFormData.value.deviceStatus,
+  const parm = {
+    id: SearchFormData.deviceNumber,
+    deviceName: SearchFormData.deviceName,
+    deviceArea: SearchFormData.deviceArea,
+    deviceType: SearchFormData.deviceType,
+    departmentId: SearchFormData.departmentId,
+    status: SearchFormData.deviceStatus,
     page: currentPage.value,
     size: pageSize.value
   }
+
   axios({
     method: 'post',
     url: PATH_URL + '/MachineMange/exportExcelForMacDevice',
@@ -1766,150 +1397,322 @@ const onClickExport = () => {
     },
     data: parm
   }).then((response) => {
-    var blob = new Blob([response.data], { type: 'application/vnd.ms-excel' }) //根据实际情况设置type
-    var link = document.createElement('a')
-    var body = document.querySelector('body')
+    const blob = new Blob([response.data], { type: 'application/vnd.ms-excel' })
+    const link = document.createElement('a')
+    const body = document.querySelector('body')
 
     link.href = window.URL.createObjectURL(blob)
     link.download = '导出设备列表.xls'
-
-    // fix Firefox
     link.style.display = 'none'
     body?.appendChild(link)
-
     link.click()
     body?.removeChild(link)
-
     window.URL.revokeObjectURL(link.href)
   })
-
-  // service.post(PATH_URL + '/MachineMange/exportExcelForMacDevice', parm).then(() => {})
 }
 
-let BatchRulesdialogVisible = ref(false)
+const BatchRulesdialogVisible = ref(false)
 const doSetRuleBatch = () => {
   BatchRulesdialogVisible.value = true
 }
-let batchRuleSelect: Ref<any> = ref()
-
-let rules: Ref<any[]> = ref([])
+const batchRuleSelect = ref()
+const rules = ref<any[]>([])
+const batchRuleOptions = computed(() => rules.value.map((item) => ({ label: item.label, value: item.id })))
 
 const getRules = () => {
   service.get(PATH_URL + '/MachineMange/getRulesForDepartment').then((res: any) => {
-    rules.value = res.data
+    rules.value = res.data || []
   })
 }
 
 const doSetBatchRules = () => {
-  let param = {
-    ids: DeleteIdArray,
-    rules: batchRuleSelect.value
-  }
-
-  service.post(PATH_URL + '/MachineMange/setBatchRules', param).then((res: any) => {
-    console.log(res)
-    ElMessage('操作成功')
-    BatchRulesdialogVisible.value = false
-    getDeviceData()
-  })
-}
-
-const doSetNotActive = () => {
   service
-    .post(
-      PATH_URL + '/MachineMange/setNotActiveBatch',
-      qs.stringify(
-        {
-          ids: DeleteIdArray
-        },
-        { arrayFormat: 'brackets' }
-      )
-    )
+    .post(PATH_URL + '/MachineMange/setBatchRules', {
+      ids: DeleteIdArray,
+      rules: batchRuleSelect.value
+    })
     .then(() => {
-      ElMessage('操作成功')
+      message.success('操作成功')
+      BatchRulesdialogVisible.value = false
       getDeviceData()
     })
 }
 
-//#endregion
+const doSetNotActive = () => {
+  service.post(PATH_URL + '/MachineMange/setNotActiveBatch', qs.stringify({ ids: DeleteIdArray }, { arrayFormat: 'brackets' })).then(() => {
+    message.success('操作成功')
+    getDeviceData()
+  })
+}
+
+onMounted(() => {
+  getDeviceData()
+  getDevcieType()
+  getDeviceStatus()
+  getDepartment()
+  getDeviceArea()
+  getStaff()
+  getRules()
+})
 </script>
 
 <style lang="less" scoped>
-// .addressInput /deep/ .el-input_inner {
-//   border: none;
-// }
-
-.frame {
-  .el-form-item {
-    height: 30px;
-    line-height: 30px;
-
-    .el-input {
-      width: 150px;
-    }
-
-    .el-select {
-      width: 150px;
-    }
-  }
-}
-
-.buttonOfTables {
-  .el-link {
-    margin-left: 10px;
-  }
-}
-
-.scrollbar-demo-item {
+.device-distribution-page {
   display: flex;
   width: 100%;
-  height: 150px;
-  margin: 15px;
-  color: var(--el-color-primary);
-  text-align: center;
-  background: var(--el-color-primary-light-9);
-  border-radius: 4px;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.search-form {
+  display: grid;
+  padding: 16px;
+  background-color: #fff;
+  border-radius: 6px;
+  gap: 14px 16px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  align-items: end;
+
+  :deep(.ant-form-item) {
+    display: flex;
+    margin-bottom: 0;
+    align-items: center;
+    flex-wrap: nowrap;
+  }
+
+  :deep(.ant-form-item-label) {
+    flex: 0 0 80px;
+    padding: 0 10px 0 0;
+    line-height: 1;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  :deep(.ant-form-item-label > label) {
+    height: 32px;
+    color: #262626;
+    font-weight: 500;
+  }
+
+  :deep(.ant-form-item-control) {
+    min-width: 0;
+    flex: 1;
+  }
+
+  :deep(.ant-input),
+  :deep(.ant-select) {
+    width: 100%;
+  }
+}
+
+.search-form-item {
+  min-width: 0;
+}
+
+.search-form-actions {
+  min-width: 0;
+
+  :deep(.ant-form-item-control-input-content) {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.toolbar {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.toolbar-left {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.toolbar-right {
+  display: inline-flex;
+  flex: none;
+  gap: 8px;
+  align-items: center;
+}
+
+.icon-button,
+.table-action {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
 
-  .img {
-    width: 160px;
-    height: 160px;
-    background-color: aquamarine;
+  :deep(.v-icon),
+  :deep(iconify-icon) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
   }
 }
 
-.avatar-uploader .avatar {
-  display: block;
-  width: 120px;
-  height: 120px;
-}
-</style>
-
-<style>
-.avatar-uploader .el-upload {
-  position: relative;
-  overflow: hidden;
-  cursor: pointer;
-  border: 1px dashed var(--el-border-color);
-  border-radius: 6px;
-  transition: var(--el-transition-duration-fast);
+.table-action {
+  height: 24px;
+  padding: 0;
+  gap: 4px;
 }
 
-.avatar-uploader .el-upload:hover {
-  border-color: var(--el-color-primary);
+.action-edit {
+  color: #52c41a;
 }
 
-.el-icon.avatar-uploader-icon {
-  width: 120px;
-  height: 120px;
-  font-size: 28px;
-  color: #8c939d;
-  text-align: center;
+.pagination-wrap {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .map {
   width: 100%;
   height: 400px;
+}
+
+.map-search {
+  display: flex;
+  margin-top: 12px;
+  gap: 8px;
+}
+
+.address-input {
+  flex: 1;
+}
+
+.rule-scroll {
+  width: 100%;
+  max-height: 400px;
+  overflow: auto;
+}
+
+.warehouse-rule-item {
+  display: flex;
+  min-height: 150px;
+  padding: 12px;
+  margin-bottom: 12px;
+  color: #1677ff;
+  background: #e6f4ff;
+  border-radius: 6px;
+  align-items: center;
+  gap: 16px;
+}
+
+.warehouse-rule-image {
+  width: 240px;
+  height: 120px;
+  object-fit: contain;
+  background-color: #fff;
+  border-radius: 4px;
+}
+
+.warehouse-rule-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.media-image {
+  display: block;
+  width: 160px;
+  height: 120px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+.led-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.led-row {
+  align-items: center;
+}
+
+.drawer-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.drawer-submit {
+  align-self: flex-start;
+}
+
+.upload-icon {
+  margin-bottom: 8px;
+  color: #8c8c8c;
+}
+
+.upload-tip,
+.empty-text {
+  color: #8c8c8c;
+}
+
+.checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.status-radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  :deep(.ant-radio-button-wrapper) {
+    height: 32px;
+    min-width: 72px;
+    padding: 0 14px;
+    line-height: 30px;
+    text-align: center;
+    border-inline-start-width: 1px;
+    border-radius: 6px;
+  }
+
+  :deep(.ant-radio-button-wrapper::before) {
+    display: none;
+  }
+}
+
+.avatar-uploader {
+  :deep(.ant-upload) {
+    width: 104px;
+    height: 104px;
+  }
+}
+
+.avatar {
+  display: block;
+  width: 104px;
+  height: 104px;
+  object-fit: contain;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+}
+
+.upload-placeholder {
+  display: inline-flex;
+  width: 104px;
+  height: 104px;
+  color: #8c8c8c;
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s cubic-bezier(0, 0, 1, 1);
+
+  &:hover {
+    border-color: #1677ff;
+  }
+}
+
+:global(.device-detail-modal-wrap .ant-modal) {
+  max-width: calc(100vw - 48px);
 }
 </style>

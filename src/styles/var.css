@@ -1,50 +1,67 @@
 :root {
+  --app-color-primary: #1677ff;
+  --app-color-primary-light-9: #e6f4ff;
+  --app-color-info: #909399;
+  --app-color-danger: #ff4d4f;
+  --app-color-warning: #faad14;
+  --app-color-success: #52c41a;
+  --app-color-black: #000;
+  --app-color-white: #fff;
+  --app-bg-color: #fff;
+  --app-border-color: #d9d9d9;
+  --app-text-color-regular: #262626;
+  --app-text-color-secondary: #595959;
+  --app-text-color-placeholder: #8c8c8c;
+  --app-text-color-disabled: #d9d9d9;
+  --app-border-radius-base: 6px;
+  --app-border-radius-small: 4px;
+
   --dark-bg-color: #293146;
 
   /* left menu start */
-  --left-menu-border-color: '#eee';
+  --left-menu-border-color: #001529;
 
   --left-menu-max-width: 200px;
 
   --left-menu-min-width: 64px;
 
-  --left-menu-bg-color: #001529;
+  --left-menu-bg-color: #001a2f;
 
-  --left-menu-bg-light-color: #0f2438;
+  --left-menu-bg-light-color: #021f38;
 
-  --left-menu-bg-active-color: var(--el-color-primary);
+  --left-menu-bg-active-color: #1677ff;
 
-  --left-menu-text-color: #bfcbd9;
+  --left-menu-text-color: #c8d3df;
 
   --left-menu-text-active-color: #fff;
 
-  --left-menu-collapse-bg-active-color: var(--el-color-primary);
+  --left-menu-collapse-bg-active-color: #1677ff;
   /* left menu end */
 
   /* logo start */
-  --logo-height: 50px;
+  --logo-height: 48px;
 
   --logo-title-text-color: #fff;
 
-  --logo-border-color: 'inherit';
+  --logo-border-color: rgb(255 255 255 / 8%);
   /* logo end */
 
   /* header start */
-  --top-header-bg-color: '#fff';
+  --top-header-bg-color: #fff;
 
-  --top-header-text-color: 'inherit';
+  --top-header-text-color: #111827;
 
-  --top-header-hover-color: #f6f6f6;
+  --top-header-hover-color: #f5f8ff;
 
-  --top-tool-height: var(--logo-height);
+  --top-tool-height: 48px;
 
-  --top-tool-p-x: 0;
+  --top-tool-p-x: 8px;
 
-  --top-tool-border-color: #eee;
+  --top-tool-border-color: #edf0f5;
 
-  --tags-view-height: 35px;
+  --tags-view-height: 34px;
 
-  --tags-view-border-color: #eee;
+  --tags-view-border-color: #edf0f5;
   /* header start */
 
   /* tab menu start */
@@ -57,9 +74,9 @@
   --tab-menu-border-color: #eee;
   /* tab menu end */
 
-  --app-content-padding: 20px;
+  --app-content-padding: 16px;
 
-  --app-content-bg-color: #f5f7f9;
+  --app-content-bg-color: #f4f6fa;
 
   --app-footer-height: 50px;
 

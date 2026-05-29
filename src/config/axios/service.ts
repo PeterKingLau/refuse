@@ -1,80 +1,91 @@
-import axios, {
-  AxiosInstance,
-  AxiosRequestConfig,
-  AxiosRequestHeaders,
-  AxiosResponse,
-  AxiosError
-} from 'axios'
-
+import axios, { AxiosError, AxiosHeaders, AxiosInstance, AxiosRequestHeaders, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 import qs from 'qs'
-
+import { message } from 'ant-design-vue'
 import { config } from './config'
-
-import { ElMessage } from 'element-plus'
 
 const { result_code, base_url } = config
 
-export const PATH_URL = base_url[import.meta.env.VITE_API_BASEPATH]
+const requestBaseUrl = base_url[import.meta.env.VITE_API_BASEPATH]
 
-// 创建axios实例
+export const PATH_URL = requestBaseUrl
+
+const isSameBaseUrl = (url: string, baseURL: string) => {
+  return url === baseURL || url.startsWith(`${baseURL}/`)
+}
+
+const removeBaseUrlPrefix = (url: string, baseURL?: string) => {
+  if (!baseURL || !isSameBaseUrl(url, baseURL)) return url
+
+  const nextUrl = url.slice(baseURL.length)
+  return nextUrl.startsWith('/') ? nextUrl : `/${nextUrl}`
+}
+
+const getContentType = (headers?: InternalAxiosRequestConfig['headers']) => {
+  if (!headers) return ''
+
+  if (headers instanceof AxiosHeaders) {
+    return headers.get('Content-Type') || ''
+  }
+
+  return headers['Content-Type'] || headers['content-type'] || ''
+}
+
+const setAuthorization = (headers: InternalAxiosRequestConfig['headers'], token: string) => {
+  if (headers instanceof AxiosHeaders) {
+    headers.set('Authorization', token)
+    return
+  }
+
+  ;(headers as AxiosRequestHeaders).Authorization = token
+}
+
 const service: AxiosInstance = axios.create({
-  baseURL: PATH_URL, // api 的 base_url
-  timeout: config.request_timeout // 请求超时时间
+  baseURL: requestBaseUrl,
+  timeout: config.request_timeout,
+  headers: {
+    'Content-Type': config.default_headers
+  },
+  paramsSerializer: (params) => qs.stringify(params, { arrayFormat: 'repeat', skipNulls: true })
 })
 
-// request拦截器
 service.interceptors.request.use(
-  (config: AxiosRequestConfig) => {
-    if (
-      config.method === 'post' &&
-      (config.headers as AxiosRequestHeaders)['Content-Type'] ===
-        'application/x-www-form-urlencoded'
-    ) {
-      config.data = qs.stringify(config.data)
+  (requestConfig: InternalAxiosRequestConfig) => {
+    requestConfig.url = removeBaseUrlPrefix(requestConfig.url || '', requestConfig.baseURL)
+
+    const contentType = String(getContentType(requestConfig.headers))
+
+    if (requestConfig.method === 'post' && contentType.includes('application/x-www-form-urlencoded') && requestConfig.data && !(requestConfig.data instanceof FormData)) {
+      requestConfig.data = qs.stringify(requestConfig.data)
     }
 
-    // get参数编码
-    if (config.method === 'get' && config.params) {
-      let url = config.url as string
-      url += '?'
-      const keys = Object.keys(config.params)
-      for (const key of keys) {
-        if (config.params[key] !== void 0 && config.params[key] !== null) {
-          url += `${key}=${encodeURIComponent(config.params[key])}&`
-        }
-      }
-      url = url.substring(0, url.length - 1)
-
-      config.params = {}
-      config.url = url
+    const token = localStorage.getItem('token')
+    if (token) {
+      setAuthorization(requestConfig.headers, token)
     }
-    ;(config.headers as AxiosRequestHeaders)['Authorization'] = localStorage.getItem('token')
 
-    return config
+    return requestConfig
   },
-  (error: AxiosError) => {
-    // Do something with request error
-
-    console.log(error) // for debug
-    Promise.reject(error)
-  }
+  (error: AxiosError) => Promise.reject(error)
 )
 
-// response 拦截器
 service.interceptors.response.use(
   (response: AxiosResponse<any>) => {
     if (response.config.responseType === 'blob') {
-      // 如果是文件流，直接过
       return response
-    } else if (response.data.code === result_code) {
-      return response.data
-    } else {
-      ElMessage.error(response.data.message)
     }
+
+    const responseData = response.data
+
+    if (responseData?.code === result_code) {
+      return responseData
+    }
+
+    message.error(responseData?.message || '请求失败')
+    return Promise.reject(responseData)
   },
-  (error: AxiosError) => {
-    console.log('err' + error) // for debug
-    ElMessage.error(error.message)
+  (error: AxiosError<any>) => {
+    const errorMessage = error.response?.data?.message || error.message || '请求失败'
+    message.error(errorMessage)
     return Promise.reject(error)
   }
 )

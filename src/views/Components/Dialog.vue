@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ContentWrap } from '@/components/ContentWrap'
 import { Dialog } from '@/components/Dialog'
-import { ElButton } from 'element-plus'
+import { Button as AButton } from 'ant-design-vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import { ref, reactive, unref } from 'vue'
 import { Form, FormExpose } from '@/components/Form'
@@ -122,26 +122,26 @@ const formSubmit = () => {
 
 <template>
   <ContentWrap :title="t('dialogDemo.dialog')" :message="t('dialogDemo.dialogDes')">
-    <ElButton type="primary" @click="dialogVisible = !dialogVisible">
+    <AButton type="primary" @click="dialogVisible = !dialogVisible">
       {{ t('dialogDemo.open') }}
-    </ElButton>
+    </AButton>
 
-    <ElButton type="primary" @click="dialogVisible2 = !dialogVisible2">
+    <AButton type="primary" @click="dialogVisible2 = !dialogVisible2">
       {{ t('dialogDemo.combineWithForm') }}
-    </ElButton>
+    </AButton>
 
     <Dialog v-model="dialogVisible" :title="t('dialogDemo.dialog')">
       <div v-for="v in 10000" :key="v">{{ v }}</div>
       <template #footer>
-        <ElButton @click="dialogVisible = false">{{ t('dialogDemo.close') }}</ElButton>
+        <AButton @click="dialogVisible = false">{{ t('dialogDemo.close') }}</AButton>
       </template>
     </Dialog>
 
     <Dialog v-model="dialogVisible2" :title="t('dialogDemo.dialog')">
       <Form ref="formRef" :schema="schema" />
       <template #footer>
-        <ElButton type="primary" @click="formSubmit">{{ t('dialogDemo.submit') }}</ElButton>
-        <ElButton @click="dialogVisible2 = false">{{ t('dialogDemo.close') }}</ElButton>
+        <AButton type="primary" @click="formSubmit">{{ t('dialogDemo.submit') }}</AButton>
+        <AButton @click="dialogVisible2 = false">{{ t('dialogDemo.close') }}</AButton>
       </template>
     </Dialog>
   </ContentWrap>

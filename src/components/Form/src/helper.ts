@@ -24,11 +24,7 @@ export const setTextPlaceholder = (schema: FormSchema): PlaceholderMoel => {
   if (selectMap.includes(schema?.component as string)) {
     // 一些范围选择器
     const twoTextMap = ['datetimerange', 'daterange', 'monthrange', 'datetimerange', 'daterange']
-    if (
-      twoTextMap.includes(
-        (schema?.componentProps?.type || schema?.componentProps?.isRange) as string
-      )
-    ) {
+    if (twoTextMap.includes((schema?.componentProps?.type || schema?.componentProps?.isRange) as string)) {
       return {
         startPlaceholder: t('common.startTimeText'),
         endPlaceholder: t('common.endTimeText'),
@@ -90,11 +86,7 @@ export const setComponentProps = (item: FormSchema): Recordable => {
  * @param slotsProps 插槽属性
  * @param field 字段名
  */
-export const setItemComponentSlots = (
-  slots: Slots,
-  slotsProps: Recordable = {},
-  field: string
-): Recordable => {
+export const setItemComponentSlots = (slots: Slots, slotsProps: Recordable = {}, field: string): Recordable => {
   const slotObj: Recordable = {}
   for (const key in slotsProps) {
     if (slotsProps[key]) {

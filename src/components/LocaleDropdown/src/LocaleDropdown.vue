@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, unref } from 'vue'
-import { ElDropdown, ElDropdownMenu, ElDropdownItem } from 'element-plus'
+import { Dropdown as ADropdown, Menu as AMenu, MenuItem as AMenuItem } from 'ant-design-vue'
 import { useLocaleStore } from '@/store/modules/locale'
 import { useLocale } from '@/hooks/web/useLocale'
 import { propTypes } from '@/utils/propTypes'
@@ -30,23 +30,21 @@ const setLang = (lang: LocaleType) => {
   const { changeLocale } = useLocale()
   changeLocale(lang)
 }
+
+const handleMenuClick = ({ key }: { key: string | number }) => {
+  setLang(key as LocaleType)
+}
 </script>
 
 <template>
-  <ElDropdown :class="prefixCls" trigger="click" @command="setLang">
-    <Icon
-      :size="18"
-      icon="ion:language-sharp"
-      class="cursor-pointer"
-      :class="$attrs.class"
-      :color="color"
-    />
-    <template #dropdown>
-      <ElDropdownMenu>
-        <ElDropdownItem v-for="item in langMap" :key="item.lang" :command="item.lang">
+  <ADropdown :class="prefixCls" :trigger="['click']">
+    <Icon :size="18" icon="ion:language-sharp" class="cursor-pointer" :class="$attrs.class" :color="color" />
+    <template #overlay>
+      <AMenu @click="handleMenuClick">
+        <AMenuItem v-for="item in langMap" :key="item.lang">
           {{ item.name }}
-        </ElDropdownItem>
-      </ElDropdownMenu>
+        </AMenuItem>
+      </AMenu>
     </template>
-  </ElDropdown>
+  </ADropdown>
 </template>

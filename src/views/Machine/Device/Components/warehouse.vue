@@ -1,23 +1,19 @@
 <template>
-  <el-row>
-    <el-col :span="8">
-      <el-row>
+  <ARow :gutter="16" class="warehouse-page">
+    <ACol :span="8">
+      <div class="warehouse-preview">
         <img :src="getImageURL('0adecfc2-0367-4be3-9b35-551ad8c24b27.jpg')" class="pic" />
-      </el-row>
-      <el-row>
-        <el-button type="primary" class="btn" @click="test">更改 </el-button>
-      </el-row>
-    </el-col>
-    <el-col :span="16">
-      <el-row />
-    </el-col>
-  </el-row>
+        <AButton type="primary" class="btn" @click="test">更改</AButton>
+      </div>
+    </ACol>
+    <ACol :span="16"></ACol>
+  </ARow>
 </template>
 
 <script setup lang="ts">
 import { computed, toRef } from 'vue'
+import { Button as AButton, Col as ACol, Row as ARow, message } from 'ant-design-vue'
 import { PATH_URL } from '@/config/axios/service'
-import { ElMessage } from 'element-plus'
 
 const props = defineProps({
   ruleId: {
@@ -26,26 +22,36 @@ const props = defineProps({
   }
 })
 
-let id = toRef(props, 'ruleId')
+const id = toRef(props, 'ruleId')
 
 const test = () => {
-  ElMessage('id = ' + id.value)
+  message.info('id = ' + id.value)
 }
 
-//获取图片的地址
-const getImageURL = computed(() => (imageURL) => {
+const getImageURL = (imageURL: string) => {
   return PATH_URL + '/Common/downLoadPic/' + imageURL
-})
+}
 </script>
 
 <style scoped>
+.warehouse-page {
+  width: 100%;
+}
+
+.warehouse-preview {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
 .pic {
   width: 100px;
   height: 100px;
+  object-fit: contain;
 }
 
 .btn {
   width: 100px;
-  margin-top: 5px;
 }
 </style>

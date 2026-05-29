@@ -2,12 +2,12 @@
 import { ContentWrap } from '@/components/ContentWrap'
 import { useI18n } from '@/hooks/web/useI18n'
 import { Highlight } from '@/components/Highlight'
-import { ElMessage } from 'element-plus'
+import { message } from 'ant-design-vue'
 
 const { t } = useI18n()
 
 const keyClick = (key: string) => {
-  ElMessage.info(key)
+  message.info(key)
 }
 </script>
 

@@ -1,4 +1,4 @@
-import { ElementPlusSize } from './elementPlus'
+import { AppSize } from './ui'
 export interface ConfigGlobalTypes {
-  size?: ElementPlusSize
+  size?: AppSize
 }

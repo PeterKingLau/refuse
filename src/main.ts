@@ -13,9 +13,6 @@ import { setupStore } from '@/store'
 // 全局组件
 import { setupGlobCom } from '@/components'
 
-// 引入element-plus
-// import { setupElementPlus } from '@/plugins/elementPlus'
-
 // 引入全局样式
 import '@/styles/index.less'
 
@@ -34,10 +31,8 @@ import App from './App.vue'
 
 import './permission'
 
-import * as ElIconModules from '@element-plus/icons-vue'
-
-import ElementPlus from 'element-plus'
-import 'element-plus/dist/index.css'
+import Antd from 'ant-design-vue'
+import 'ant-design-vue/dist/reset.css'
 
 // 创建实例
 const setupAll = async () => {
@@ -49,16 +44,11 @@ const setupAll = async () => {
 
   setupGlobCom(app)
 
-  //setupElementPlus(app)
-  app.use(ElementPlus)
+  app.use(Antd)
 
   setupRouter(app)
 
   setupPermission(app)
-
-  Object.keys(ElIconModules).forEach(function (key) {
-    app.component(ElIconModules[key].name, ElIconModules[key])
-  })
 
   app.mount('#app')
 }

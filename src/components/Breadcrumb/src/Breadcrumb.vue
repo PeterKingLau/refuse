@@ -1,6 +1,6 @@
 <script lang="tsx">
-import { ElBreadcrumb, ElBreadcrumbItem } from 'element-plus'
-import { ref, watch, computed, unref, defineComponent, TransitionGroup } from 'vue'
+import { Breadcrumb as ABreadcrumb, BreadcrumbItem as ABreadcrumbItem } from 'ant-design-vue'
+import { ref, watch, computed, unref, defineComponent } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePermissionStore } from '@/store/modules/permission'
 import { filterBreadcrumb } from './helper'
@@ -46,19 +46,25 @@ export default defineComponent({
 
     const renderBreadcrumb = () => {
       const breadcrumbList = treeToList<AppRouteRecordRaw[]>(unref(levelList))
-      return breadcrumbList.map((v) => {
-        const disabled = v.redirect === 'noredirect'
+      return breadcrumbList.map((v, index) => {
         const meta = v.meta as RouteMeta
+        const isCurrent = index === breadcrumbList.length - 1
+        const icon = meta.icon as string | undefined
+
         return (
-          <ElBreadcrumbItem to={{ path: disabled ? '' : v.path }} key={v.name}>
-            {meta?.icon && breadcrumbIcon.value ? (
-              <>
-                <Icon icon={meta.icon} class="mr-[5px]"></Icon> {t(v?.meta?.title)}
-              </>
-            ) : (
-              t(v?.meta?.title)
-            )}
-          </ElBreadcrumbItem>
+          <ABreadcrumbItem key={v.name || v.path}>
+            <span
+              class={[
+                `${prefixCls}__content`,
+                {
+                  [`${prefixCls}__content--current`]: isCurrent
+                }
+              ]}
+            >
+              {breadcrumbIcon.value && icon ? <Icon icon={icon} class={`${prefixCls}__icon`}></Icon> : undefined}
+              <span class={`${prefixCls}__title`}>{t(v?.meta?.title)}</span>
+            </span>
+          </ABreadcrumbItem>
         )
       })
     }
@@ -77,51 +83,102 @@ export default defineComponent({
     )
 
     return () => (
-      <ElBreadcrumb separator="/" class={`${prefixCls} flex items-center h-full ml-[10px]`}>
-        <TransitionGroup appear enter-active-class="animate__animated animate__fadeInRight">
-          {renderBreadcrumb()}
-        </TransitionGroup>
-      </ElBreadcrumb>
+      <ABreadcrumb separator="/" class={`${prefixCls} ml-[10px]`}>
+        {renderBreadcrumb()}
+      </ABreadcrumb>
     )
   }
 })
 </script>
 
 <style lang="less" scoped>
-@prefix-cls: ~'@{elNamespace}-breadcrumb';
+@prefix-cls: ~'@{namespace}-breadcrumb';
 
 .@{prefix-cls} {
-  :deep(&__item) {
-    display: flex;
-    .@{prefix-cls}__inner {
-      display: flex;
-      align-items: center;
-      color: var(--top-header-text-color);
+  display: inline-flex;
+  height: 100%;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--top-header-text-color);
+  align-items: center;
 
-      &:hover {
-        color: var(--el-color-primary);
-      }
+  :deep(ol) {
+    display: inline-flex;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    align-items: center;
+  }
+
+  :deep(li) {
+    display: inline-flex;
+    height: 100%;
+    align-items: center;
+  }
+
+  :deep(.ant-breadcrumb-link) {
+    display: inline-flex;
+    height: 100%;
+    line-height: 1;
+    color: var(--app-text-color-placeholder);
+    align-items: center;
+  }
+
+  :deep(.ant-breadcrumb-separator) {
+    display: inline-flex;
+    height: 100%;
+    margin-inline: 8px;
+    line-height: 1;
+    color: var(--app-text-color-placeholder);
+    align-items: center;
+  }
+
+  :deep(.@{prefix-cls}__content) {
+    display: inline-flex;
+    min-height: 20px;
+    line-height: 1;
+    color: var(--app-text-color-placeholder);
+    cursor: default;
+    align-items: center;
+    vertical-align: middle;
+
+    &:hover {
+      color: var(--app-text-color-placeholder);
     }
   }
 
-  :deep(&__item):not(:last-child) {
-    .@{prefix-cls}__inner {
-      color: var(--top-header-text-color);
+  :deep(.@{prefix-cls}__content--current) {
+    color: var(--app-color-primary);
 
-      &:hover {
-        color: var(--el-color-primary);
-      }
+    &:hover {
+      color: var(--app-color-primary);
     }
   }
 
-  :deep(&__item):last-child {
-    .@{prefix-cls}__inner {
-      color: var(--el-text-color-placeholder);
+  :deep(.@{prefix-cls}__icon) {
+    display: inline-flex;
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
+    color: currentcolor;
+    line-height: 1;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+  }
 
-      &:hover {
-        color: var(--el-text-color-placeholder);
-      }
-    }
+  :deep(.@{prefix-cls}__title) {
+    display: inline-flex;
+    min-height: 20px;
+    line-height: 20px;
+    align-items: center;
+    vertical-align: middle;
+  }
+
+  :deep(.ant-breadcrumb li:last-child .ant-breadcrumb-link),
+  :deep(li:last-child .ant-breadcrumb-link) {
+    color: var(--app-color-primary);
   }
 }
 </style>

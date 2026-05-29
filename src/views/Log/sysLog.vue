@@ -1,274 +1,192 @@
 <template>
-  <el-row>
-    <el-form :model="Queryparam" label-width="100px" :inline="true" v-if="showSearchForm">
-      <el-form-item label="模块名称：">
-        <el-input v-model="Queryparam.module" class="eInput" placeholder="请输入模块名称" />
-      </el-form-item>
+  <div class="sys-log-page">
+    <AForm v-if="showSearchForm" :model="Queryparam" layout="horizontal" class="search-form">
+      <AFormItem label="模块名称" class="search-form-item">
+        <AInput v-model:value="Queryparam.module" class="w-full" placeholder="请输入模块名称" />
+      </AFormItem>
 
-      <el-form-item label="操作人员：">
-        <el-input v-model="Queryparam.user" class="eInput" placeholder="请输入操作人员" />
-      </el-form-item>
+      <AFormItem label="操作人员" class="search-form-item">
+        <AInput v-model:value="Queryparam.user" class="w-full" placeholder="请输入操作人员" />
+      </AFormItem>
 
-      <el-form-item label="状态：">
-        <el-select v-model="Queryparam.status">
-          <el-option
-            v-for="item in statusArray"
-            :key="item.id"
-            :label="item.label"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
+      <AFormItem label="状态" class="search-form-item">
+        <ASelect v-model:value="Queryparam.status" :options="statusOptions" allow-clear class="w-full" placeholder="请选择状态" />
+      </AFormItem>
 
-      <el-form-item label="操作类型：">
-        <el-select v-model="Queryparam.type">
-          <el-option
-            v-for="item in operationTypeArray"
-            :key="item.label"
-            :label="item.label"
-            :value="item.label"
-          />
-        </el-select>
-      </el-form-item>
+      <AFormItem label="操作类型" class="search-form-item">
+        <ASelect v-model:value="Queryparam.type" :options="operationTypeOptions" allow-clear class="w-full" placeholder="请选择操作类型" />
+      </AFormItem>
 
-      <el-form-item label="操作时间:">
-        <el-date-picker
-          v-model="operationTime"
-          type="daterange"
-          range-separator="到"
-          start-placeholder="开始时间"
-          end-placeholder="结束时间"
-          value-format="YYYY-MM-DD HH:mm:ss"
-          size="default"
-        />
-      </el-form-item>
+      <AFormItem label="操作时间" class="search-form-item search-form-range">
+        <ARangePicker v-model:value="operationTime" value-format="YYYY-MM-DD HH:mm:ss" class="w-full" start-placeholder="开始时间" end-placeholder="结束时间" />
+      </AFormItem>
 
-      <el-form-item>
-        <el-button type="primary" class="btn" @click="getLogData" v-hasPermi="Permission.sec">
-          <el-icon><Search /></el-icon>
-          搜索
-        </el-button>
-      </el-form-item>
+      <AFormItem class="search-form-actions">
+        <ASpace>
+          <AButton type="primary" class="icon-button" @click="onSearch" v-hasPermi="Permission.sec">
+            <template #icon>
+              <Icon icon="ant-design:search-outlined" />
+            </template>
+            搜索
+          </AButton>
+          <AButton class="icon-button" @click="onReset">
+            <template #icon>
+              <Icon icon="ant-design:reload-outlined" />
+            </template>
+            重置
+          </AButton>
+        </ASpace>
+      </AFormItem>
+    </AForm>
 
-      <el-form-item>
-        <el-button class="btn" @click="onReset">
-          <el-icon class="el-icon--left"><RefreshRight /></el-icon>
-          重置
-        </el-button>
-      </el-form-item>
-    </el-form>
-  </el-row>
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <AButton danger class="icon-button" :disabled="disableRemove" @click="deleteOfDetail" v-hasPermi="Permission.del">
+          <template #icon>
+            <Icon icon="ant-design:delete-outlined" />
+          </template>
+          删除
+        </AButton>
+      </div>
 
-  <!-- 操作按钮-->
-  <el-row>
-    <el-col :span="12">
-      <!-- <el-button type="primary" class="btn" @click="OnClickAdd" v-if="false">
-        <el-icon><Plus /> </el-icon>
-        新增</el-button
-      > -->
+      <div class="toolbar-right">
+        <ATooltip :title="showSearchForm ? '隐藏搜索' : '显示搜索'">
+          <AButton shape="circle" @click="OnClickOfShowForm">
+            <template #icon>
+              <Icon icon="ant-design:search-outlined" />
+            </template>
+          </AButton>
+        </ATooltip>
+        <ATooltip title="刷新">
+          <AButton shape="circle" @click="onPageRest">
+            <template #icon>
+              <Icon icon="ant-design:reload-outlined" />
+            </template>
+          </AButton>
+        </ATooltip>
+      </div>
+    </div>
 
-      <el-button
-        type="danger"
-        class="btn"
-        :disabled="disableRemove"
-        @click="deleteOfDetail"
-        v-hasPermi="Permission.del"
-        ><el-icon><Close /></el-icon>删除</el-button
-      >
-    </el-col>
+    <ADivider />
 
-    <el-col :span="12" style="text-align: right">
-      <el-tooltip content="隐藏搜索" placement="top-start">
-        <el-button circle @click="OnClickOfShowForm">
-          <el-icon><Search /></el-icon
-        ></el-button>
-      </el-tooltip>
-      <el-tooltip content="刷新" placement="top-start">
-        <el-button circle @click="onPageRest">
-          <el-icon><RefreshRight /></el-icon>
-        </el-button>
-      </el-tooltip>
-    </el-col>
-  </el-row>
+    <ATable row-key="oper_id" :columns="columns" :data-source="logData" :pagination="false" :row-selection="rowSelection" bordered>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'oper_status'">
+          {{ converStatu(record.oper_status) }}
+        </template>
 
-  <el-divider />
+        <template v-else-if="column.key === 'oper_create_time'">
+          {{ converDateFormat(record.oper_create_time) }}
+        </template>
 
-  <el-row>
-    <el-table
-      ref="areaTableRef"
-      :data="logData"
-      style="width: 100%"
-      @selection-change="handleSelectionChange"
-    >
-      <el-table-column type="selection" width="55" />
-      <el-table-column label="日志编号" width="100" property="oper_id" />
+        <template v-else-if="column.key === 'action'">
+          <AButton type="link" class="table-action" @click="handleDetail(record)">详细</AButton>
+        </template>
+      </template>
+    </ATable>
 
-      <el-table-column label="日志模块" width="160" property="oper_module" />
-      <el-table-column label="操作类型" width="100" property="oper_type" />
-      <el-table-column label="操作人员" width="100" property="oper_user_id" />
-      <el-table-column label="操作IP地址" width="160" property="oper_ip" />
-
-      <el-table-column label="操作状态" width="160" v-slot="scope">
-        {{ converStatu(scope.row.oper_status) }}
-      </el-table-column>
-      <el-table-column label="投放时间" width="180" v-slot="scope">
-        {{ converDateFormat(scope.row.oper_create_time) }}
-      </el-table-column>
-
-      <el-table-column label="操作" v-slot="scope" width="150">
-        <div class="buttonOfTables">
-          <el-link type="primary" @click="handleDetail(scope.row)">详细</el-link>
-        </div>
-      </el-table-column>
-    </el-table>
-  </el-row>
-  <el-row>
-    <el-col :span="18">
-      <el-pagination
-        v-model:current-page="currentPage"
+    <div class="pagination-wrap">
+      <APagination
+        v-model:current="currentPage"
         v-model:page-size="pageSize"
-        :small="small"
+        :page-size-options="['5', '10', '15', '20', '50', '100']"
+        :show-size-changer="true"
         :disabled="disabled"
-        layout="total, sizes, prev, pager, next, jumper"
         :total="total"
-        @size-change="handleSizeChange"
-        @current-change="handleSizeChange"
+        :show-total="(totalCount) => `共 ${totalCount} 条`"
+        show-quick-jumper
+        @change="handlePageChange"
+        @show-size-change="handlePageChange"
       />
-    </el-col>
-  </el-row>
+    </div>
 
-  <el-dialog v-model="handleShow" title="详细日志" width="50%">
-    <el-row class="c-row">
-      <el-col :span="5" class="title">模块名称：</el-col>
-      <el-col :span="5" class="content">{{ currentRow.oper_module }}</el-col>
-      <el-col :span="5" class="title">操作类型：</el-col>
-      <el-col :span="5" class="content">{{ currentRow.oper_type }}</el-col>
-    </el-row>
-    <el-row class="c-row">
-      <el-col :span="5" class="title">请求地址：</el-col>
-      <el-col :span="5" class="content">{{ currentRow.oper_method }}</el-col>
-      <el-col :span="5" class="title">请求结果：</el-col>
-      <el-col :span="5" class="content">{{ converStatu(currentRow.oper_status) }}</el-col>
-    </el-row>
-    <el-row class="c-row">
-      <el-col :span="5" class="title">请求IP地址：</el-col>
-      <el-col :span="5" class="content">{{ currentRow.oper_ip }}</el-col>
-      <el-col :span="5" class="title">操作用户：</el-col>
-      <el-col :span="5" class="content">{{ currentRow.oper_user_id }}</el-col>
-    </el-row>
-    <el-row class="c-row">
-      <el-col :span="5" class="title">操作方法：</el-col>
-      <el-col :span="15" class="content">{{ currentRow.oper_uri }}</el-col>
-    </el-row>
+    <AModal v-model:open="handleShow" title="详细日志" width="760px" :footer="null">
+      <div class="detail-grid">
+        <div class="detail-item">
+          <span class="detail-label">模块名称</span>
+          <span>{{ currentRow.oper_module }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">操作类型</span>
+          <span>{{ currentRow.oper_type }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">请求地址</span>
+          <span>{{ currentRow.oper_method }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">请求结果</span>
+          <span>{{ converStatu(currentRow.oper_status) }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">请求IP地址</span>
+          <span>{{ currentRow.oper_ip }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">操作用户</span>
+          <span>{{ currentRow.oper_user_id }}</span>
+        </div>
+        <div class="detail-item detail-wide">
+          <span class="detail-label">操作方法</span>
+          <span>{{ currentRow.oper_uri }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">操作描述</span>
+          <span>{{ currentRow.oper_desc }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">操作时间</span>
+          <span>{{ converDateFormat(currentRow.oper_create_time) }}</span>
+        </div>
+      </div>
 
-    <el-row class="c-row">
-      <el-col :span="5" class="title">操作描述：</el-col>
-      <el-col :span="5" class="content">{{ currentRow.oper_desc }}</el-col>
-      <el-col :span="5" class="title">操作时间：</el-col>
-      <el-col :span="5" class="content">{{ converDateFormat(currentRow.oper_create_time) }}</el-col>
-    </el-row>
-
-    <template #footer>
-      <span class="dialog-footer">
-        <el-button @click="handleShow = false">关闭</el-button>
-      </span>
-    </template>
-  </el-dialog>
+      <div class="modal-footer">
+        <AButton @click="handleShow = false">关闭</AButton>
+      </div>
+    </AModal>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { PATH_URL, service } from '@/config/axios/service'
-
-import { ElMessage } from 'element-plus'
-import { Ref, ref, onMounted, unref, inject } from 'vue'
+import { computed, inject, onMounted, ref } from 'vue'
+import {
+  Button as AButton,
+  DatePicker as ADatePicker,
+  Divider as ADivider,
+  Form as AForm,
+  FormItem as AFormItem,
+  Input as AInput,
+  Modal as AModal,
+  Pagination as APagination,
+  Select as ASelect,
+  Space as ASpace,
+  Table as ATable,
+  Tooltip as ATooltip,
+  message
+} from 'ant-design-vue'
+import type { TableColumnsType } from 'ant-design-vue'
 import qs from 'qs'
-const reload: any = inject('reload')
+import { PATH_URL, service } from '@/config/axios/service'
+import { Icon } from '@/components/Icon'
 
-const onPageRest = () => {
-  reload()
-}
+const ARangePicker = ADatePicker.RangePicker
 
-const Permission = ref({
-  del: 'log_sys_del',
-  sec: 'log_sys_sec'
-})
-
-//#region 数据结构
-
-let currentPage = ref(1)
-let pageSize = ref(10)
-let small = ref(false)
-let disabled = ref(false)
-let total = ref(0)
-
-let operationTime = ref([])
-
-let showSearchForm = ref(true)
-
-let statusArray = [
-  {
-    id: 0,
-    label: '成功'
-  },
-  {
-    id: 1,
-    label: '失败'
-  }
-]
-
-let operationTypeArray = [
-  {
-    label: '新增'
-  },
-  {
-    label: '修改'
-  },
-  {
-    label: '删除'
-  },
-  {
-    label: '授权'
-  },
-  {
-    label: '导出'
-  },
-  {
-    label: '导入'
-  },
-  {
-    label: '强退'
-  },
-  {
-    label: '生成代码'
-  }
-]
+type TableKey = string | number
+type DateRange = [string, string] | undefined
 
 interface LogQueryParam {
   module: string
-  type: string
+  type?: string
   user: string
-  status: number | undefined
-  sTime: string
-  eTime: string
+  status?: number
+  sTime?: string
+  eTime?: string
   page: number
   size: number
 }
-let currentRow: any = ref({})
-
-let handleShow = ref(false)
-
-let Queryparam: Ref<LogQueryParam> = ref({
-  module: '',
-  type: '',
-  user: '',
-  status: undefined,
-  sTime: '',
-  eTime: '',
-  page: 1,
-  size: 10
-})
 
 interface LogData {
+  [key: string]: any
   oper_id?: number
   oper_module?: string
   oper_type?: string
@@ -283,44 +201,116 @@ interface LogData {
   oper_status?: number
 }
 
-let logData: Ref<LogData[]> = ref([])
+const reload = inject<() => void>('reload')
 
-let disableRemove = ref(true)
-let converDateFormat = (time: string) => {
-  if (time) {
-    return time.replace('T', ' ')
+const onPageRest = () => {
+  if (reload) {
+    reload()
+    return
   }
-  return time
+  getLogData()
 }
+
+const Permission = ref({
+  del: 'log_sys_del',
+  sec: 'log_sys_sec'
+})
+
+const currentPage = ref(1)
+const pageSize = ref(10)
+const disabled = ref(false)
+const total = ref(0)
+const operationTime = ref<DateRange>()
+const showSearchForm = ref(true)
+const currentRow = ref<LogData>({})
+const handleShow = ref(false)
+const logData = ref<LogData[]>([])
+const selectedRowKeys = ref<TableKey[]>([])
+let DeleteIdArray: number[] = []
+
+const statusArray = [
+  { id: 0, label: '成功' },
+  { id: 1, label: '失败' }
+]
+
+const operationTypeArray = [{ label: '新增' }, { label: '修改' }, { label: '删除' }, { label: '授权' }, { label: '导出' }, { label: '导入' }, { label: '强退' }, { label: '生成代码' }]
+
+const Queryparam = ref<LogQueryParam>({
+  module: '',
+  type: undefined,
+  user: '',
+  status: undefined,
+  sTime: undefined,
+  eTime: undefined,
+  page: 1,
+  size: 10
+})
+
+const statusOptions = computed(() => statusArray.map((item) => ({ label: item.label, value: item.id })))
+const operationTypeOptions = computed(() => operationTypeArray.map((item) => ({ label: item.label, value: item.label })))
+const disableRemove = computed(() => selectedRowKeys.value.length === 0)
+
+const columns: TableColumnsType<LogData> = [
+  { title: '日志模块', dataIndex: 'oper_module', key: 'oper_module', width: 160 },
+  { title: '操作类型', dataIndex: 'oper_type', key: 'oper_type', width: 120 },
+  { title: '操作人员', dataIndex: 'oper_user_id', key: 'oper_user_id', width: 120 },
+  { title: '操作IP地址', dataIndex: 'oper_ip', key: 'oper_ip', width: 160 },
+  { title: '操作状态', dataIndex: 'oper_status', key: 'oper_status', width: 120 },
+  { title: '投放时间', dataIndex: 'oper_create_time', key: 'oper_create_time', width: 180 },
+  { title: '操作', key: 'action', width: 120 }
+]
+
+const rowSelection = computed(() => ({
+  selectedRowKeys: selectedRowKeys.value,
+  onChange: (keys: TableKey[], rows: LogData[]) => {
+    selectedRowKeys.value = keys
+    DeleteIdArray = rows.map((row) => row.oper_id).filter((id): id is number => id != null)
+  }
+}))
+
+const converDateFormat = (time?: string) => {
+  return time ? time.replace('T', ' ') : time
+}
+
 const OnClickOfShowForm = () => {
   showSearchForm.value = !showSearchForm.value
 }
-//#endregion
-
-let DeleteIdArray: any = []
 
 onMounted(() => {
   getLogData()
 })
 
-const handleSizeChange = () => {
+const handlePageChange = (page: number, size: number) => {
+  currentPage.value = page
+  pageSize.value = size
+  getLogData()
+}
+
+const onSearch = () => {
+  currentPage.value = 1
   getLogData()
 }
 
 const getLogData = () => {
-  if (operationTime.value) {
-    Queryparam.value.sTime = operationTime.value[0]
-    Queryparam.value.eTime = operationTime.value[1]
-  }
+  Queryparam.value.sTime = operationTime.value?.[0]
+  Queryparam.value.eTime = operationTime.value?.[1]
   Queryparam.value.page = currentPage.value
   Queryparam.value.size = pageSize.value
+
   service.post(PATH_URL + '/MachineMange/getLogData', Queryparam.value).then((res: any) => {
-    console.log(res)
-    total.value = res.data.total
-    logData.value = res.data.records
+    total.value = res.data?.total || 0
+    logData.value = res.data?.records || []
+    selectedRowKeys.value = []
+    DeleteIdArray = []
   })
 }
+
 const deleteOfDetail = () => {
+  if (DeleteIdArray.length === 0) {
+    message.warning('请选择要删除的日志')
+    return
+  }
+
   service
     .post(
       PATH_URL + '/MachineMange/deleteLogIds',
@@ -332,60 +322,191 @@ const deleteOfDetail = () => {
       )
     )
     .then((res: any) => {
-      console.log(res)
       if (res.code == 200) {
-        ElMessage('操作成功')
+        message.success('操作成功')
         DeleteIdArray = []
         getLogData()
       }
     })
 }
+
 const onReset = () => {
   Queryparam.value.status = undefined
   Queryparam.value.module = ''
   Queryparam.value.user = ''
-  Queryparam.value.type = ''
-  operationTime.value = []
+  Queryparam.value.type = undefined
+  currentPage.value = 1
+  operationTime.value = undefined
+  getLogData()
 }
 
-const handleSelectionChange = (val: any) => {
-  if (val.length > 0) {
-    disableRemove.value = false
-  } else {
-    disableRemove.value = true
-  }
-
-  DeleteIdArray = []
-  let tt = unref(val)
-  tt.forEach((row: any) => {
-    console.log(row)
-    DeleteIdArray.push(row.oper_id)
-  })
-}
-
-const handleDetail = (row: any) => {
-  console.log(row)
+const handleDetail = (row: Record<string, any>) => {
   currentRow.value = row
   handleShow.value = true
 }
 
-const converStatu = (status: number): string => {
+const converStatu = (status?: number): string => {
   if (status == 0) {
     return '成功'
-  } else if (status == 1) {
-    return '失败'
-  } else {
-    return '未知状态'
   }
+  if (status == 1) {
+    return '失败'
+  }
+  return '未知状态'
 }
 </script>
 
-<style scoped>
-.title {
-  font-weight: 700;
+<style lang="less" scoped>
+.sys-log-page {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.c-row {
-  margin-top: 30px;
+.search-form {
+  display: grid;
+  padding: 16px;
+  background-color: #fff;
+  border-radius: 6px;
+  gap: 14px 16px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  align-items: end;
+
+  :deep(.ant-form-item) {
+    display: flex;
+    margin-bottom: 0;
+    align-items: center;
+    flex-wrap: nowrap;
+  }
+
+  :deep(.ant-form-item-label) {
+    flex: 0 0 80px;
+    padding: 0 10px 0 0;
+    line-height: 1;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  :deep(.ant-form-item-label > label) {
+    height: 32px;
+    color: #262626;
+    font-weight: 500;
+  }
+
+  :deep(.ant-form-item-control) {
+    min-width: 0;
+    flex: 1;
+  }
+
+  :deep(.ant-form-item-control-input),
+  :deep(.ant-form-item-control-input-content) {
+    width: 100%;
+  }
+
+  :deep(.ant-input),
+  :deep(.ant-select),
+  :deep(.ant-picker) {
+    width: 100%;
+  }
+}
+
+.search-form-item,
+.search-form-actions {
+  min-width: 0;
+}
+
+.search-form-range {
+  grid-column: span 2;
+}
+
+.search-form-actions {
+  :deep(.ant-form-item-control-input-content) {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.toolbar-left,
+.toolbar-right {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.icon-button,
+.table-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  :deep(.ant-btn-icon),
+  :deep(.v-icon),
+  :deep(iconify-icon) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+}
+
+.table-action {
+  height: 24px;
+  padding: 0;
+}
+
+.pagination-wrap,
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-top: 1px solid #f0f0f0;
+  border-left: 1px solid #f0f0f0;
+}
+
+.detail-item {
+  display: grid;
+  min-height: 40px;
+  grid-template-columns: 108px minmax(0, 1fr);
+  border-right: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.detail-wide {
+  grid-column: span 2;
+}
+
+.detail-label {
+  display: flex;
+  padding: 8px 12px;
+  color: #595959;
+  background-color: #fafafa;
+  align-items: center;
+}
+
+.detail-item > span:not(.detail-label) {
+  display: flex;
+  min-width: 0;
+  padding: 8px 12px;
+  word-break: break-all;
+  align-items: center;
+}
+
+.modal-footer {
+  margin-top: 16px;
+}
+
+.w-full {
+  width: 100%;
 }
 </style>

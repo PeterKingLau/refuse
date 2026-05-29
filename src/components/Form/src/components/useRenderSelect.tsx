@@ -1,24 +1,22 @@
-import { ElOption, ElOptionGroup } from 'element-plus'
+import { SelectOption as ASelectOption, SelectOptGroup as ASelectOptGroup } from 'ant-design-vue'
 import { getSlot } from '@/utils/tsxHelper'
-import { Slots } from 'vue'
-import { FormSchema } from '@/types/form'
-import { ComponentOptions } from '@/types/components'
+import type { Slots } from 'vue'
+import type { FormSchema } from '@/types/form'
+import type { ComponentOptions } from '@/types/components'
 
 export const useRenderSelect = (slots: Slots) => {
-  // 渲染 select options
   const renderSelectOptions = (item: FormSchema) => {
-    // 如果有别名，就取别名
     const labelAlias = item?.componentProps?.optionsAlias?.labelField
     return item?.componentProps?.options?.map((option) => {
       if (option?.options?.length) {
         return (
-          <ElOptionGroup label={option[labelAlias || 'label']}>
+          <ASelectOptGroup key={option[labelAlias || 'label']} label={option[labelAlias || 'label']}>
             {() => {
               return option?.options?.map((v) => {
                 return renderSelectOptionItem(item, v)
               })
             }}
-          </ElOptionGroup>
+          </ASelectOptGroup>
         )
       } else {
         return renderSelectOptionItem(item, option)
@@ -26,28 +24,20 @@ export const useRenderSelect = (slots: Slots) => {
     })
   }
 
-  // 渲染 select option item
   const renderSelectOptionItem = (item: FormSchema, option: ComponentOptions) => {
-    // 如果有别名，就取别名
     const labelAlias = item?.componentProps?.optionsAlias?.labelField
     const valueAlias = item?.componentProps?.optionsAlias?.valueField
 
     const { label, value, ...other } = option
+    const optionLabel = labelAlias ? option[labelAlias] : label
+    const optionValue = valueAlias ? option[valueAlias] : value
 
     return (
-      <ElOption
-        {...other}
-        label={labelAlias ? option[labelAlias] : label}
-        value={valueAlias ? option[valueAlias] : value}
-      >
+      <ASelectOption {...other} key={optionValue} label={optionLabel} value={optionValue}>
         {{
-          default: () =>
-            // option 插槽名规则，{field}-option
-            item?.componentProps?.optionsSlot
-              ? getSlot(slots, `${item.field}-option`, { item: option })
-              : undefined
+          default: () => (item?.componentProps?.optionsSlot ? getSlot(slots, `${item.field}-option`, { item: option }) : optionLabel)
         }}
-      </ElOption>
+      </ASelectOption>
     )
   }
 

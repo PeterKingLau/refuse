@@ -1,432 +1,422 @@
 <template>
-  <el-row>
-    <el-form :model="Queryparam" label-width="100px" :inline="true" v-if="showSearchForm">
-      <el-form-item label="媒体名称">
-        <el-input v-model="Queryparam.name" class="eInput" placeholder="请输入媒体名称" />
-      </el-form-item>
+  <div class="medium-page">
+    <AForm v-if="showSearchForm" :model="Queryparam" layout="horizontal" class="search-form">
+      <AFormItem label="媒体名称" class="search-form-item">
+        <AInput v-model:value="Queryparam.name" class="w-full" placeholder="请输入媒体名称" />
+      </AFormItem>
 
-      <el-form-item label="类型" label-width="60">
-        <el-select v-model="Queryparam.screenType" placeholder="屏幕类型">
-          <el-option
-            v-for="item in screenTypeArray"
-            :key="item.id"
-            :label="item.label"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
+      <AFormItem label="类型" class="search-form-item">
+        <ASelect v-model:value="Queryparam.screenType" :options="screenTypeOptions" allow-clear class="w-full" placeholder="请选择屏幕类型" />
+      </AFormItem>
 
-      <el-form-item>
-        <el-button type="primary" class="btn" @click="onClickSearch" v-hasPermi="Permission.sec">
-          <el-icon><Search /></el-icon>
-          搜索
-        </el-button>
-      </el-form-item>
+      <AFormItem class="search-form-actions">
+        <ASpace>
+          <AButton type="primary" class="icon-button" @click="onClickSearch" v-hasPermi="Permission.sec">
+            <template #icon>
+              <Icon icon="ant-design:search-outlined" />
+            </template>
+            搜索
+          </AButton>
+          <AButton class="icon-button" @click="onReset">
+            <template #icon>
+              <Icon icon="ant-design:reload-outlined" />
+            </template>
+            重置
+          </AButton>
+        </ASpace>
+      </AFormItem>
+    </AForm>
 
-      <el-form-item>
-        <el-button class="btn" @click="onReset">
-          <el-icon class="el-icon--left"><RefreshRight /></el-icon>
-          重置
-        </el-button>
-      </el-form-item>
-    </el-form>
-  </el-row>
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <AButton type="primary" class="icon-button" @click="onClickAdd" v-hasPermi="Permission.add">
+          <template #icon>
+            <Icon icon="ant-design:plus-outlined" />
+          </template>
+          增加
+        </AButton>
 
-  <el-row class="buttons">
-    <el-col :span="12">
-      <el-button type="primary" @click="onClickAdd" v-hasPermi="Permission.add">增加</el-button>
+        <AButton danger class="icon-button" :disabled="EnableDelete" @click="onClickDelete" v-hasPermi="Permission.del">
+          <template #icon>
+            <Icon icon="ant-design:delete-outlined" />
+          </template>
+          删除
+        </AButton>
 
-      <el-button
-        type="danger"
-        :disabled="EnableDelete"
-        @click="onClickDelete"
-        v-hasPermi="Permission.del"
-        >删除</el-button
-      >
-      <el-button type="warning" :disabled="EnableDelete">导出</el-button>
-    </el-col>
+        <AButton class="icon-button" :disabled="EnableDelete">
+          <template #icon>
+            <Icon icon="ant-design:export-outlined" />
+          </template>
+          导出
+        </AButton>
+      </div>
 
-    <el-col :span="12" style="text-align: right">
-      <el-tooltip content="隐藏搜索" placement="top-start">
-        <el-button circle @click="showSearchForm = !showSearchForm">
-          <el-icon><Search /></el-icon
-        ></el-button>
-      </el-tooltip>
-      <el-tooltip content="刷新" placement="top-start">
-        <el-button circle @click="onPageRest">
-          <el-icon><RefreshRight /></el-icon>
-        </el-button>
-      </el-tooltip>
-    </el-col>
-  </el-row>
+      <div class="toolbar-right">
+        <ATooltip :title="showSearchForm ? '隐藏搜索' : '显示搜索'">
+          <AButton shape="circle" @click="showSearchForm = !showSearchForm">
+            <template #icon>
+              <Icon icon="ant-design:search-outlined" />
+            </template>
+          </AButton>
+        </ATooltip>
+        <ATooltip title="刷新">
+          <AButton shape="circle" @click="onPageRest">
+            <template #icon>
+              <Icon icon="ant-design:reload-outlined" />
+            </template>
+          </AButton>
+        </ATooltip>
+      </div>
+    </div>
 
-  <el-divider />
+    <ADivider />
 
-  <el-row style="margin-top: 10px">
-    <el-table :data="tableData" style="width: 100%" @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="55" />
-      <el-table-column label="媒体名称" width="100" property="name" />
-
-      <el-table-column label="媒体链接" width="300" v-slot="scope">
-        <img
-          :src="GetImageURL(scope.row.file_name)"
-          class="image"
-          v-if="scope.row.file_type == 1"
-        />
-        <Cvideo
-          v-show="true"
-          :videoUrl="GetVideoURL(scope.row.file_name)"
-          :width="200"
-          :height="200"
-          :autoplay="false"
-          :controls="true"
-          :loop="false"
-          :muted="false"
-          preload="auto"
-          :showPlay="true"
-          :playWidth="96"
-          zoom="cotain"
-          v-if="scope.row.file_type == 2"
-        />
-      </el-table-column>
-      <el-table-column label="类型" width="100" v-slot="scope">
-        {{ scope.row.file_type == 1 ? '图片' : '视频' }}
-      </el-table-column>
-      <el-table-column label="适用屏幕" width="150" v-slot="scope">
-        {{ consvertScreenType(scope.row.screen_type) }}
-      </el-table-column>
-      <el-table-column label="视频屏幕尺寸" width="200" property="screenSize" />
-      <el-table-column label="描述" width="160" property="remarks" />
-      <el-table-column label="创建者" width="100" property="aName" />
-
-      <el-table-column label="创建时间" width="160" v-slot="scope">
-        {{ FormatDate(scope.row.create_time) }}
-      </el-table-column>
-
-      <el-table-column label="修改者" width="160" property="a2Name" />
-      <el-table-column label="修改时间" width="160" v-slot="scope">
-        {{ FormatDate(scope.row.update_time) }}
-      </el-table-column>
-      <el-table-column label="操作" v-slot="scope">
-        <div class="buttonOfTables">
-          <el-link
-            class="bt"
-            type="success"
-            @click="onRevise(scope.row)"
-            v-hasPermi="Permission.rev"
-            >修改</el-link
-          >
-          <el-link
-            class="bt"
-            type="danger"
-            @click="onPublish(scope.row)"
-            v-hasPermi="Permission.puh"
-            >发布</el-link
-          >
-
-          <el-link class="bt" type="danger" @click="onCancel(scope.row)" v-hasPermi="Permission.cbk"
-            >撤回</el-link
-          >
-          <el-link
-            class="bt"
-            type="success"
-            @click="onRemove(scope.row)"
-            v-hasPermi="Permission.del"
-            >删除</el-link
-          >
-        </div>
-      </el-table-column>
-    </el-table>
-  </el-row>
-  <el-row style="width: 100%; text-align: right">
-    <el-pagination
-      v-model:current-page="Queryparam.page"
-      v-model:page-size="Queryparam.size"
-      :page-sizes="[5, 10, 15, 20]"
-      :small="small"
-      layout="total, sizes, prev, pager, next, jumper"
-      :total="total"
-      @size-change="handleSizeChange"
-      @current-change="handleCurrentChange"
-    />
-  </el-row>
-
-  <el-dialog v-model="addDialogVisible" title="添加媒体" width="40%">
-    <el-form
-      ref="ruleFormRef"
-      :model="ruleForm"
-      :rules="rules"
-      label-width="120px"
-      class="demo-ruleForm"
-      size="default"
-      status-icon
-    >
-      <el-form-item label="媒体名称" prop="name" label-width="100">
-        <el-input v-model="ruleForm.name" />
-      </el-form-item>
-
-      <el-form-item label="媒体链接" prop="link" label-width="100">
-        <el-upload
-          class="avatar-uploader"
-          :action="UpImageURL"
-          :show-file-list="false"
-          :on-success="handleAvatarSuccess"
-          :before-upload="beforeAvatarUpload"
-          :headers="headObject"
-        >
-          <img v-if="showImage" :src="GetImageURL(ruleForm.fileName)" class="avatar" />
+    <ATable row-key="id" :columns="mediumColumns" :data-source="tableData" :pagination="false" :row-selection="mediumRowSelection" :scroll="{ x: 1500 }" bordered>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'media'">
+          <div v-if="record.file_type == 1" class="media-image-frame">
+            <img v-if="record.file_name && !hasMediaImageFailed(record)" :src="GetImageURL(record.file_name)" class="media-image" @error="markMediaImageFailed(record)" />
+            <span v-else class="media-image-empty">{{ record.file_name ? '图片加载失败' : '暂无图片' }}</span>
+          </div>
           <Cvideo
-            v-if="showVideo"
-            v-show="true"
-            :videoUrl="GetVideoURL(ruleForm.fileName)"
-            :width="100"
-            :height="100"
-            :autoplay="true"
+            v-else-if="record.file_type == 2"
+            :video-url="GetVideoURL(record.file_name)"
+            :width="200"
+            :height="200"
+            :autoplay="false"
             :controls="true"
             :loop="false"
             :muted="false"
             preload="auto"
-            :showPlay="true"
-            :playWidth="96"
-            zoom="cotain"
+            :show-play="true"
+            :play-width="48"
+            zoom="contain"
           />
-          <el-icon v-if="showPlus" class="avatar-uploader-icon"><Plus /></el-icon>
-        </el-upload>
-      </el-form-item>
+          <span v-else class="empty-text">暂无</span>
+        </template>
 
-      <el-form-item label="媒体类型" prop="fileType" label-width="100">
-        <el-radio-group v-model="ruleForm.fileType">
-          <el-radio :label="1"> 图片</el-radio>
-          <el-radio :label="2">视频 </el-radio>
-        </el-radio-group>
-      </el-form-item>
+        <template v-else-if="column.key === 'file_type'">
+          {{ record.file_type == 1 ? '图片' : '视频' }}
+        </template>
 
-      <el-form-item label="适用屏幕" prop="screenType" label-width="100">
-        <el-radio-group v-model="ruleForm.screenType">
-          <el-radio :label="1"> 横屏</el-radio>
-          <el-radio :label="2">竖屏</el-radio>
-        </el-radio-group>
-      </el-form-item>
+        <template v-else-if="column.key === 'screen_type'">
+          {{ convertScreenType(record.screen_type) }}
+        </template>
 
-      <el-form-item label="屏幕尺寸" prop="region" label-width="100">
-        <el-select v-model="ruleForm.screenSize" placeholder="屏幕尺寸">
-          <el-option
-            v-for="item in screenSizeArray"
-            :key="item.label"
-            :label="item.label"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
+        <template v-else-if="column.key === 'create_time'">
+          {{ FormatDate(record.create_time) }}
+        </template>
 
-      <el-form-item label="描述" prop="desc" label-width="100">
-        <el-input v-model="ruleForm.remarks" type="textarea" :rows="3" />
-      </el-form-item>
-    </el-form>
+        <template v-else-if="column.key === 'update_time'">
+          {{ FormatDate(record.update_time) }}
+        </template>
 
-    <template #footer>
-      <span class="dialog-footer">
-        <el-button @click="addDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitForm(ruleFormRef)"> 确定 </el-button>
-      </span>
-    </template>
-  </el-dialog>
+        <template v-else-if="column.key === 'action'">
+          <ASpace>
+            <AButton type="link" class="table-action action-edit" @click="onRevise(record)" v-hasPermi="Permission.rev">修改</AButton>
+            <AButton type="link" danger class="table-action" @click="onPublish(record)" v-hasPermi="Permission.puh">发布</AButton>
+            <AButton type="link" danger class="table-action" @click="onCancel(record)" v-hasPermi="Permission.cbk">撤回</AButton>
+            <AButton type="link" class="table-action action-edit" @click="onRemove(record)" v-hasPermi="Permission.del">删除</AButton>
+          </ASpace>
+        </template>
+      </template>
+    </ATable>
 
-  <!---  发布 dialog  -->
-  <el-dialog v-model="publishDialogVisible" title="媒体发布" width="70%">
-    <el-row>
-      <el-form-item label="设备编号">
-        <el-input
-          v-model="QueryDeviceParam.serialNumber"
-          class="eInput"
-          placeholder="请输入设备编号"
-        />
-      </el-form-item>
-      <el-form-item label="设备名称">
-        <el-input v-model="QueryDeviceParam.name" class="eInput" placeholder="请输入设备名称" />
-      </el-form-item>
-
-      <el-form-item label="屏幕模式">
-        <el-select v-model="QueryDeviceParam.screenModel" placeholder="屏幕尺寸">
-          <el-option
-            v-for="item in screenTypeArray"
-            :key="item.label"
-            :label="item.label"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
-
-      <el-form-item label="屏幕尺寸" prop="region">
-        <el-select v-model="ruleForm.screenSize" placeholder="屏幕尺寸">
-          <el-option
-            v-for="item in screenSizeArray"
-            :key="item.label"
-            :label="item.label"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
-
-      <el-form-item>
-        <el-button type="primary" class="btn" @click="onClickPublish">
-          <el-icon><Search /></el-icon>
-          搜索
-        </el-button>
-      </el-form-item>
-
-      <el-form-item>
-        <el-button class="btn" @click="onPublishReset">
-          <el-icon class="el-icon--left"><RefreshRight /></el-icon>
-          重置
-        </el-button>
-      </el-form-item>
-    </el-row>
-
-    <el-row>
-      <el-table
-        :data="deviceData"
-        style="width: 100%"
-        @selection-change="DevicehandleSelectionChange"
-      >
-        <el-table-column type="selection" width="55" />
-        <el-table-column label="设备编号" width="150" property="serial_number" />
-        <el-table-column label="设备名称" property="name" />
-        <el-table-column label="型号名称" width="150" property="typeName" />
-        <el-table-column label="屏幕类型" width="100" v-slot="scope">
-          {{ ConvertScreenModel(scope.row.screen_model) }}
-        </el-table-column>
-        <el-table-column label="屏幕尺寸" width="80" property="label" />
-        <el-table-column label="设备sn" width="150" property="imei" />
-        <el-table-column label="屏幕类型" width="150" v-slot="scope">
-          {{ ConvertDeviceStatus(scope.row.status) }}
-        </el-table-column>
-      </el-table>
-    </el-row>
-    <el-row style="width: 100%; text-align: right">
-      <el-pagination
-        v-model:current-page="QueryDeviceParam.page"
-        v-model:page-size="QueryDeviceParam.size"
-        :page-sizes="[5, 10, 15, 20]"
-        :small="small"
-        layout="total, sizes, prev, pager, next, jumper"
-        :total="QueryDeviceParam.total"
-        @size-change="PulishSizeChange"
-        @current-change="PulishSizeChange"
+    <div class="pagination-wrap">
+      <APagination
+        v-model:current="Queryparam.page"
+        v-model:page-size="Queryparam.size"
+        :page-size-options="['5', '10', '15', '20']"
+        :show-size-changer="true"
+        :total="total"
+        :show-total="(totalCount) => `共 ${totalCount} 条`"
+        show-quick-jumper
+        @change="handlePageChange"
+        @show-size-change="handlePageChange"
       />
-    </el-row>
-    <template #footer>
-      <div class="footer">
-        <div class="ss">
-          <el-form-item label="投放位置" prop="region">
-            <el-select v-model="pushLocation" placeholder="请选择投放位置">
-              <el-option :value="1" label="首页" />
-              <el-option :value="2" label="待机" />
-            </el-select>
-          </el-form-item>
-        </div>
-        <span class="dialog-footer">
-          <el-button @click="publishDialogVisible = false">关闭</el-button>
-          <el-button type="primary" @click="DoPublish()"> 发布 </el-button>
-        </span>
+    </div>
+
+    <AModal v-model:open="addDialogVisible" :title="ruleForm.id == 0 ? '添加媒体' : '修改媒体'" width="720px" :destroy-on-close="true">
+      <AForm :model="ruleForm" layout="horizontal" class="modal-form">
+        <AFormItem label="媒体名称" required>
+          <AInput v-model:value="ruleForm.name" class="w-full" placeholder="请输入媒体名称" />
+        </AFormItem>
+
+        <AFormItem label="媒体链接" required>
+          <AUpload class="media-uploader" :action="UpImageURL" :show-upload-list="false" :before-upload="beforeAvatarUpload" :headers="headObject" @change="handleAvatarSuccess">
+            <div v-if="showImage" class="avatar-frame">
+              <img v-if="!uploadImageFailed" :src="GetImageURL(ruleForm.fileName)" class="avatar" @error="uploadImageFailed = true" />
+              <span v-else class="avatar-empty">图片加载失败</span>
+            </div>
+            <Cvideo
+              v-else-if="showVideo"
+              :video-url="GetVideoURL(ruleForm.fileName)"
+              :width="104"
+              :height="104"
+              :autoplay="true"
+              :controls="true"
+              :loop="false"
+              :muted="false"
+              preload="auto"
+              :show-play="true"
+              :play-width="48"
+              zoom="contain"
+            />
+            <div v-else class="upload-placeholder">
+              <Icon icon="ant-design:plus-outlined" :size="24" />
+            </div>
+          </AUpload>
+        </AFormItem>
+
+        <AFormItem label="媒体类型" required>
+          <ARadioGroup v-model:value="ruleForm.fileType" :options="mediaTypeOptions" option-type="button" button-style="solid" />
+        </AFormItem>
+
+        <AFormItem label="适用屏幕" required>
+          <ARadioGroup v-model:value="ruleForm.screenType" :options="screenTypeOptions" option-type="button" button-style="solid" />
+        </AFormItem>
+
+        <AFormItem label="屏幕尺寸">
+          <ASelect v-model:value="ruleForm.screenSize" :options="screenSizeOptions" class="w-full" placeholder="请选择屏幕尺寸" />
+        </AFormItem>
+
+        <AFormItem label="描述">
+          <ATextarea v-model:value="ruleForm.remarks" :rows="3" class="w-full" placeholder="请输入描述" />
+        </AFormItem>
+      </AForm>
+
+      <template #footer>
+        <ASpace>
+          <AButton @click="addDialogVisible = false">取消</AButton>
+          <AButton type="primary" @click="submitForm">确定</AButton>
+        </ASpace>
+      </template>
+    </AModal>
+
+    <AModal v-model:open="publishDialogVisible" title="媒体发布" width="80%">
+      <AForm :model="QueryDeviceParam" layout="horizontal" class="dialog-search-form">
+        <AFormItem label="设备编号" class="search-form-item">
+          <AInput v-model:value="QueryDeviceParam.serialNumber" class="w-full" placeholder="请输入设备编号" />
+        </AFormItem>
+
+        <AFormItem label="设备名称" class="search-form-item">
+          <AInput v-model:value="QueryDeviceParam.name" class="w-full" placeholder="请输入设备名称" />
+        </AFormItem>
+
+        <AFormItem label="屏幕模式" class="search-form-item">
+          <ASelect v-model:value="QueryDeviceParam.screenModel" :options="screenModelOptions" allow-clear class="w-full" placeholder="请选择屏幕模式" />
+        </AFormItem>
+
+        <AFormItem label="屏幕尺寸" class="search-form-item">
+          <ASelect v-model:value="QueryDeviceParam.screenSize" :options="screenSizeOptions" allow-clear class="w-full" placeholder="请选择屏幕尺寸" />
+        </AFormItem>
+
+        <AFormItem class="search-form-actions">
+          <ASpace>
+            <AButton type="primary" class="icon-button" @click="onClickPublish">
+              <template #icon>
+                <Icon icon="ant-design:search-outlined" />
+              </template>
+              搜索
+            </AButton>
+            <AButton class="icon-button" @click="onPublishReset">
+              <template #icon>
+                <Icon icon="ant-design:reload-outlined" />
+              </template>
+              重置
+            </AButton>
+          </ASpace>
+        </AFormItem>
+      </AForm>
+
+      <ATable row-key="id" :columns="publishColumns" :data-source="deviceData" :pagination="false" :row-selection="publishRowSelection" bordered>
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'screen_model'">
+            {{ ConvertScreenModel(record.screen_model) }}
+          </template>
+
+          <template v-else-if="column.key === 'status'">
+            {{ ConvertDeviceStatus(record.status) }}
+          </template>
+        </template>
+      </ATable>
+
+      <div class="pagination-wrap">
+        <APagination
+          v-model:current="QueryDeviceParam.page"
+          v-model:page-size="QueryDeviceParam.size"
+          :page-size-options="['5', '10', '15', '20']"
+          :show-size-changer="true"
+          :total="QueryDeviceParam.total"
+          :show-total="(totalCount) => `共 ${totalCount} 条`"
+          show-quick-jumper
+          @change="handlePublishPageChange"
+          @show-size-change="handlePublishPageChange"
+        />
       </div>
-    </template>
-  </el-dialog>
 
-  <!-- 撤回 -->
+      <template #footer>
+        <div class="modal-footer-row">
+          <ASelect v-model:value="pushLocation" :options="pushLocationOptions" class="push-location-select" placeholder="请选择投放位置" />
+          <ASpace>
+            <AButton @click="publishDialogVisible = false">关闭</AButton>
+            <AButton type="primary" @click="DoPublish">发布</AButton>
+          </ASpace>
+        </div>
+      </template>
+    </AModal>
 
-  <el-dialog v-model="clearDialogVisible" title="撤回媒体" width="70%">
-    <el-row>
-      <el-form-item label="设备编号" class="form-item">
-        <el-input
-          v-model="QueryClearDevice.serialNumber"
-          class="eInput"
-          placeholder="请输入设备编号"
+    <AModal v-model:open="clearDialogVisible" title="撤回媒体" width="80%">
+      <AForm :model="QueryClearDevice" layout="horizontal" class="dialog-search-form">
+        <AFormItem label="设备编号" class="search-form-item">
+          <AInput v-model:value="QueryClearDevice.serialNumber" class="w-full" placeholder="请输入设备编号" />
+        </AFormItem>
+
+        <AFormItem label="设备名称" class="search-form-item">
+          <AInput v-model:value="QueryClearDevice.name" class="w-full" placeholder="请输入设备名称" />
+        </AFormItem>
+
+        <AFormItem label="投放位置" class="search-form-item">
+          <ASelect v-model:value="QueryClearDevice.location" :options="pushLocationOptions" allow-clear class="w-full" placeholder="请选择投放位置" />
+        </AFormItem>
+
+        <AFormItem class="search-form-actions">
+          <ASpace>
+            <AButton type="primary" class="icon-button" @click="onClearClick">
+              <template #icon>
+                <Icon icon="ant-design:search-outlined" />
+              </template>
+              搜索
+            </AButton>
+            <AButton class="icon-button" @click="onClearReset">
+              <template #icon>
+                <Icon icon="ant-design:reload-outlined" />
+              </template>
+              重置
+            </AButton>
+          </ASpace>
+        </AFormItem>
+      </AForm>
+
+      <ATable row-key="id" :columns="clearColumns" :data-source="ClearData" :pagination="false" :row-selection="clearRowSelection" bordered>
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'create_time'">
+            {{ FormatDate(record.create_time) }}
+          </template>
+
+          <template v-else-if="column.key === 'location'">
+            {{ record.location == 1 ? '首页' : '待机' }}
+          </template>
+
+          <template v-else-if="column.key === 'status'">
+            {{ ConvertDeviceStatus(record.status) }}
+          </template>
+        </template>
+      </ATable>
+
+      <div class="pagination-wrap">
+        <APagination
+          v-model:current="QueryClearDevice.page"
+          v-model:page-size="QueryClearDevice.size"
+          :page-size-options="['5', '10', '15', '20']"
+          :show-size-changer="true"
+          :total="QueryClearDevice.total"
+          :show-total="(totalCount) => `共 ${totalCount} 条`"
+          show-quick-jumper
+          @change="handleClearPageChange"
+          @show-size-change="handleClearPageChange"
         />
-      </el-form-item>
-      <el-form-item label="设备名称" class="form-item">
-        <el-input v-model="QueryClearDevice.name" class="eInput" placeholder="请输入设备名称" />
-      </el-form-item>
+      </div>
 
-      <el-form-item label="投放位置" class="form-item">
-        <el-select v-model="QueryClearDevice.location" placeholder="投放位置">
-          <el-option :value="1" label="首页" />
-          <el-option :value="2" label="待机" />
-        </el-select>
-      </el-form-item>
-
-      <el-form-item class="form-item">
-        <el-button type="primary" class="btn" @click="onClearClick">
-          <el-icon><Search /></el-icon>
-          搜索
-        </el-button>
-      </el-form-item>
-
-      <el-form-item class="form-item">
-        <el-button class="btn" @click="onClearReset">
-          <el-icon class="el-icon--left"><RefreshRight /></el-icon>
-          重置
-        </el-button>
-      </el-form-item>
-    </el-row>
-
-    <el-row>
-      <el-table
-        :data="ClearData"
-        style="width: 100%"
-        @selection-change="ClearhandleSelectionChange"
-      >
-        <el-table-column type="selection" width="55" />
-        <el-table-column label="设备编号" width="150" property="serial_number" />
-        <el-table-column label="设备名称" property="deviceName" />
-        <el-table-column label="型号名称" width="150" property="typeName" />
-
-        <el-table-column label="设备sn" width="150" property="imei" />
-        <el-table-column label="发布时间" width="200" v-slot="scope">
-          {{ FormatDate(scope.row.create_time) }}
-        </el-table-column>
-        <el-table-column label="投放位置" width="80" v-slot="scope">
-          {{ scope.row.location == 1 ? '首页' : '待机' }}
-        </el-table-column>
-        <el-table-column label="状态" width="80" v-slot="scope">
-          {{ ConvertDeviceStatus(scope.row.status) }}
-        </el-table-column>
-      </el-table>
-    </el-row>
-    <el-row style="width: 100%; text-align: right">
-      <el-pagination
-        v-model:current-page="QueryClearDevice.page"
-        v-model:page-size="QueryClearDevice.size"
-        :page-sizes="[5, 10, 15, 20]"
-        :small="small"
-        layout="total, sizes, prev, pager, next, jumper"
-        :total="QueryClearDevice.total"
-        @size-change="ClearSizeChange"
-        @current-change="ClearSizeChange"
-      />
-    </el-row>
-    <template #footer>
-      <span class="dialog-footer">
-        <el-button @click="clearDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="DoClear()"> 撤回 </el-button>
-      </span>
-    </template>
-  </el-dialog>
+      <template #footer>
+        <ASpace>
+          <AButton @click="clearDialogVisible = false">取消</AButton>
+          <AButton type="primary" @click="DoClear">撤回</AButton>
+        </ASpace>
+      </template>
+    </AModal>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, Ref, unref, onMounted, reactive, computed, inject } from 'vue'
+import { computed, inject, onMounted, reactive, ref } from 'vue'
+import {
+  Button as AButton,
+  Divider as ADivider,
+  Form as AForm,
+  FormItem as AFormItem,
+  Input as AInput,
+  Modal as AModal,
+  Pagination as APagination,
+  RadioGroup as ARadioGroup,
+  Select as ASelect,
+  Space as ASpace,
+  Table as ATable,
+  Tooltip as ATooltip,
+  Upload as AUpload,
+  message
+} from 'ant-design-vue'
+import type { TableColumnsType, UploadChangeParam } from 'ant-design-vue'
+import qs from 'qs'
 import { FormatDate, GetImageURL, GetVideoURL } from '@/utils/tools'
 import { PATH_URL, service } from '@/config/axios/service'
-import { FormRules, ElMessage, FormInstance, ElMessageBox } from 'element-plus'
-import qs from 'qs'
+import { Icon } from '@/components/Icon'
 import { Cvideo } from './components'
 
-const reload: any = inject('reload')
+const ATextarea = AInput.TextArea
+
+type TableKey = string | number
+
+interface QueryStruct {
+  name: string
+  screenType?: number
+  page: number
+  size: number
+}
+
+interface PublishStruct {
+  id?: number
+  serialNumber: string
+  name: string
+  deviceType?: number
+  screenModel?: number
+  screenSize?: number
+  status?: number
+  page: number
+  size: number
+  total: number
+}
+
+interface MediumRecord {
+  [key: string]: any
+  id: number
+}
+
+interface DeviceRecord {
+  [key: string]: any
+  id: number
+}
+
+interface ClearQueryStruct {
+  mediumId: number
+  serialNumber: string
+  name: string
+  location?: number
+  page: number
+  size: number
+  total: number
+}
+
+const reload = inject<() => void>('reload')
 
 const onPageRest = () => {
-  reload()
+  if (reload) {
+    reload()
+    return
+  }
+  getTableData()
 }
+
 const Permission = ref({
   add: 'med_vid_add',
   rev: 'med_vid_rev',
@@ -436,29 +426,40 @@ const Permission = ref({
   sec: 'med_vid_sec'
 })
 
-//#region 页面显示
+const screenTypeArray = [
+  { id: 1, label: '横屏' },
+  { id: 2, label: '竖屏' }
+]
 
-interface QueryStruct {
-  name: string
-  screenType: number | undefined
-  page: number
-  size: number
-}
+const screenModelOptions = [
+  { value: 0, label: '无屏' },
+  { value: 1, label: '横屏' },
+  { value: 2, label: '竖屏' }
+]
 
-interface publishStruct {
-  id?: number
-  serialNumber: string
-  name: string
-  deviceType: number | undefined
-  screenModel: number | undefined
-  screenSize: number | undefined
-  status: number | undefined
-  page: number
-  size: number
-  total: number
-}
+const mediaTypeOptions = [
+  { value: 1, label: '图片' },
+  { value: 2, label: '视频' }
+]
 
-let QueryDeviceParam: Ref<publishStruct> = ref({
+const pushLocationOptions = [
+  { value: 1, label: '首页' },
+  { value: 2, label: '待机' }
+]
+
+const Queryparam = ref<QueryStruct>({
+  name: '',
+  screenType: undefined,
+  page: 1,
+  size: 10
+})
+const total = ref(0)
+const tableData = ref<MediumRecord[]>([])
+const showSearchForm = ref(true)
+const selectedRowKeys = ref<TableKey[]>([])
+let DeleteIdArray: number[] = []
+
+const QueryDeviceParam = ref<PublishStruct>({
   id: 0,
   serialNumber: '',
   deviceType: undefined,
@@ -470,488 +471,14 @@ let QueryDeviceParam: Ref<publishStruct> = ref({
   size: 10,
   total: 0
 })
+const publishDialogVisible = ref(false)
+const deviceData = ref<DeviceRecord[]>([])
+const publishSelectedRowKeys = ref<TableKey[]>([])
+let deviceSelectArray: number[] = []
+const pushLocation = ref<number>()
 
-const consvertScreenType = (type: number): string => {
-  let desc = '未知'
-  if (type == 1) {
-    desc = '横屏'
-  }
-  if (type == 2) {
-    desc = '竖屏'
-  }
-  return desc
-}
-
-const total = ref(0)
-let small = ref(false)
-const handleSizeChange = () => {
-  handleCurrentChange()
-}
-const handleCurrentChange = () => {
-  getTableData()
-}
-
-let screenTypeArray = [
-  {
-    id: 1,
-    label: '横屏'
-  },
-  {
-    id: 2,
-    label: '竖屏'
-  }
-]
-
-let DeleteIdArray: any[] = []
-const handleSelectionChange = (val: any) => {
-  if (val.length > 0) {
-    EnableDelete.value = false
-  } else {
-    EnableDelete.value = true
-  }
-
-  DeleteIdArray = []
-  let tt = unref(val)
-  tt.forEach((row: any) => {
-    console.log(row)
-    DeleteIdArray.push(row.id)
-  })
-}
-
-let showSearchForm = ref(true)
-
-let onClickSearch = () => {
-  Queryparam.value.page = 1
-  getTableData()
-}
-let onReset = () => {
-  Queryparam.value.name = ''
-  Queryparam.value.screenType = undefined
-}
-
-const getTableData = () => {
-  service.post(PATH_URL + '/medMedium/getMedium', Queryparam.value).then((res: any) => {
-    console.log(res.data)
-    tableData.value = res.data.records
-    total.value = res.data.total
-  })
-}
-
-let Queryparam: Ref<QueryStruct> = ref({
-  name: '',
-  screenType: undefined,
-  page: 1,
-  size: 10
-})
-
-let tableData: any = ref([])
-
-const onClickAdd = () => {
-  ruleForm.fileName = ''
-  ruleForm.name = ''
-  ruleForm.fileType = 1
-  ruleForm.screenSize = 1
-  ruleForm.screenType = 1
-  ruleForm.remarks = ''
-  ruleForm.id = 0
-  isVideo(ruleForm.fileName)
-  addDialogVisible.value = true
-}
-
-const onClickDelete = () => {}
-
-let EnableDelete = ref(true)
-
-const onRemove = (row: any) => {
-  console.log(row)
-
-  ElMessageBox.confirm('你确定要删除这个记录吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  })
-    .then(() => {
-      let ids: number[] = []
-      ids.push(row.id)
-
-      service
-        .post(
-          PATH_URL + '/medMedium/deleteBatch',
-          qs.stringify(
-            {
-              ids: ids
-            },
-            { arrayFormat: 'brackets' }
-          )
-        )
-        .then((res: any) => {
-          if (res.code == 200) {
-            ElMessage('操作成功')
-            getTableData()
-          }
-        })
-    })
-    .catch(() => {})
-}
-
-const onRevise = (row: any) => {
-  console.log(row)
-
-  ruleForm.fileName = row.file_name
-  ruleForm.fileType = row.file_type
-  ruleForm.id = row.id
-  ruleForm.name = row.name
-  ruleForm.remarks = row.remarks
-  ruleForm.screenType = row.screen_type
-  ruleForm.screenSize = row.screen_size
-  isVideo(ruleForm.fileName)
-  addDialogVisible.value = true
-}
-
-const onPublish = (row: any) => {
-  QueryDeviceParam.value.id = row.id
-  QueryDeviceParam.value.deviceType = undefined
-  QueryDeviceParam.value.name = ''
-  QueryDeviceParam.value.page = 1
-  QueryDeviceParam.value.size = 10
-  QueryDeviceParam.value.screenModel = undefined
-  QueryDeviceParam.value.screenSize = undefined
-  QueryDeviceParam.value.serialNumber = ''
-  QueryDeviceParam.value.status = undefined
-  QueryDeviceParam.value.total = 0
-  publishDialogVisible.value = true
-  pushLocation.value = undefined
-  getPublishDevice()
-}
-
-const onCancel = (row: any) => {
-  QueryClearDevice.value.location = undefined
-  QueryClearDevice.value.mediumId = row.id
-  QueryClearDevice.value.name = ''
-  QueryClearDevice.value.page = 1
-  QueryClearDevice.value.size = 10
-  QueryClearDevice.value.serialNumber = ''
-  QueryClearDevice.value.total = 0
-  getClearData()
-  clearDialogVisible.value = true
-}
-
-//#endregion
-
-//#region  添加媒体
-
-let ruleForm = reactive({
-  id: 0,
-  name: '232',
-  fileName: '',
-  fileType: 1,
-  screenType: 1,
-  screenSize: 2,
-  remarks: ''
-})
-const ruleFormRef = ref<FormInstance>()
-const rules = reactive<FormRules>({
-  name: [
-    { required: true, message: '请输入媒体库名称', trigger: 'blur' },
-    { min: 1, max: 20, message: '字符长度为 1 到 20', trigger: 'blur' }
-  ],
-  fileType: [
-    {
-      required: true,
-      message: '请选择文件类型',
-      trigger: 'change'
-    }
-  ],
-  region: [
-    {
-      type: 'number',
-      required: false,
-      message: '屏幕尺寸',
-      trigger: 'change'
-    }
-  ]
-})
-
-const headObject = {
-  Authorization: localStorage.getItem('token')
-}
-
-const screenSizeArray: Ref<any[]> = ref([])
-
-const getScreenSize = () => {
-  service.get(PATH_URL + '/MachineMange/getScreenClass').then((res: any) => {
-    console.log('screen', res.data)
-    screenSizeArray.value = res.data
-  })
-}
-
-const beforeAvatarUpload = () => {}
-onMounted(() => {
-  getScreenSize()
-  getTableData()
-})
-
-// 上传图片地址
-const UpImageURL = computed(() => {
-  return PATH_URL + '/Common/upLoadImage'
-})
-
-const handleAvatarSuccess = (respon) => {
-  if (respon.code == 200) {
-    ruleForm.fileName = respon.data
-    isVideo(ruleForm.fileName)
-  } else {
-    ElMessage('上传图片出错了')
-  }
-}
-
-let addDialogVisible = ref(false)
-
-const submitForm = async (formEl: FormInstance | undefined) => {
-  console.log(ruleForm)
-
-  if (!formEl) return
-  await formEl.validate((valid, fields) => {
-    if (valid) {
-      let message = '你是否确定要修改这个媒体库'
-      if (ruleForm.id == 0) {
-        message = '你是否确定要添加这个媒体库'
-      }
-
-      ElMessageBox.confirm(message, '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      })
-        .then(() => {
-          if (ruleForm.id == 0) {
-            addMedium()
-          } else {
-            updateMedium()
-          }
-        })
-        .catch(() => {})
-    } else {
-      console.log('填写错误', fields)
-    }
-  })
-}
-
-const updateMedium = () => {
-  service.post(PATH_URL + '/medMedium/reviseMedium', ruleForm).then((res: any) => {
-    console.log(res)
-    if (res.code == 200) {
-      ElMessage('操作成功')
-      getTableData()
-      addDialogVisible.value = false
-    }
-  })
-}
-
-const addMedium = () => {
-  service.post(PATH_URL + '/medMedium/addMedium', ruleForm).then((res: any) => {
-    console.log(res)
-    if (res.code == 200) {
-      ElMessage('操作成功')
-      getTableData()
-      addDialogVisible.value = false
-    }
-  })
-}
-
-let showImage = ref(false)
-let showVideo = ref(false)
-let showPlus = ref(true)
-
-const isVideo = (fileName: string) => {
-  if (!fileName) {
-    showImage.value = false
-    showVideo.value = false
-    showPlus.value = true
-    return
-  }
-  console.log('filename', fileName)
-  let ll = fileName.split('.')
-  let ending = ll[ll.length - 1]
-  debugger
-  console.log(ending)
-  if (ending === 'mp4') {
-    showImage.value = false
-    showVideo.value = true
-    showPlus.value = false
-    return
-  }
-  if (ending === 'jpg' || ending === 'png') {
-    console.log('jjj')
-    showImage.value = true
-    showVideo.value = false
-    showPlus.value = false
-    return
-  }
-  showImage.value = false
-  showVideo.value = false
-  showPlus.value = true
-}
-
-//#endregion
-
-//#region  发布媒体
-
-let publishDialogVisible = ref(false)
-const onClickPublish = () => {
-  QueryDeviceParam.value.page = 1
-  getPublishDevice()
-}
-const onPublishReset = () => {}
-
-const PulishSizeChange = () => {
-  getPublishDevice()
-}
-
-const getPublishDevice = () => {
-  service
-    .post(PATH_URL + '/MachineMange/getDeviceForMedium', QueryDeviceParam.value)
-    .then((res: any) => {
-      console.log(res)
-      if (res.code == 200) {
-        deviceData.value = res.data.records
-        QueryDeviceParam.value.total = res.data.total
-      }
-    })
-}
-
-let deviceData = ref([])
-let deviceSelectArray: any[] = []
-
-const ConvertScreenModel = (model: number) => {
-  let desc = ''
-  switch (model) {
-    case 1:
-      desc = '横屏'
-      break
-    case 2:
-      desc = '竖屏'
-      break
-    case 0:
-      desc = '无屏'
-      break
-    default:
-      desc = '未知'
-  }
-  return desc
-}
-
-const ConvertDeviceStatus = (status: number): string => {
-  let desc = ''
-  switch (status) {
-    case 1:
-      desc = '待使用'
-      break
-    case 2:
-      desc = '使用中'
-      break
-    case 3:
-      desc = '已禁用'
-      break
-    case 4:
-      desc = '故障'
-      break
-    case 5:
-      desc = '已欠费'
-      break
-    case 6:
-      desc = '未激活'
-      break
-    default:
-      desc = '未知'
-      break
-  }
-  return desc
-}
-let pushLocation: Ref<number | undefined> = ref(undefined)
-
-const DevicehandleSelectionChange = (val: any) => {
-  deviceSelectArray = []
-  let tt = unref(val)
-  tt.forEach((row: any) => {
-    deviceSelectArray.push(row.id)
-  })
-}
-
-const DoPublish = () => {
-  if (!(pushLocation.value == 1 || pushLocation.value == 2)) {
-    ElMessage('请选择投放位置')
-    return
-  }
-
-  ElMessageBox.confirm('您确定要发布媒体到这些设备？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    service
-      .post(
-        PATH_URL + '/medMedium/doPublish',
-
-        {
-          location: pushLocation.value,
-          mediumId: QueryDeviceParam.value.id,
-          ids: deviceSelectArray
-        }
-      )
-      .then(() => {
-        ElMessage('操作成功')
-      })
-  })
-}
-
-//#endregion
-
-//#region  撤回媒体
-
-let clearDialogVisible = ref(false)
-
-const onClearClick = () => {
-  QueryClearDevice.value.page = 1
-  getClearData()
-}
-
-const onClearReset = () => {
-  QueryClearDevice.value.location = undefined
-  QueryClearDevice.value.mediumId = 0
-  QueryClearDevice.value.name = ''
-  QueryClearDevice.value.page = 1
-  QueryClearDevice.value.size = 10
-  QueryClearDevice.value.serialNumber = ''
-  QueryClearDevice.value.total = 0
-}
-
-const DoClear = () => {
-  ElMessageBox.confirm('您确定要撤销这些设备？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    service
-      .post(
-        PATH_URL + '/medMedium/doClear',
-        qs.stringify(
-          {
-            ids: clearIds
-          },
-          { arrayFormat: 'brackets' }
-        )
-      )
-      .then((res: any) => {
-        if (res.code == 200) {
-          ElMessage('操作成功')
-          getClearData()
-        }
-      })
-  })
-}
-
-let QueryClearDevice = ref({
+const clearDialogVisible = ref(false)
+const QueryClearDevice = ref<ClearQueryStruct>({
   mediumId: 0,
   serialNumber: '',
   name: '',
@@ -960,76 +487,648 @@ let QueryClearDevice = ref({
   size: 10,
   total: 0
 })
-
+const ClearData = ref<DeviceRecord[]>([])
+const clearSelectedRowKeys = ref<TableKey[]>([])
 let clearIds: number[] = []
 
-const ClearhandleSelectionChange = (val: any) => {
-  clearIds = []
-  let tt = unref(val)
-  tt.forEach((row: any) => {
-    clearIds.push(row.id)
+const addDialogVisible = ref(false)
+const ruleForm = reactive({
+  id: 0,
+  name: '',
+  fileName: '',
+  fileType: 1,
+  screenType: 1,
+  screenSize: 1,
+  remarks: ''
+})
+
+const screenSizeArray = ref<any[]>([])
+const screenTypeOptions = computed(() => screenTypeArray.map((item) => ({ label: item.label, value: item.id })))
+const screenSizeOptions = computed(() => screenSizeArray.value.map((item) => ({ label: item.label, value: item.id })))
+const EnableDelete = computed(() => selectedRowKeys.value.length === 0)
+const UpImageURL = computed(() => PATH_URL + '/Common/upLoadImage')
+const headObject = computed(() => ({
+  Authorization: localStorage.getItem('token') || ''
+}))
+
+const mediumColumns: TableColumnsType<MediumRecord> = [
+  { title: '媒体名称', dataIndex: 'name', key: 'name', width: 120 },
+  { title: '媒体链接', key: 'media', width: 240 },
+  { title: '类型', dataIndex: 'file_type', key: 'file_type', width: 100 },
+  { title: '适用屏幕', dataIndex: 'screen_type', key: 'screen_type', width: 120 },
+  { title: '视频屏幕尺寸', dataIndex: 'screenSize', key: 'screenSize', width: 160 },
+  { title: '描述', dataIndex: 'remarks', key: 'remarks', width: 160 },
+  { title: '创建者', dataIndex: 'aName', key: 'aName', width: 120 },
+  { title: '创建时间', dataIndex: 'create_time', key: 'create_time', width: 180 },
+  { title: '修改者', dataIndex: 'a2Name', key: 'a2Name', width: 120 },
+  { title: '修改时间', dataIndex: 'update_time', key: 'update_time', width: 180 },
+  { title: '操作', key: 'action', width: 240, fixed: 'right' }
+]
+
+const publishColumns: TableColumnsType<DeviceRecord> = [
+  { title: '设备编号', dataIndex: 'serial_number', key: 'serial_number', width: 150 },
+  { title: '设备名称', dataIndex: 'name', key: 'name', width: 160 },
+  { title: '型号名称', dataIndex: 'typeName', key: 'typeName', width: 150 },
+  { title: '屏幕类型', dataIndex: 'screen_model', key: 'screen_model', width: 120 },
+  { title: '屏幕尺寸', dataIndex: 'label', key: 'label', width: 120 },
+  { title: '设备SN', dataIndex: 'imei', key: 'imei', width: 160 },
+  { title: '状态', dataIndex: 'status', key: 'status', width: 120 }
+]
+
+const clearColumns: TableColumnsType<DeviceRecord> = [
+  { title: '设备编号', dataIndex: 'serial_number', key: 'serial_number', width: 150 },
+  { title: '设备名称', dataIndex: 'deviceName', key: 'deviceName', width: 160 },
+  { title: '型号名称', dataIndex: 'typeName', key: 'typeName', width: 150 },
+  { title: '设备SN', dataIndex: 'imei', key: 'imei', width: 160 },
+  { title: '发布时间', dataIndex: 'create_time', key: 'create_time', width: 180 },
+  { title: '投放位置', dataIndex: 'location', key: 'location', width: 120 },
+  { title: '状态', dataIndex: 'status', key: 'status', width: 120 }
+]
+
+const mediumRowSelection = computed(() => ({
+  selectedRowKeys: selectedRowKeys.value,
+  onChange: (keys: TableKey[], rows: MediumRecord[]) => {
+    selectedRowKeys.value = keys
+    DeleteIdArray = rows.map((row) => row.id)
+  }
+}))
+
+const publishRowSelection = computed(() => ({
+  selectedRowKeys: publishSelectedRowKeys.value,
+  onChange: (keys: TableKey[], rows: DeviceRecord[]) => {
+    publishSelectedRowKeys.value = keys
+    deviceSelectArray = rows.map((row) => row.id)
+  }
+}))
+
+const clearRowSelection = computed(() => ({
+  selectedRowKeys: clearSelectedRowKeys.value,
+  onChange: (keys: TableKey[], rows: DeviceRecord[]) => {
+    clearSelectedRowKeys.value = keys
+    clearIds = rows.map((row) => row.id)
+  }
+}))
+
+const convertScreenType = (type: number): string => {
+  if (type == 1) return '横屏'
+  if (type == 2) return '竖屏'
+  return '未知'
+}
+
+const onClickSearch = () => {
+  Queryparam.value.page = 1
+  getTableData()
+}
+
+const onReset = () => {
+  Queryparam.value.name = ''
+  Queryparam.value.screenType = undefined
+  Queryparam.value.page = 1
+  getTableData()
+}
+
+const handlePageChange = (page: number, size: number) => {
+  Queryparam.value.page = page
+  Queryparam.value.size = size
+  getTableData()
+}
+
+const failedMediaImages = ref<Set<string | number>>(new Set())
+const uploadImageFailed = ref(false)
+
+const getMediaImageKey = (record: Record<string, any>) => {
+  return record.id ?? record.file_name ?? ''
+}
+
+const hasMediaImageFailed = (record: Record<string, any>) => {
+  return failedMediaImages.value.has(getMediaImageKey(record))
+}
+
+const markMediaImageFailed = (record: Record<string, any>) => {
+  failedMediaImages.value = new Set([...failedMediaImages.value, getMediaImageKey(record)])
+}
+
+const getTableData = () => {
+  service.post(PATH_URL + '/medMedium/getMedium', Queryparam.value).then((res: any) => {
+    tableData.value = res.data?.records || []
+    total.value = res.data?.total || 0
+    selectedRowKeys.value = []
+    DeleteIdArray = []
+    failedMediaImages.value = new Set()
   })
 }
 
-const ClearSizeChange = () => {}
-let ClearData: Ref<any[]> = ref([])
+const resetRuleForm = () => {
+  ruleForm.fileName = ''
+  ruleForm.name = ''
+  ruleForm.fileType = 1
+  ruleForm.screenSize = 1
+  ruleForm.screenType = 1
+  ruleForm.remarks = ''
+  ruleForm.id = 0
+  uploadImageFailed.value = false
+}
+
+const onClickAdd = () => {
+  resetRuleForm()
+  addDialogVisible.value = true
+}
+
+const deleteMediumBatch = (ids: number[], content: string) => {
+  if (ids.length === 0) {
+    message.warning('请选择要删除的媒体')
+    return
+  }
+
+  AModal.confirm({
+    title: '提示',
+    content,
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      await service.post(PATH_URL + '/medMedium/deleteBatch', qs.stringify({ ids }, { arrayFormat: 'brackets' }))
+      message.success('操作成功')
+      getTableData()
+    }
+  })
+}
+
+const onClickDelete = () => {
+  deleteMediumBatch([...DeleteIdArray], '确定要删除这些媒体记录吗？')
+}
+
+const onRemove = (row: Record<string, any>) => {
+  deleteMediumBatch([row.id], '确定要删除这个记录吗？')
+}
+
+const onRevise = (row: Record<string, any>) => {
+  ruleForm.fileName = row.file_name
+  ruleForm.fileType = row.file_type
+  ruleForm.id = row.id
+  ruleForm.name = row.name
+  ruleForm.remarks = row.remarks
+  ruleForm.screenType = row.screen_type
+  ruleForm.screenSize = row.screen_size
+  uploadImageFailed.value = false
+  addDialogVisible.value = true
+}
+
+const onPublish = (row: Record<string, any>) => {
+  QueryDeviceParam.value = {
+    id: row.id,
+    serialNumber: '',
+    deviceType: undefined,
+    screenModel: undefined,
+    screenSize: undefined,
+    status: undefined,
+    name: '',
+    page: 1,
+    size: 10,
+    total: 0
+  }
+  publishSelectedRowKeys.value = []
+  deviceSelectArray = []
+  pushLocation.value = undefined
+  publishDialogVisible.value = true
+  getPublishDevice()
+}
+
+const onCancel = (row: Record<string, any>) => {
+  QueryClearDevice.value = {
+    mediumId: row.id,
+    serialNumber: '',
+    name: '',
+    location: undefined,
+    page: 1,
+    size: 10,
+    total: 0
+  }
+  clearSelectedRowKeys.value = []
+  clearIds = []
+  clearDialogVisible.value = true
+  getClearData()
+}
+
+const beforeAvatarUpload = () => true
+
+const handleAvatarSuccess = (info: UploadChangeParam) => {
+  if (info.file.status !== 'done') return
+
+  const response = info.file.response
+  if (response?.code == 200) {
+    ruleForm.fileName = response.data
+    uploadImageFailed.value = false
+  } else {
+    message.error(response?.message || '上传文件出错了')
+  }
+}
+
+const submitForm = () => {
+  if (!ruleForm.name?.trim()) {
+    message.warning('请输入媒体名称')
+    return
+  }
+  if (!ruleForm.fileName) {
+    message.warning('请上传媒体文件')
+    return
+  }
+
+  const content = ruleForm.id == 0 ? '确定要添加这个媒体库吗？' : '确定要修改这个媒体库吗？'
+
+  AModal.confirm({
+    title: '提示',
+    content,
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      if (ruleForm.id == 0) {
+        await addMedium()
+      } else {
+        await updateMedium()
+      }
+    }
+  })
+}
+
+const updateMedium = async () => {
+  await service.post(PATH_URL + '/medMedium/reviseMedium', ruleForm)
+  message.success('操作成功')
+  getTableData()
+  addDialogVisible.value = false
+}
+
+const addMedium = async () => {
+  await service.post(PATH_URL + '/medMedium/addMedium', ruleForm)
+  message.success('操作成功')
+  getTableData()
+  addDialogVisible.value = false
+}
+
+const isVideoFile = (fileName: string) => {
+  const cleanName = fileName.split('?')[0].toLowerCase()
+  return ['mp4', 'm3u8', 'webm', 'ogg', 'ogv'].some((suffix) => cleanName.endsWith('.' + suffix))
+}
+
+const isImageFile = (fileName: string) => {
+  const cleanName = fileName.split('?')[0].toLowerCase()
+  return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].some((suffix) => cleanName.endsWith('.' + suffix))
+}
+
+const showImage = computed(() => !!ruleForm.fileName && isImageFile(ruleForm.fileName))
+const showVideo = computed(() => !!ruleForm.fileName && isVideoFile(ruleForm.fileName))
+
+const handlePublishPageChange = (page: number, size: number) => {
+  QueryDeviceParam.value.page = page
+  QueryDeviceParam.value.size = size
+  getPublishDevice()
+}
+
+const onClickPublish = () => {
+  QueryDeviceParam.value.page = 1
+  getPublishDevice()
+}
+
+const onPublishReset = () => {
+  QueryDeviceParam.value.serialNumber = ''
+  QueryDeviceParam.value.name = ''
+  QueryDeviceParam.value.deviceType = undefined
+  QueryDeviceParam.value.screenModel = undefined
+  QueryDeviceParam.value.screenSize = undefined
+  QueryDeviceParam.value.status = undefined
+  QueryDeviceParam.value.page = 1
+  getPublishDevice()
+}
+
+const getPublishDevice = () => {
+  service.post(PATH_URL + '/MachineMange/getDeviceForMedium', QueryDeviceParam.value).then((res: any) => {
+    deviceData.value = res.data?.records || []
+    QueryDeviceParam.value.total = res.data?.total || 0
+    publishSelectedRowKeys.value = []
+    deviceSelectArray = []
+  })
+}
+
+const ConvertScreenModel = (model: number) => {
+  switch (model) {
+    case 1:
+      return '横屏'
+    case 2:
+      return '竖屏'
+    case 0:
+      return '无屏'
+    default:
+      return '未知'
+  }
+}
+
+const ConvertDeviceStatus = (status: number): string => {
+  switch (status) {
+    case 1:
+      return '待使用'
+    case 2:
+      return '使用中'
+    case 3:
+      return '已禁用'
+    case 4:
+      return '故障'
+    case 5:
+      return '已欠费'
+    case 6:
+      return '未激活'
+    default:
+      return '未知'
+  }
+}
+
+const DoPublish = () => {
+  if (!(pushLocation.value == 1 || pushLocation.value == 2)) {
+    message.warning('请选择投放位置')
+    return
+  }
+  if (deviceSelectArray.length === 0) {
+    message.warning('请选择要发布的设备')
+    return
+  }
+
+  AModal.confirm({
+    title: '提示',
+    content: '确定要发布媒体到这些设备吗？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      await service.post(PATH_URL + '/medMedium/doPublish', {
+        location: pushLocation.value,
+        mediumId: QueryDeviceParam.value.id,
+        ids: deviceSelectArray
+      })
+      message.success('操作成功')
+    }
+  })
+}
+
+const handleClearPageChange = (page: number, size: number) => {
+  QueryClearDevice.value.page = page
+  QueryClearDevice.value.size = size
+  getClearData()
+}
+
+const onClearClick = () => {
+  QueryClearDevice.value.page = 1
+  getClearData()
+}
+
+const onClearReset = () => {
+  QueryClearDevice.value.location = undefined
+  QueryClearDevice.value.name = ''
+  QueryClearDevice.value.page = 1
+  QueryClearDevice.value.size = 10
+  QueryClearDevice.value.serialNumber = ''
+  getClearData()
+}
+
+const DoClear = () => {
+  if (clearIds.length === 0) {
+    message.warning('请选择要撤回的设备')
+    return
+  }
+
+  AModal.confirm({
+    title: '提示',
+    content: '确定要撤销这些设备吗？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      await service.post(PATH_URL + '/medMedium/doClear', qs.stringify({ ids: clearIds }, { arrayFormat: 'brackets' }))
+      message.success('操作成功')
+      getClearData()
+    }
+  })
+}
+
 const getClearData = () => {
   service.post(PATH_URL + '/medMedium/getClearDevice', QueryClearDevice.value).then((res: any) => {
-    console.log(res)
-    ClearData.value = res.data.records
-    QueryClearDevice.value.total = res.data.total
+    ClearData.value = res.data?.records || []
+    QueryClearDevice.value.total = res.data?.total || 0
+    clearSelectedRowKeys.value = []
+    clearIds = []
   })
 }
 
-//#endregion
+const getScreenSize = () => {
+  service.get(PATH_URL + '/MachineMange/getScreenClass').then((res: any) => {
+    screenSizeArray.value = res.data || []
+  })
+}
+
+onMounted(() => {
+  getScreenSize()
+  getTableData()
+})
 </script>
 
 <style lang="less" scoped>
-.avatar-uploader .avatar {
-  display: block;
-  width: 100px;
-  height: 100px;
-}
-
-.avatar-uploader .el-upload {
-  position: relative;
-  overflow: hidden;
-  cursor: pointer;
-  border: 1px dashed #8c939d;
-  border-radius: 6px;
-  transition: var(--el-transition-duration-fast);
-}
-
-.bt {
-  margin-left: 20px;
-}
-
-.avatar-uploader .el-upload:hover {
-  border-color: var(--el-color-primary);
-}
-
-.el-icon.avatar-uploader-icon {
-  width: 178px;
-  height: 178px;
-  font-size: 28px;
-  color: #8c939d;
-  text-align: center;
-}
-
-.image {
-  width: 200px;
-  height: 200px;
-}
-
-.footer {
+.medium-page {
   display: flex;
   width: 100%;
-  flex-direction: row;
-  justify-content: space-evenly;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.search-form,
+.dialog-search-form {
+  display: grid;
+  padding: 16px;
+  background-color: #fff;
+  border-radius: 6px;
+  gap: 14px 16px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  align-items: end;
+
+  :deep(.ant-form-item) {
+    display: flex;
+    margin-bottom: 0;
+    align-items: center;
+    flex-wrap: nowrap;
+  }
+
+  :deep(.ant-form-item-label) {
+    flex: 0 0 80px;
+    padding: 0 10px 0 0;
+    line-height: 1;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  :deep(.ant-form-item-label > label) {
+    height: 32px;
+    color: #262626;
+    font-weight: 500;
+  }
+
+  :deep(.ant-form-item-control) {
+    min-width: 0;
+    flex: 1;
+  }
+
+  :deep(.ant-form-item-control-input),
+  :deep(.ant-form-item-control-input-content) {
+    width: 100%;
+  }
+}
+
+.dialog-search-form {
+  padding: 0 0 16px;
+}
+
+.search-form-item,
+.search-form-actions {
+  min-width: 0;
+}
+
+.search-form-actions {
+  :deep(.ant-form-item-control-input-content) {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
 }
 
-.form-item {
-  margin-left: 20px;
+.toolbar-left,
+.toolbar-right {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.icon-button,
+.table-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  :deep(.ant-btn-icon),
+  :deep(.v-icon),
+  :deep(iconify-icon) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+}
+
+.table-action {
+  height: 24px;
+  padding: 0;
+}
+
+.action-edit {
+  color: #52c41a;
+}
+
+.pagination-wrap {
+  display: flex;
+  margin-top: 12px;
+  justify-content: flex-end;
+}
+
+.modal-form {
+  :deep(.ant-form-item-label) {
+    width: 96px;
+    text-align: right;
+  }
+}
+
+.media-image-frame,
+.media-image-empty {
+  display: flex;
+  width: 200px;
+  height: 200px;
+  color: #8c8c8c;
+  background-color: #fafafa;
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+  align-items: center;
+  justify-content: center;
+}
+
+.media-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+.media-uploader {
+  display: inline-block;
+
+  :deep(.ant-upload) {
+    display: inline-flex;
+    width: 104px;
+    height: 104px;
+    overflow: hidden;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.avatar-frame,
+.avatar-empty {
+  display: flex;
+  width: 104px;
+  height: 104px;
+  color: #8c8c8c;
+  background-color: #fafafa;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+.upload-placeholder {
+  display: flex;
+  width: 104px;
+  height: 104px;
+  color: #8c8c8c;
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s cubic-bezier(0, 0, 1, 1);
+
+  &:hover {
+    border-color: #1677ff;
+  }
+}
+
+.modal-footer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.push-location-select {
+  width: 220px;
+}
+
+.empty-text {
+  color: #8c8c8c;
+}
+
+.w-full {
+  width: 100%;
 }
 </style>

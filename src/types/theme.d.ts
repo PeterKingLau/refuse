@@ -1,5 +1,5 @@
-export type ThemeTypes = {
-  elColorPrimary?: string
+﻿export type ThemeTypes = {
+  appColorPrimary?: string
   leftMenuBorderColor?: string
   leftMenuBgColor?: string
   leftMenuBgLightColor?: string

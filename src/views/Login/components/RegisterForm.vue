@@ -3,7 +3,7 @@ import { Form } from '@/components/Form'
 import { reactive, ref, unref } from 'vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import { useForm } from '@/hooks/web/useForm'
-import { ElButton, ElInput, FormRules } from 'element-plus'
+import { Button as AButton, Input as AInput } from 'ant-design-vue'
 import { useValidator } from '@/hooks/web/useValidator'
 import { FormSchema } from '@/types/form'
 
@@ -81,7 +81,7 @@ const schema = reactive<FormSchema[]>([
   }
 ])
 
-const rules: FormRules = {
+const rules = {
   username: [required()],
   password: [required()],
   check_password: [required()],
@@ -110,35 +110,27 @@ const loginRegister = async () => {
 </script>
 
 <template>
-  <Form
-    :schema="schema"
-    :rules="rules"
-    label-position="top"
-    hide-required-asterisk
-    size="large"
-    class="dark:(border-1 border-[var(--el-border-color)] border-solid)"
-    @register="register"
-  >
+  <Form :schema="schema" :rules="rules" label-position="top" hide-required-asterisk size="large" class="dark:(border-1 border-[var(--app-border-color)] border-solid)" @register="register">
     <template #title>
       <h2 class="text-2xl font-bold text-center w-[100%]">{{ t('login.register') }}</h2>
     </template>
 
     <template #code="form">
       <div class="w-[100%] flex">
-        <ElInput v-model="form['code']" :placeholder="t('login.codePlaceholder')" />
+        <AInput v-model:value="form['code']" :placeholder="t('login.codePlaceholder')" />
       </div>
     </template>
 
     <template #register>
       <div class="w-[100%]">
-        <ElButton type="primary" class="w-[100%]" :loading="loading" @click="loginRegister">
+        <AButton type="primary" class="w-[100%]" :loading="loading" @click="loginRegister">
           {{ t('login.register') }}
-        </ElButton>
+        </AButton>
       </div>
       <div class="w-[100%] mt-15px">
-        <ElButton class="w-[100%]" @click="toLogin">
+        <AButton class="w-[100%]" @click="toLogin">
           {{ t('login.hasUser') }}
-        </ElButton>
+        </AButton>
       </div>
     </template>
   </Form>

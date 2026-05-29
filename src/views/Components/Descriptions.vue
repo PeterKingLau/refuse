@@ -1,9 +1,9 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { Descriptions } from '@/components/Descriptions'
 import { useI18n } from '@/hooks/web/useI18n'
 import { reactive, unref } from 'vue'
 import { Form } from '@/components/Form'
-import { ElFormItem, ElInput, ElButton } from 'element-plus'
+import { Button as AButton, FormItem as AFormItem, Input as AInput } from 'ant-design-vue'
 import { useValidator } from '@/hooks/web/useValidator'
 import { useForm } from '@/hooks/web/useForm'
 import { DescriptionsSchema } from '@/types/descriptions'
@@ -14,11 +14,11 @@ const { t } = useI18n()
 
 const data = reactive({
   username: 'chenkl',
-  nickName: '梦似花落。',
+  nickName: '梦里花落',
   age: 26,
   phone: '13655971xxxx',
   email: '502431556@qq.com',
-  addr: '这是一个很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长的地址',
+  addr: '这是一个很长很长很长很长很长很长很长很长很长很长很长很长的地址',
   sex: '男',
   certy: '3505831994xxxxxxxx'
 })
@@ -73,12 +73,7 @@ const formValidation = () => {
 </script>
 
 <template>
-  <Descriptions
-    :title="t('descriptionsDemo.descriptions')"
-    :message="t('descriptionsDemo.descriptionsDes')"
-    :data="data"
-    :schema="schema"
-  />
+  <Descriptions :title="t('descriptionsDemo.descriptions')" :message="t('descriptionsDemo.descriptionsDes')" :data="data" :schema="schema" />
 
   <Form is-custom :model="form" :rules="rules" @register="register">
     <Descriptions :title="t('descriptionsDemo.form')" :data="data" :schema="schema" class="mt-20px">
@@ -99,33 +94,33 @@ const formValidation = () => {
       </template>
 
       <template #username>
-        <ElFormItem prop="username">
-          <ElInput v-model="form.username" />
-        </ElFormItem>
+        <AFormItem name="username">
+          <AInput v-model:value="form.username" />
+        </AFormItem>
       </template>
       <template #nickName>
-        <ElFormItem prop="nickName">
-          <ElInput v-model="form.nickName" />
-        </ElFormItem>
+        <AFormItem name="nickName">
+          <AInput v-model:value="form.nickName" />
+        </AFormItem>
       </template>
       <template #phone>
-        <ElFormItem prop="phone">
-          <ElInput v-model="form.phone" />
-        </ElFormItem>
+        <AFormItem name="phone">
+          <AInput v-model:value="form.phone" />
+        </AFormItem>
       </template>
       <template #email>
-        <ElFormItem prop="email">
-          <ElInput v-model="form.email" />
-        </ElFormItem>
+        <AFormItem name="email">
+          <AInput v-model:value="form.email" />
+        </AFormItem>
       </template>
       <template #addr>
-        <ElFormItem prop="addr">
-          <ElInput v-model="form.addr" />
-        </ElFormItem>
+        <AFormItem name="addr">
+          <AInput v-model:value="form.addr" />
+        </AFormItem>
       </template>
     </Descriptions>
     <div class="text-center mt-10px">
-      <ElButton @click="formValidation"> {{ t('formDemo.formValidation') }} </ElButton>
+      <AButton @click="formValidation"> {{ t('formDemo.formValidation') }} </AButton>
     </div>
   </Form>
 </template>
@@ -136,7 +131,7 @@ const formValidation = () => {
 
   &::before {
     margin-right: 4px;
-    color: var(--el-color-danger);
+    color: var(--app-color-danger);
     content: '*';
   }
 }

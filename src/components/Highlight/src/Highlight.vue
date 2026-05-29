@@ -10,7 +10,7 @@ export default defineComponent({
       type: Array as PropType<string[]>,
       default: () => []
     },
-    color: propTypes.string.def('var(--el-color-primary)')
+    color: propTypes.string.def('var(--app-color-primary)')
   },
   emits: ['click'],
   setup(props, { emit, slots }) {

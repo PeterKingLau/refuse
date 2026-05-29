@@ -4,7 +4,7 @@ import { ContentWrap } from '@/components/ContentWrap'
 import { useI18n } from '@/hooks/web/useI18n'
 import { useForm } from '@/hooks/web/useForm'
 import { reactive, unref, ref } from 'vue'
-import { ElButton } from 'element-plus'
+import { Button as AButton } from 'ant-design-vue'
 import { useValidator } from '@/hooks/web/useValidator'
 import { getDictOneApi } from '@/api/common'
 import { FormSchema } from '@/types/form'
@@ -242,37 +242,31 @@ const getDictOne = async () => {
 
 <template>
   <ContentWrap :title="`UseForm ${t('formDemo.operate')}`">
-    <ElButton @click="changeLabelWidth(150)">{{ t('formDemo.change') }} labelWidth</ElButton>
-    <ElButton @click="changeLabelWidth('auto')">{{ t('formDemo.restore') }} labelWidth</ElButton>
+    <AButton @click="changeLabelWidth(150)">{{ t('formDemo.change') }} labelWidth</AButton>
+    <AButton @click="changeLabelWidth('auto')">{{ t('formDemo.restore') }} labelWidth</AButton>
 
-    <ElButton @click="changeSize('large')">{{ t('formDemo.change') }} size</ElButton>
-    <ElButton @click="changeSize('default')">{{ t('formDemo.restore') }} size</ElButton>
+    <AButton @click="changeSize('large')">{{ t('formDemo.change') }} size</AButton>
+    <AButton @click="changeSize('default')">{{ t('formDemo.restore') }} size</AButton>
 
-    <ElButton @click="changeDisabled(true)">{{ t('formDemo.disabled') }}</ElButton>
-    <ElButton @click="changeDisabled(false)">{{ t('formDemo.disablement') }}</ElButton>
+    <AButton @click="changeDisabled(true)">{{ t('formDemo.disabled') }}</AButton>
+    <AButton @click="changeDisabled(false)">{{ t('formDemo.disablement') }}</AButton>
 
-    <ElButton @click="changeSchema(true)">
-      {{ t('formDemo.delete') }} {{ t('formDemo.select') }}
-    </ElButton>
-    <ElButton @click="changeSchema(false)">
-      {{ t('formDemo.add') }} {{ t('formDemo.select') }}
-    </ElButton>
+    <AButton @click="changeSchema(true)"> {{ t('formDemo.delete') }} {{ t('formDemo.select') }} </AButton>
+    <AButton @click="changeSchema(false)"> {{ t('formDemo.add') }} {{ t('formDemo.select') }} </AButton>
 
-    <ElButton @click="setValue(false)">{{ t('formDemo.setValue') }}</ElButton>
-    <ElButton @click="setValue(true)">{{ t('formDemo.resetValue') }}</ElButton>
+    <AButton @click="setValue(false)">{{ t('formDemo.setValue') }}</AButton>
+    <AButton @click="setValue(true)">{{ t('formDemo.resetValue') }}</AButton>
 
-    <ElButton @click="setLabel">
-      {{ t('formDemo.set') }} {{ t('formDemo.select') }} label
-    </ElButton>
+    <AButton @click="setLabel"> {{ t('formDemo.set') }} {{ t('formDemo.select') }} label </AButton>
 
-    <ElButton @click="addItem"> {{ t('formDemo.add') }} {{ t('formDemo.subitem') }} </ElButton>
+    <AButton @click="addItem"> {{ t('formDemo.add') }} {{ t('formDemo.subitem') }} </AButton>
 
-    <ElButton @click="formValidation"> {{ t('formDemo.formValidation') }} </ElButton>
-    <ElButton @click="verifyReset"> {{ t('formDemo.verifyReset') }} </ElButton>
+    <AButton @click="formValidation"> {{ t('formDemo.formValidation') }} </AButton>
+    <AButton @click="verifyReset"> {{ t('formDemo.verifyReset') }} </AButton>
 
-    <ElButton @click="getDictOne">
+    <AButton @click="getDictOne">
       {{ t('searchDemo.dynamicOptions') }}
-    </ElButton>
+    </AButton>
   </ContentWrap>
   <ContentWrap :title="`UseForm ${t('formDemo.example')}`">
     <Form @register="register" />

@@ -5,7 +5,7 @@ import { Table } from '@/components/Table'
 import { getTableListApi } from '@/api/table'
 import { TableData } from '@/api/table/types'
 import { ref, h } from 'vue'
-import { ElTag, ElButton } from 'element-plus'
+import { Button as AButton, Tag as ATag } from 'ant-design-vue'
 import { TableColumn, TableSlotDefault } from '@/types/table'
 
 interface Params {
@@ -38,16 +38,11 @@ const columns: TableColumn[] = [
     label: t('tableDemo.importance'),
     formatter: (_: Recordable, __: TableColumn, cellValue: number) => {
       return h(
-        ElTag,
+        ATag,
         {
-          type: cellValue === 1 ? 'success' : cellValue === 2 ? 'warning' : 'danger'
+          color: cellValue === 1 ? 'success' : cellValue === 2 ? 'warning' : 'error'
         },
-        () =>
-          cellValue === 1
-            ? t('tableDemo.important')
-            : cellValue === 2
-            ? t('tableDemo.good')
-            : t('tableDemo.commonly')
+        () => (cellValue === 1 ? t('tableDemo.important') : cellValue === 2 ? t('tableDemo.good') : t('tableDemo.commonly'))
       )
     }
   },
@@ -92,9 +87,9 @@ const actionFn = (data: TableSlotDefault) => {
   <ContentWrap :title="t('tableDemo.table')" :message="t('tableDemo.tableDes')">
     <Table :columns="columns" :data="tableDataList" :loading="loading">
       <template #action="data">
-        <ElButton type="primary" @click="actionFn(data as TableSlotDefault)">
+        <AButton type="primary" @click="actionFn(data as TableSlotDefault)">
           {{ t('tableDemo.action') }}
-        </ElButton>
+        </AButton>
       </template>
     </Table>
   </ContentWrap>

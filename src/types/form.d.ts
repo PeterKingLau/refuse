@@ -30,7 +30,7 @@ export type FormSchema = {
   labelMessage?: string
   // col组件属性
   colProps?: ColProps
-  // 表单组件属性，slots对应的是表单组件的插槽，规则：${field}-xxx，具体可以查看element-plus文档
+  // 表单组件属性，slots 对应的是表单组件的插槽，规则：${field}-xxx，具体可以查看 Ant Design Vue 文档
   componentProps?: { slots?: Recordable } & ComponentProps
   // formItem组件属性
   formItemProps?: FormItemProps

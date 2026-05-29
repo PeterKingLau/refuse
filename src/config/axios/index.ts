@@ -1,34 +1,30 @@
-import { service } from './service'
-
+import type { AxiosRequestConfig, Method, ResponseType } from 'axios'
 import { config } from './config'
+import { service } from './service'
 
 const { default_headers } = config
 
-const request = (option: any) => {
-  const { url, method, params, data, headersType, responseType } = option
-  console.log('option', option)
-  return service({
-    url: url,
-    method,
-    params,
-    data,
-    responseType: responseType,
-    headers: {
-      'Content-Type': headersType || default_headers
-    }
-  })
+interface RequestOption extends AxiosRequestConfig {
+  headersType?: string
+  method?: Method
+  responseType?: ResponseType
 }
+
+const request = <T = any>(option: RequestOption) => {
+  const { headersType, headers, ...requestOption } = option
+
+  return service({
+    ...requestOption,
+    headers: {
+      'Content-Type': headersType || default_headers,
+      ...headers
+    }
+  }) as Promise<T>
+}
+
 export default {
-  get: <T = any>(option: any) => {
-    return request({ method: 'get', ...option }) as unknown as T
-  },
-  post: <T = any>(option: any) => {
-    return request({ method: 'post', ...option }) as unknown as T
-  },
-  delete: <T = any>(option: any) => {
-    return request({ method: 'delete', ...option }) as unknown as T
-  },
-  put: <T = any>(option: any) => {
-    return request({ method: 'put', ...option }) as unknown as T
-  }
+  get: <T = any>(option: RequestOption) => request<T>({ ...option, method: 'get' }),
+  post: <T = any>(option: RequestOption) => request<T>({ ...option, method: 'post' }),
+  delete: <T = any>(option: RequestOption) => request<T>({ ...option, method: 'delete' }),
+  put: <T = any>(option: RequestOption) => request<T>({ ...option, method: 'put' })
 }

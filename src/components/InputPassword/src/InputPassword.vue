@@ -1,6 +1,6 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, unref, computed, watch } from 'vue'
-import { ElInput } from 'element-plus'
+import { Input as AInput } from 'ant-design-vue'
 import { propTypes } from '@/utils/propTypes'
 import { useConfigGlobal } from '@/hooks/web/useConfigGlobal'
 import { zxcvbn } from '@zxcvbn-ts/core'
@@ -29,7 +29,7 @@ const { configGlobal } = useConfigGlobal()
 
 const emit = defineEmits(['update:modelValue'])
 
-// 设置input的type属性
+// 设置 input 的 type 属性
 const textType = ref<'password' | 'text'>('password')
 
 const changeTextType = () => {
@@ -39,7 +39,7 @@ const changeTextType = () => {
 // 输入框的值
 const valueRef = ref(props.modelValue)
 
-// 监听
+// 监听输入值变化
 watch(
   () => valueRef.value,
   (val: string) => {
@@ -54,23 +54,17 @@ const getPasswordStrength = computed(() => {
   return value ? zxcvbnRef.score : -1
 })
 
-const getIconName = computed(() =>
-  unref(textType) === 'password' ? 'ant-design:eye-invisible-outlined' : 'ant-design:eye-outlined'
-)
+const getIconName = computed(() => (unref(textType) === 'password' ? 'ant-design:eye-invisible-outlined' : 'ant-design:eye-outlined'))
 </script>
 
 <template>
   <div :class="[prefixCls, `${prefixCls}--${configGlobal?.size}`]">
-    <ElInput v-bind="$attrs" v-model="valueRef" :type="textType">
+    <AInput v-bind="$attrs" v-model:value="valueRef" :type="textType">
       <template #suffix>
-        <Icon class="el-input__icon cursor-pointer" :icon="getIconName" @click="changeTextType" />
+        <Icon class="cursor-pointer" :icon="getIconName" @click="changeTextType" />
       </template>
-    </ElInput>
-    <div
-      v-if="strength"
-      :class="`${prefixCls}__bar`"
-      class="relative h-6px mt-10px mb-6px mr-auto ml-auto"
-    >
+    </AInput>
+    <div v-if="strength" :class="`${prefixCls}__bar`" class="relative h-6px mt-10px mb-6px mr-auto ml-auto">
       <div :class="`${prefixCls}__bar--fill`" :data-score="getPasswordStrength"></div>
     </div>
   </div>
@@ -80,13 +74,13 @@ const getIconName = computed(() =>
 @prefix-cls: ~'@{namespace}-input-password';
 
 .@{prefix-cls} {
-  :deep(.@{elNamespace}-input__clear) {
+  :deep(.ant-input-clear-icon) {
     margin-left: 5px;
   }
 
   &__bar {
-    background-color: var(--el-text-color-disabled);
-    border-radius: var(--el-border-radius-base);
+    background-color: var(--app-text-color-disabled);
+    border-radius: var(--app-border-radius-base);
 
     &::before,
     &::after {
@@ -96,7 +90,7 @@ const getIconName = computed(() =>
       width: 20%;
       height: inherit;
       background-color: transparent;
-      border-color: var(--el-color-white);
+      border-color: var(--app-color-white);
       border-style: solid;
       border-width: 0 5px 0 5px;
       content: '';
@@ -116,37 +110,39 @@ const getIconName = computed(() =>
       height: inherit;
       background-color: transparent;
       border-radius: inherit;
-      transition: width 0.5s ease-in-out, background 0.25s;
+      transition:
+        width 0.5s ease-in-out,
+        background 0.25s;
 
       &[data-score='0'] {
         width: 20%;
-        background-color: var(--el-color-danger);
+        background-color: var(--app-color-danger);
       }
 
       &[data-score='1'] {
         width: 40%;
-        background-color: var(--el-color-danger);
+        background-color: var(--app-color-danger);
       }
 
       &[data-score='2'] {
         width: 60%;
-        background-color: var(--el-color-warning);
+        background-color: var(--app-color-warning);
       }
 
       &[data-score='3'] {
         width: 80%;
-        background-color: var(--el-color-success);
+        background-color: var(--app-color-success);
       }
 
       &[data-score='4'] {
         width: 100%;
-        background-color: var(--el-color-success);
+        background-color: var(--app-color-success);
       }
     }
   }
 
   &--mini > &__bar {
-    border-radius: var(--el-border-radius-small);
+    border-radius: var(--app-border-radius-small);
   }
 }
 </style>

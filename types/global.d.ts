@@ -6,7 +6,7 @@ declare global {
 
   declare type Nullable<T> = T | null
 
-  declare type ElRef<T extends HTMLElement = HTMLDivElement> = Nullable<T>
+  declare type HTMLElementRef<T extends HTMLElement = HTMLDivElement> = Nullable<T>
 
   declare type Recordable<T = any, K = string> = Record<K extends null | undefined ? string : K, T>
 
@@ -14,10 +14,7 @@ declare global {
 
   declare type LocaleType = 'zh-CN' | 'en'
 
-  declare type AxiosHeaders =
-    | 'application/json'
-    | 'application/x-www-form-urlencoded'
-    | 'multipart/form-data'
+  declare type AxiosHeaders = 'application/json' | 'application/x-www-form-urlencoded' | 'multipart/form-data'
 
   declare type AxiosMethod = 'get' | 'post' | 'delete' | 'put'
 

@@ -1,0 +1,22 @@
+[
+  {
+    "name": "Element Plus",
+    "prefix": "ep",
+    "path": "ep-icons.json"
+  },
+  {
+    "name": "Material Design",
+    "prefix": "mdi",
+    "path": "mdi-icons.json"
+  },
+  {
+    "name": "Material Symbols",
+    "prefix": "material-symbols",
+    "path": "material-symbols-icons.json"
+  },
+  {
+    "name": "Simple Icons",
+    "prefix": "simple-icons",
+    "path": "simple-icons-icons.json"
+  }
+]

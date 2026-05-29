@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ElSwitch, ElMessage } from 'element-plus'
+import { message, Switch as ASwitch } from 'ant-design-vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import { useAppStore } from '@/store/modules/app'
 import { computed, ref, watch } from 'vue'
@@ -111,7 +111,7 @@ const greyModeChange = (show: boolean) => {
 const dynamicRouter = ref(appStore.getDynamicRouter)
 
 const dynamicRouterChange = (show: boolean) => {
-  ElMessage.info(t('setting.reExperienced'))
+  message.info(t('setting.reExperienced'))
   appStore.setDynamicRouter(show)
 }
 
@@ -138,77 +138,77 @@ watch(
   <div :class="prefixCls">
     <div class="flex justify-between items-center">
       <span class="text-14px">{{ t('setting.breadcrumb') }}</span>
-      <ElSwitch v-model="breadcrumb" @change="breadcrumbChange" />
+      <ASwitch v-model:checked="breadcrumb" @change="breadcrumbChange" />
     </div>
 
     <div class="flex justify-between items-center">
       <span class="text-14px">{{ t('setting.breadcrumbIcon') }}</span>
-      <ElSwitch v-model="breadcrumbIcon" @change="breadcrumbIconChange" />
+      <ASwitch v-model:checked="breadcrumbIcon" @change="breadcrumbIconChange" />
     </div>
 
     <div class="flex justify-between items-center">
       <span class="text-14px">{{ t('setting.hamburgerIcon') }}</span>
-      <ElSwitch v-model="hamburger" @change="hamburgerChange" />
+      <ASwitch v-model:checked="hamburger" @change="hamburgerChange" />
     </div>
 
     <div class="flex justify-between items-center">
       <span class="text-14px">{{ t('setting.screenfullIcon') }}</span>
-      <ElSwitch v-model="screenfull" @change="screenfullChange" />
+      <ASwitch v-model:checked="screenfull" @change="screenfullChange" />
     </div>
 
     <div class="flex justify-between items-center">
       <span class="text-14px">{{ t('setting.sizeIcon') }}</span>
-      <ElSwitch v-model="size" @change="sizeChange" />
+      <ASwitch v-model:checked="size" @change="sizeChange" />
     </div>
 
     <div class="flex justify-between items-center">
       <span class="text-14px">{{ t('setting.localeIcon') }}</span>
-      <ElSwitch v-model="locale" @change="localeChange" />
+      <ASwitch v-model:checked="locale" @change="localeChange" />
     </div>
 
     <div class="flex justify-between items-center">
       <span class="text-14px">{{ t('setting.tagsView') }}</span>
-      <ElSwitch v-model="tagsView" @change="tagsViewChange" />
+      <ASwitch v-model:checked="tagsView" @change="tagsViewChange" />
     </div>
 
     <div class="flex justify-between items-center">
       <span class="text-14px">{{ t('setting.tagsViewIcon') }}</span>
-      <ElSwitch v-model="tagsViewIcon" @change="tagsViewIconChange" />
+      <ASwitch v-model:checked="tagsViewIcon" @change="tagsViewIconChange" />
     </div>
 
     <div class="flex justify-between items-center">
       <span class="text-14px">{{ t('setting.logo') }}</span>
-      <ElSwitch v-model="logo" @change="logoChange" />
+      <ASwitch v-model:checked="logo" @change="logoChange" />
     </div>
 
     <div class="flex justify-between items-center">
       <span class="text-14px">{{ t('setting.uniqueOpened') }}</span>
-      <ElSwitch v-model="uniqueOpened" @change="uniqueOpenedChange" />
+      <ASwitch v-model:checked="uniqueOpened" @change="uniqueOpenedChange" />
     </div>
 
     <div class="flex justify-between items-center">
       <span class="text-14px">{{ t('setting.fixedHeader') }}</span>
-      <ElSwitch v-model="fixedHeader" @change="fixedHeaderChange" />
+      <ASwitch v-model:checked="fixedHeader" @change="fixedHeaderChange" />
     </div>
 
     <div class="flex justify-between items-center">
       <span class="text-14px">{{ t('setting.footer') }}</span>
-      <ElSwitch v-model="footer" @change="footerChange" />
+      <ASwitch v-model:checked="footer" @change="footerChange" />
     </div>
 
     <div class="flex justify-between items-center">
       <span class="text-14px">{{ t('setting.greyMode') }}</span>
-      <ElSwitch v-model="greyMode" @change="greyModeChange" />
+      <ASwitch v-model:checked="greyMode" @change="greyModeChange" />
     </div>
 
     <div class="flex justify-between items-center">
       <span class="text-14px">{{ t('setting.dynamicRouter') }}</span>
-      <ElSwitch v-model="dynamicRouter" @change="dynamicRouterChange" />
+      <ASwitch v-model:checked="dynamicRouter" @change="dynamicRouterChange" />
     </div>
 
     <div class="flex justify-between items-center">
       <span class="text-14px">{{ t('setting.fixedMenu') }}</span>
-      <ElSwitch v-model="fixedMenu" @change="fixedMenuChange" />
+      <ASwitch v-model:checked="fixedMenu" @change="fixedMenuChange" />
     </div>
   </div>
 </template>

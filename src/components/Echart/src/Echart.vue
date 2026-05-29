@@ -1,48 +1,62 @@
 <script setup lang="ts">
-import type { EChartsOption } from 'echarts'
-import echarts from '@/plugins/echarts'
+import { Chart, type G2Spec } from '@antv/g2'
 import { debounce } from 'lodash-es'
-import 'echarts-wordcloud'
-import { propTypes } from '@/utils/propTypes'
-import { computed, PropType, ref, unref, watch, onMounted, onBeforeUnmount, onActivated } from 'vue'
+import { computed, nextTick, onActivated, onBeforeUnmount, onMounted, PropType, ref, unref, watch } from 'vue'
 import { useAppStore } from '@/store/modules/app'
 import { isString } from '@/utils/is'
 import { useDesign } from '@/hooks/web/useDesign'
 
+defineOptions({
+  name: 'G2Chart'
+})
+
 const { getPrefixCls, variables } = useDesign()
 
-const prefixCls = getPrefixCls('echart')
+const prefixCls = getPrefixCls('g2-chart')
 
 const appStore = useAppStore()
 
 const props = defineProps({
   options: {
-    type: Object as PropType<EChartsOption>,
+    type: Object as PropType<G2Spec>,
     required: true
   },
-  width: propTypes.oneOfType([Number, String]).def(''),
-  height: propTypes.oneOfType([Number, String]).def('500px')
+  width: {
+    type: [Number, String],
+    default: ''
+  },
+  height: {
+    type: [Number, String],
+    default: '500px'
+  },
+  autoFit: {
+    type: Boolean,
+    default: true
+  },
+  theme: {
+    type: String,
+    default: ''
+  }
 })
+
+const emit = defineEmits<{
+  chartReady: [chart: G2ChartInstance]
+  rendered: [chart: G2ChartInstance]
+}>()
+
+type G2ChartInstance = InstanceType<typeof Chart>
 
 const isDark = computed(() => appStore.getIsDark)
 
-const theme = computed(() => {
-  const echartTheme: boolean | string = unref(isDark) ? true : 'auto'
+const currentTheme = computed(() => props.theme || (unref(isDark) ? 'classicDark' : 'classic'))
 
-  return echartTheme
+const chartOptions = computed<G2Spec>(() => {
+  return {
+    ...props.options,
+    autoFit: props.autoFit,
+    theme: unref(currentTheme)
+  } as G2Spec
 })
-
-const options = computed(() => {
-  return Object.assign(props.options, {
-    darkMode: unref(theme)
-  })
-})
-
-const elRef = ref<ElRef>()
-
-let echartRef: Nullable<echarts.ECharts> = null
-
-const contentEl = ref<Element>()
 
 const styles = computed(() => {
   const width = isString(props.width) ? props.width : `${props.width}px`
@@ -54,57 +68,85 @@ const styles = computed(() => {
   }
 })
 
-const initChart = () => {
-  if (unref(elRef) && props.options) {
-    echartRef = echarts.init(unref(elRef) as HTMLElement)
-    echartRef?.setOption(unref(options))
+const elRef = ref<HTMLElement>()
+const contentEl = ref<Element>()
+
+let chartRef: Nullable<G2ChartInstance> = null
+
+const renderChart = async () => {
+  if (!chartRef) return
+
+  chartRef.options(unref(chartOptions))
+  await chartRef.render()
+  emit('rendered', chartRef)
+}
+
+const initChart = async () => {
+  await nextTick()
+  const el = unref(elRef)
+  if (!el || chartRef) return
+
+  chartRef = new Chart({
+    container: el,
+    autoFit: props.autoFit
+  })
+
+  emit('chartReady', chartRef)
+  await renderChart()
+}
+
+const resizeChart = async () => {
+  if (!chartRef) return
+
+  await chartRef.forceFit()
+}
+
+const resizeHandler = debounce(() => {
+  void resizeChart()
+}, 100)
+
+const contentResizeHandler = (event: TransitionEvent) => {
+  if (event.propertyName === 'width') {
+    resizeHandler()
   }
 }
 
 watch(
-  () => options.value,
-  (options) => {
-    if (echartRef) {
-      echartRef?.setOption(options)
-    }
+  () => chartOptions.value,
+  () => {
+    void renderChart()
   },
   {
     deep: true
   }
 )
 
-const resizeHandler = debounce(() => {
-  if (echartRef) {
-    echartRef.resize()
-  }
-}, 100)
-
-const contentResizeHandler = async (e: TransitionEvent) => {
-  if (e.propertyName === 'width') {
-    resizeHandler()
-  }
-}
-
 onMounted(() => {
-  initChart()
+  void initChart()
 
   window.addEventListener('resize', resizeHandler)
 
   contentEl.value = document.getElementsByClassName(`${variables.namespace}-layout-content`)[0]
-  unref(contentEl) &&
-    (unref(contentEl) as Element).addEventListener('transitionend', contentResizeHandler)
+  unref(contentEl)?.addEventListener('transitionend', contentResizeHandler)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', resizeHandler)
-  unref(contentEl) &&
-    (unref(contentEl) as Element).removeEventListener('transitionend', contentResizeHandler)
+  unref(contentEl)?.removeEventListener('transitionend', contentResizeHandler)
+  resizeHandler.cancel()
+
+  chartRef?.destroy()
+  chartRef = null
 })
 
 onActivated(() => {
-  if (echartRef) {
-    echartRef.resize()
-  }
+  void resizeChart()
+})
+
+defineExpose({
+  getChart: () => chartRef,
+  renderChart,
+  resizeChart
 })
 </script>
 

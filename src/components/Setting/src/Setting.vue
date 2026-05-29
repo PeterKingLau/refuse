@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ElDrawer, ElDivider, ElButton, ElMessage } from 'element-plus'
+import { Button as AButton, Divider as ADivider, Drawer as ADrawer, message } from 'ant-design-vue'
 import { ref, unref, computed, watch } from 'vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import { ThemeSwitch } from '@/components/ThemeSwitch'
@@ -27,13 +27,13 @@ const layout = computed(() => appStore.getLayout)
 const drawer = ref(false)
 
 // 主题色相关
-const systemTheme = ref(appStore.getTheme.elColorPrimary)
+const systemTheme = ref(appStore.getTheme.appColorPrimary)
 
 const setSystemTheme = (color: string) => {
-  setCssVar('--el-color-primary', color)
-  appStore.setTheme({ elColorPrimary: color })
+  setCssVar('--app-color-primary', color)
+  appStore.setTheme({ appColorPrimary: color })
   const leftMenuBgColor = useCssVar('--left-menu-bg-color', document.documentElement)
-  setMenuTheme(trim(unref(leftMenuBgColor)))
+  setMenuTheme(trim(unref(leftMenuBgColor) || ''))
 }
 
 // 头部主题相关
@@ -63,7 +63,7 @@ const setHeaderTheme = (color: string) => {
 const menuTheme = ref(appStore.getTheme.leftMenuBgColor || '')
 
 const setMenuTheme = (color: string) => {
-  const primaryColor = useCssVar('--el-color-primary', document.documentElement)
+  const primaryColor = useCssVar('--app-color-primary', document.documentElement)
   const isDarkColor = colorIsDark(color)
   const theme: Recordable = {
     // 左侧菜单边框颜色
@@ -73,17 +73,13 @@ const setMenuTheme = (color: string) => {
     // 左侧菜单浅色背景颜色
     leftMenuBgLightColor: isDarkColor ? lighten(color!, 6) : color,
     // 左侧菜单选中背景颜色
-    leftMenuBgActiveColor: isDarkColor
-      ? 'var(--el-color-primary)'
-      : hexToRGB(unref(primaryColor), 0.1),
+    leftMenuBgActiveColor: isDarkColor ? 'var(--app-color-primary)' : hexToRGB(unref(primaryColor) || '', 0.1),
     // 左侧菜单收起选中背景颜色
-    leftMenuCollapseBgActiveColor: isDarkColor
-      ? 'var(--el-color-primary)'
-      : hexToRGB(unref(primaryColor), 0.1),
+    leftMenuCollapseBgActiveColor: isDarkColor ? 'var(--app-color-primary)' : hexToRGB(unref(primaryColor) || '', 0.1),
     // 左侧菜单字体颜色
     leftMenuTextColor: isDarkColor ? '#bfcbd9' : '#333',
     // 左侧菜单选中字体颜色
-    leftMenuTextActiveColor: isDarkColor ? '#fff' : 'var(--el-color-primary)',
+    leftMenuTextActiveColor: isDarkColor ? '#fff' : 'var(--app-color-primary)',
     // logo字体颜色
     logoTitleTextColor: isDarkColor ? '#fff' : 'inherit',
     // logo边框颜色
@@ -149,7 +145,7 @@ const copyConfig = async () => {
       // 主题相关
       theme: {
         // 主题色
-        elColorPrimary: '${appStore.getTheme.elColorPrimary}',
+        appColorPrimary: '${appStore.getTheme.appColorPrimary}',
         // 左侧菜单边框颜色
         leftMenuBorderColor: '${appStore.getTheme.leftMenuBorderColor}',
         // 左侧菜单背景颜色
@@ -180,11 +176,11 @@ const copyConfig = async () => {
     `
   })
   if (!isSupported) {
-    ElMessage.error(t('setting.copyFailed'))
+    message.error(t('setting.copyFailed'))
   } else {
     await copy()
     if (unref(copied)) {
-      ElMessage.success(t('setting.copySuccess'))
+      message.success(t('setting.copySuccess'))
     }
   }
 }
@@ -200,96 +196,53 @@ const clear = () => {
 </script>
 
 <template>
-  <div
-    :class="prefixCls"
-    class="fixed top-[45%] right-0 w-40px h-40px text-center leading-40px bg-[var(--el-color-primary)] cursor-pointer"
-    @click="drawer = true"
-  >
+  <div :class="prefixCls" class="fixed top-[45%] right-0 w-40px h-40px text-center leading-40px bg-[var(--app-color-primary)] cursor-pointer" @click="drawer = true">
     <Icon icon="ant-design:setting-outlined" color="#fff" />
   </div>
 
-  <ElDrawer v-model="drawer" direction="rtl" size="350px" :z-index="4000">
-    <template #header>
+  <ADrawer v-model:open="drawer" placement="right" width="350px" :z-index="4000">
+    <template #title>
       <span class="text-16px font-700">{{ t('setting.projectSetting') }}</span>
     </template>
 
     <div class="text-center">
       <!-- 主题 -->
-      <ElDivider>{{ t('setting.theme') }}</ElDivider>
+      <ADivider>{{ t('setting.theme') }}</ADivider>
       <ThemeSwitch />
 
       <!-- 布局 -->
-      <ElDivider>{{ t('setting.layout') }}</ElDivider>
+      <ADivider>{{ t('setting.layout') }}</ADivider>
       <LayoutRadioPicker />
 
       <!-- 系统主题 -->
-      <ElDivider>{{ t('setting.systemTheme') }}</ElDivider>
-      <ColorRadioPicker
-        v-model="systemTheme"
-        :schema="[
-          '#409eff',
-          '#009688',
-          '#536dfe',
-          '#ff5c93',
-          '#ee4f12',
-          '#0096c7',
-          '#9c27b0',
-          '#ff9800'
-        ]"
-        @change="setSystemTheme"
-      />
+      <ADivider>{{ t('setting.systemTheme') }}</ADivider>
+      <ColorRadioPicker v-model="systemTheme" :schema="['#409eff', '#009688', '#536dfe', '#ff5c93', '#ee4f12', '#0096c7', '#9c27b0', '#ff9800']" @change="setSystemTheme" />
 
       <!-- 头部主题 -->
-      <ElDivider>{{ t('setting.headerTheme') }}</ElDivider>
-      <ColorRadioPicker
-        v-model="headerTheme"
-        :schema="[
-          '#fff',
-          '#151515',
-          '#5172dc',
-          '#e74c3c',
-          '#24292e',
-          '#394664',
-          '#009688',
-          '#383f45'
-        ]"
-        @change="setHeaderTheme"
-      />
+      <ADivider>{{ t('setting.headerTheme') }}</ADivider>
+      <ColorRadioPicker v-model="headerTheme" :schema="['#fff', '#151515', '#5172dc', '#e74c3c', '#24292e', '#394664', '#009688', '#383f45']" @change="setHeaderTheme" />
 
       <!-- 菜单主题 -->
       <template v-if="layout !== 'top'">
-        <ElDivider>{{ t('setting.menuTheme') }}</ElDivider>
-        <ColorRadioPicker
-          v-model="menuTheme"
-          :schema="[
-            '#fff',
-            '#001529',
-            '#212121',
-            '#273352',
-            '#191b24',
-            '#383f45',
-            '#001628',
-            '#344058'
-          ]"
-          @change="setMenuTheme"
-        />
+        <ADivider>{{ t('setting.menuTheme') }}</ADivider>
+        <ColorRadioPicker v-model="menuTheme" :schema="['#fff', '#001529', '#212121', '#273352', '#191b24', '#383f45', '#001628', '#344058']" @change="setMenuTheme" />
       </template>
     </div>
 
     <!-- 界面显示 -->
-    <ElDivider>{{ t('setting.interfaceDisplay') }}</ElDivider>
+    <ADivider>{{ t('setting.interfaceDisplay') }}</ADivider>
     <InterfaceDisplay />
 
-    <ElDivider />
+    <ADivider />
     <div>
-      <ElButton type="primary" class="w-full" @click="copyConfig">{{ t('setting.copy') }}</ElButton>
+      <AButton type="primary" block @click="copyConfig">{{ t('setting.copy') }}</AButton>
     </div>
     <div class="mt-5px">
-      <ElButton type="danger" class="w-full" @click="clear">
+      <AButton danger block @click="clear">
         {{ t('setting.clearAndReset') }}
-      </ElButton>
+      </AButton>
     </div>
-  </ElDrawer>
+  </ADrawer>
 </template>
 
 <style lang="less" scoped>

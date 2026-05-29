@@ -1,15 +1,18 @@
 import introJs from 'intro.js'
-import { IntroJs, Step, Options } from 'intro.js'
 import 'intro.js/introjs.css'
 import { useI18n } from '@/hooks/web/useI18n'
 import { useDesign } from '@/hooks/web/useDesign'
 
-export const useIntro = (setps?: Step[], options?: Options) => {
+type IntroInstance = ReturnType<typeof introJs>
+type IntroStep = Parameters<IntroInstance['addSteps']>[0][number]
+type IntroOptions = Parameters<IntroInstance['setOptions']>[0]
+
+export const useIntro = (steps?: IntroStep[], options?: IntroOptions) => {
   const { t } = useI18n()
 
   const { variables } = useDesign()
 
-  const defaultSetps: Step[] = setps || [
+  const defaultSteps: IntroStep[] = steps || [
     {
       element: `#${variables.namespace}-menu`,
       title: t('common.menu'),
@@ -30,16 +33,16 @@ export const useIntro = (setps?: Step[], options?: Options) => {
     }
   ]
 
-  const defaultOptions: Options = options || {
+  const defaultOptions: IntroOptions = options || {
     prevLabel: t('common.prevLabel'),
     nextLabel: t('common.nextLabel'),
     skipLabel: t('common.skipLabel'),
     doneLabel: t('common.doneLabel')
   }
 
-  const introRef: IntroJs = introJs()
+  const introRef: IntroInstance = introJs()
 
-  introRef.addSteps(defaultSetps).setOptions(defaultOptions)
+  introRef.addSteps(defaultSteps).setOptions(defaultOptions)
 
   return {
     introRef

@@ -126,61 +126,37 @@ export const usePermissionStore = defineStore('permission', {
     },
 
     ConvertFormat(routers: MyCustomRouteRaw[]): AppCustomRouteRecordRaw[] {
-      const records: AppCustomRouteRecordRaw[] = []
-      for (const rec of routers) {
-        const item: AppCustomRouteRecordRaw = {
-          path: '',
-          name: '',
-          component: '',
-          meta: undefined,
-          redirect: ''
-        }
-        item.path = rec.path
-        item.name = rec.name
-        item.component = rec.component
-        let redirect = ''
-        if (rec.redirect != null) {
-          redirect = rec.redirect
-        }
-        item.redirect = redirect
-        const meta1: RouteMeta = {}
-        meta1.alwaysShow = rec.meta.alwaysShow
-
-        meta1.icon = rec.meta.icon
-        meta1.title = rec.meta.title
-        meta1.hidden = false
-        item.meta = meta1
-
-        if (rec.children && rec.children.length > 0) {
-          const _chilren: AppCustomRouteRecordRaw[] = []
-          for (const c1 of rec.children) {
-            const _item: AppCustomRouteRecordRaw = {
-              path: '',
-              name: '',
-              component: '',
-              meta: undefined,
-              redirect: ''
-            }
-            _item.path = c1.path
-            _item.name = c1.name
-            _item.component = c1.component
-            let rr = ''
-            if (c1.redirect != null && c1.redirect != undefined) {
-              rr = c1.redirect
-            }
-            _item.redirect = rr
-            const meta2: RouteMeta = {}
-
-            meta2.title = c1.meta.title
-            meta2.noCache = true
-            _item.meta = meta2
-            _chilren.push(_item)
-          }
-          item.children = _chilren
-        }
-        records.push(item)
+      const isDisabled = (status?: boolean | string | number | null) => {
+        const normalizedStatus = String(status).toLowerCase()
+        return ['true', '1', 'disabled', 'disable', '禁用'].includes(normalizedStatus)
       }
-      return records
+
+      const convertRoute = (route: MyCustomRouteRaw): AppCustomRouteRecordRaw => {
+        const children = (route.children || []).map(convertRoute)
+        const title = route.label || route.meta?.title || route.name
+        const meta: RouteMeta = {
+          alwaysShow: Boolean(route.meta?.alwaysShow),
+          icon: route.meta?.icon,
+          title,
+          hidden: isDisabled(route.status) || isDisabled(route.meta?.status)
+        }
+
+        const item: AppCustomRouteRecordRaw = {
+          path: route.path,
+          name: route.name,
+          component: route.component,
+          redirect: route.redirect || '',
+          meta
+        }
+
+        if (children.length) {
+          item.children = children
+        }
+
+        return item
+      }
+
+      return (routers || []).map(convertRoute)
     },
 
     setIsAddRouters(state: boolean): void {

@@ -3,7 +3,7 @@ import { usePermissionStore } from '@/store/modules/permission'
 import { useAppStore } from '@/store/modules/app'
 import { computed, unref, defineComponent, watch, ref, onMounted } from 'vue'
 import { useI18n } from '@/hooks/web/useI18n'
-import { ElScrollbar } from 'element-plus'
+import { Button as AButton } from 'ant-design-vue'
 import { Icon } from '@/components/Icon'
 import { Menu } from '@/components/Menu'
 import { useRouter } from 'vue-router'
@@ -43,11 +43,7 @@ export default defineComponent({
     onMounted(() => {
       if (unref(fixedMenu)) {
         const path = `/${unref(currentRoute).path.split('/')[1]}`
-        const children = unref(tabRouters).find(
-          (v) =>
-            (v.meta?.alwaysShow || (v?.children?.length && v?.children?.length > 1)) &&
-            v.path === path
-        )?.children
+        const children = unref(tabRouters).find((v) => (v.meta?.alwaysShow || (v?.children?.length && v?.children?.length > 1)) && v.path === path)?.children
 
         tabActive.value = path
         if (children) {
@@ -149,7 +145,7 @@ export default defineComponent({
         ]}
         onMouseleave={mouseleave}
       >
-        <ElScrollbar class="!h-[calc(100%-var(--tab-menu-collapse-height)-1px)]">
+        <div class={[`${prefixCls}__scroll`, '!h-[calc(100%-var(--tab-menu-collapse-height)-1px)]']}>
           <div>
             {() => {
               return unref(tabRouters).map((v) => {
@@ -177,24 +173,16 @@ export default defineComponent({
                     <div>
                       <Icon icon={item?.meta?.icon}></Icon>
                     </div>
-                    {!unref(showTitle) ? undefined : (
-                      <p class="break-words mt-5px px-2px">{t(item.meta?.title)}</p>
-                    )}
+                    {!unref(showTitle) ? undefined : <p class="break-words mt-5px px-2px">{t(item.meta?.title)}</p>}
                   </div>
                 )
               })
             }}
           </div>
-        </ElScrollbar>
-        <div
-          class={[
-            `${prefixCls}--collapse`,
-            'text-center h-[var(--tab-menu-collapse-height)] leading-[var(--tab-menu-collapse-height)] cursor-pointer'
-          ]}
-          onClick={setCollapse}
-        >
-          <Icon icon={unref(collapse) ? 'ep:d-arrow-right' : 'ep:d-arrow-left'}></Icon>
         </div>
+        <AButton type="text" block class={[`${prefixCls}--collapse`, '!h-[var(--tab-menu-collapse-height)] !rounded-none']} onClick={setCollapse}>
+          <Icon icon={unref(collapse) ? 'ant-design:double-right-outlined' : 'ant-design:double-left-outlined'}></Icon>
+        </AButton>
         <Menu
           class={[
             '!absolute top-0 border-left-1 border-solid border-[var(--left-menu-bg-light-color)]',
@@ -229,6 +217,21 @@ export default defineComponent({
     content: '';
   }
 
+  &__scroll {
+    overflow: auto;
+    scrollbar-width: thin;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: rgb(255 255 255 / 20%);
+      border-radius: 6px;
+    }
+  }
+
   &__item {
     color: var(--left-menu-text-color);
     transition: all var(--transition-time-02);
@@ -243,6 +246,12 @@ export default defineComponent({
     color: var(--left-menu-text-color);
     background-color: var(--left-menu-bg-light-color);
     border-top: 1px solid var(--left-menu-border-color);
+
+    &:hover,
+    &:focus {
+      color: var(--left-menu-text-active-color);
+      background-color: var(--left-menu-bg-light-color);
+    }
   }
 
   .is-active {

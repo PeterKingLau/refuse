@@ -1,6 +1,6 @@
-<script lang="tsx">
-import { computed, defineComponent, unref, PropType } from 'vue'
-import { ElMenu, ElScrollbar } from 'element-plus'
+﻿<script lang="tsx">
+import { computed, defineComponent, unref, PropType, ref, watch } from 'vue'
+import { Menu as AntMenu } from 'ant-design-vue'
 import { useAppStore } from '@/store/modules/app'
 import { usePermissionStore } from '@/store/modules/permission'
 import { useRenderMenuItem } from './components/useRenderMenuItem'
@@ -8,6 +8,7 @@ import { useRouter } from 'vue-router'
 import { isUrl } from '@/utils/is'
 import { useDesign } from '@/hooks/web/useDesign'
 import { LayoutType } from '@/types/layout'
+import { pathResolve } from '@/utils/routerHelper'
 
 const { getPrefixCls } = useDesign()
 
@@ -31,7 +32,6 @@ export default defineComponent({
     const permissionStore = usePermissionStore()
 
     const menuMode = computed((): 'vertical' | 'horizontal' => {
-      // 竖
       const vertical: LayoutType[] = ['classic', 'topLeft', 'cutMenu']
 
       if (vertical.includes(unref(layout))) {
@@ -41,29 +41,61 @@ export default defineComponent({
       }
     })
 
-    const routers = computed(() =>
-      unref(layout) === 'cutMenu' ? permissionStore.getMenuTabRouters : permissionStore.getRouters
-    )
+    const routers = computed(() => (unref(layout) === 'cutMenu' ? permissionStore.getMenuTabRouters : permissionStore.getRouters))
 
     const collapse = computed(() => appStore.getCollapse)
 
-    const uniqueOpened = computed(() => appStore.getUniqueOpened)
-
     const activeMenu = computed(() => {
       const { meta, path } = unref(currentRoute)
-      // if set path, the sidebar will highlight the path you set
       if (meta.activeMenu) {
         return meta.activeMenu as string
       }
       return path
     })
 
-    const menuSelect = (index: string) => {
+    const openKeys = ref<string[]>([])
+
+    const getActiveOpenKeys = (menuRouters: AppRouteRecordRaw[], targetPath: string, parentPath = '/'): string[] => {
+      for (const route of menuRouters) {
+        if (route?.meta?.hidden) continue
+
+        const fullPath = isUrl(route.path) ? route.path : pathResolve(parentPath, route.path)
+        const childOpenKeys = route.children?.length ? getActiveOpenKeys(route.children, targetPath, fullPath) : []
+
+        if (childOpenKeys.length > 0) {
+          return [fullPath, ...childOpenKeys]
+        }
+
+        if (route.children?.length && targetPath.startsWith(`${fullPath}/`)) {
+          return [fullPath]
+        }
+      }
+
+      return []
+    }
+
+    watch(
+      [activeMenu, routers, collapse, menuMode],
+      () => {
+        if (unref(menuMode) !== 'vertical' || unref(collapse)) {
+          openKeys.value = []
+          return
+        }
+
+        openKeys.value = getActiveOpenKeys(unref(routers), unref(activeMenu))
+      },
+      {
+        immediate: true
+      }
+    )
+
+    const menuSelect = (index?: string | number | symbol | null) => {
+      if (typeof index !== 'string' || !index) return
+
       if (props.menuSelect) {
         props.menuSelect(index)
       }
 
-      // 自定义事件
       if (isUrl(index)) {
         console.log('windows.open')
         window.open(index)
@@ -76,23 +108,25 @@ export default defineComponent({
       if (unref(layout) === 'top') {
         return renderMenu()
       } else {
-        return <ElScrollbar>{renderMenu()}</ElScrollbar>
+        return <div class={`${prefixCls}__scroll`}>{renderMenu()}</div>
       }
     }
 
     const renderMenu = () => {
+      const mode = unref(menuMode) === 'vertical' ? 'inline' : 'horizontal'
+      const isCollapsed = unref(layout) === 'top' || unref(layout) === 'cutMenu' ? false : unref(collapse)
+      const currentOpenKeys = mode === 'inline' && !isCollapsed ? unref(openKeys) : undefined
+
       return (
-        <ElMenu
-          defaultActive={unref(activeMenu)}
-          mode={unref(menuMode)}
-          collapse={
-            unref(layout) === 'top' || unref(layout) === 'cutMenu' ? false : unref(collapse)
-          }
-          uniqueOpened={unref(layout) === 'top' ? false : unref(uniqueOpened)}
-          backgroundColor="var(--left-menu-bg-color)"
-          textColor="var(--left-menu-text-color)"
-          activeTextColor="var(--left-menu-text-active-color)"
-          onSelect={menuSelect}
+        <AntMenu
+          selectedKeys={[unref(activeMenu)]}
+          openKeys={currentOpenKeys}
+          mode={mode}
+          inlineCollapsed={mode === 'inline' ? isCollapsed : undefined}
+          onClick={({ key }) => menuSelect(key)}
+          onOpenChange={(keys) => {
+            openKeys.value = keys as string[]
+          }}
         >
           {{
             default: () => {
@@ -100,7 +134,7 @@ export default defineComponent({
               return renderMenuItem(unref(routers))
             }
           }}
-        </ElMenu>
+        </AntMenu>
       )
     }
 
@@ -109,7 +143,7 @@ export default defineComponent({
         id={prefixCls}
         class={[
           `${prefixCls} ${prefixCls}__${unref(menuMode)}`,
-          'h-[100%] overflow-hidden flex-col bg-[var(--left-menu-bg-color)]',
+          'h-[100%] overflow-hidden flex-col bg-[var(--left-menu-bg-color)] shadow-[inset_-1px_0_0_var(--left-menu-border-color)]',
           {
             'w-[var(--left-menu-min-width)]': unref(collapse) && unref(layout) !== 'cutMenu',
             'w-[var(--left-menu-max-width)]': !unref(collapse) && unref(layout) !== 'cutMenu'
@@ -132,12 +166,14 @@ export default defineComponent({
   right: 0;
   width: 4px;
   height: 100%;
-  background-color: var(--el-color-primary);
+  background-color: var(--app-color-primary);
   content: '';
 }
 
 .@{prefix-cls} {
   position: relative;
+  overflow: hidden;
+  padding-top: 3px;
   transition: width var(--transition-time-02);
 
   &:after {
@@ -149,29 +185,29 @@ export default defineComponent({
     content: '';
   }
 
-  :deep(.@{elNamespace}-menu) {
+  :deep(.ant-menu) {
     width: 100% !important;
+    max-height: 100%;
     border-right: none;
+    color: var(--left-menu-text-color);
+    background: transparent !important;
+    border-inline-end: 0;
 
-    // 设置选中时子标题的颜色
-    .is-active {
-      & > .@{elNamespace}-sub-menu__title {
+    .ant-menu-submenu-selected {
+      & > .ant-menu-submenu-title {
         color: var(--left-menu-text-active-color) !important;
       }
     }
 
-    // 设置子菜单悬停的高亮和背景色
-    .@{elNamespace}-sub-menu__title,
-    .@{elNamespace}-menu-item {
+    .ant-menu-submenu-title,
+    .ant-menu-item {
       &:hover {
         color: var(--left-menu-text-active-color) !important;
-        background-color: var(--left-menu-bg-color) !important;
+        background-color: rgb(255 255 255 / 7%) !important;
       }
     }
 
-    // 设置选中时的高亮背景和高亮颜色
-    .@{elNamespace}-sub-menu.is-active,
-    .@{elNamespace}-menu-item.is-active {
+    .ant-menu-item-selected {
       color: var(--left-menu-text-active-color) !important;
       background-color: var(--left-menu-bg-active-color) !important;
 
@@ -180,61 +216,190 @@ export default defineComponent({
       }
     }
 
-    .@{elNamespace}-menu-item.is-active {
+    .ant-menu-item-selected {
       position: relative;
 
       &:after {
-        .is-active--after;
+        display: none;
       }
     }
 
-    // 设置子菜单的背景颜色
-    .@{elNamespace}-menu {
-      .@{elNamespace}-sub-menu__title,
-      .@{elNamespace}-menu-item:not(.is-active) {
-        background-color: var(--left-menu-bg-light-color) !important;
+    .ant-menu-sub {
+      color: var(--left-menu-text-color);
+      background: transparent !important;
+
+      .ant-menu-submenu-title,
+      .ant-menu-item:not(.ant-menu-item-selected) {
+        background-color: transparent !important;
       }
     }
   }
 
-  // 折叠时的最小宽度
-  :deep(.@{elNamespace}-menu--collapse) {
+  &__scroll {
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+
+    :deep(.ant-menu) {
+      min-height: 100%;
+      overflow: visible;
+    }
+  }
+
+  :deep(.ant-menu-inline),
+  :deep(.ant-menu-vertical) {
+    padding: 0 8px 10px;
+  }
+
+  :deep(.ant-menu-item),
+  :deep(.ant-menu-submenu-title) {
+    width: 100% !important;
+    height: 42px !important;
+    margin: 4px 0 !important;
+    padding-inline: 24px 14px !important;
+    color: var(--left-menu-text-color) !important;
+    line-height: 42px !important;
+    border-radius: 8px !important;
+  }
+
+  :deep(.ant-menu-inline-collapsed > .ant-menu-item),
+  :deep(.ant-menu-inline-collapsed > .ant-menu-submenu > .ant-menu-submenu-title) {
+    padding-inline: calc(50% - 8px) !important;
+  }
+
+  :deep(.ant-menu-item:hover),
+  :deep(.ant-menu-submenu-title:hover) {
+    color: var(--left-menu-text-active-color) !important;
+    background: rgb(255 255 255 / 8%) !important;
+  }
+
+  :deep(.ant-menu-item-selected) {
+    color: var(--left-menu-text-active-color) !important;
+    background: var(--left-menu-bg-active-color) !important;
+    box-shadow:
+      0 0 0 1px rgb(255 255 255 / 18%) inset,
+      0 8px 18px rgb(22 119 255 / 35%);
+  }
+
+  :deep(.ant-menu-submenu-selected > .ant-menu-submenu-title) {
+    color: var(--left-menu-text-active-color) !important;
+  }
+
+  :deep(.ant-menu-submenu-arrow) {
+    color: currentcolor !important;
+  }
+
+  :deep(.ant-menu-title-content) {
+    min-width: 0;
+    margin-inline-start: 0;
+    font-weight: 600;
+  }
+
+  :deep(.v-menu__title-wrap) {
+    display: inline-flex;
+    width: 100%;
+    min-width: 0;
+    align-items: center;
+    vertical-align: middle;
+  }
+
+  :deep(.v-menu__icon) {
+    display: inline-flex;
+    width: 16px;
+    min-width: 16px;
+    height: 16px;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
+  :deep(.v-menu__title) {
+    display: inline-block;
+    min-width: 0;
+    margin-left: 10px;
+    overflow: hidden;
+    font-size: 14px;
+    letter-spacing: 0;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  :deep(.ant-menu-item-icon),
+  :deep(.ant-menu-submenu-title .anticon),
+  :deep(.ant-menu-submenu-title svg),
+  :deep(.v-menu__icon span),
+  :deep(.v-menu__icon iconify-icon) {
+    color: currentcolor;
+    font-size: 16px;
+  }
+
+  :deep(.ant-menu-sub) {
+    padding: 0 0 2px;
+  }
+
+  :deep(.ant-menu-sub .ant-menu-item),
+  :deep(.ant-menu-sub .ant-menu-submenu-title) {
+    height: 42px !important;
+    margin: 0 !important;
+    padding-left: 48px !important;
+    font-size: 14px;
+    line-height: 42px !important;
+    border-radius: 8px !important;
+    box-shadow: none;
+  }
+
+  :deep(.ant-menu-sub .ant-menu-item-selected) {
+    background: rgb(22 119 255 / 18%) !important;
+    box-shadow: none;
+  }
+
+  :deep(.ant-menu-sub .ant-menu-title-content) {
+    margin-inline-start: 0;
+    font-weight: 600;
+  }
+
+  :deep(.ant-menu-inline-collapsed) {
     width: var(--left-menu-min-width);
 
-    & > .is-active,
-    & > .is-active > .@{elNamespace}-sub-menu__title {
+    & > .ant-menu-item-selected {
       position: relative;
       background-color: var(--left-menu-collapse-bg-active-color) !important;
 
       &:after {
-        .is-active--after;
+        display: none;
       }
     }
   }
 
-  // 折叠动画的时候，就需要把文字给隐藏掉
   :deep(.horizontal-collapse-transition) {
-    // transition: 0s width ease-in-out, 0s padding-left ease-in-out, 0s padding-right ease-in-out !important;
     .@{prefix-cls}__title {
       display: none;
     }
   }
 
-  // 水平菜单
   &__horizontal {
     height: calc(~'var(--top-tool-height)') !important;
 
-    :deep(.@{elNamespace}-menu--horizontal) {
+    :deep(.ant-menu-horizontal) {
       height: calc(~'var(--top-tool-height)');
       border-bottom: none;
-      // 重新设置底部高亮颜色
-      & > .@{elNamespace}-sub-menu.is-active {
-        .@{elNamespace}-sub-menu__title {
-          border-bottom-color: var(--el-color-primary) !important;
+
+      & > .ant-menu-submenu-selected {
+        .ant-menu-submenu-title {
+          border-bottom-color: var(--app-color-primary) !important;
         }
       }
 
-      .@{elNamespace}-menu-item.is-active {
+      .ant-menu-item-selected {
         position: relative;
 
         &:after {
@@ -243,9 +408,7 @@ export default defineComponent({
       }
 
       .@{prefix-cls}__title {
-        /* stylelint-disable-next-line */
         max-height: calc(~'var(--top-tool-height) - 2px') !important;
-        /* stylelint-disable-next-line */
         line-height: calc(~'var(--top-tool-height) - 2px');
       }
     }
@@ -262,30 +425,87 @@ export default defineComponent({
   right: 0;
   width: 4px;
   height: 100%;
-  background-color: var(--el-color-primary);
+  background-color: var(--app-color-primary);
   content: '';
 }
 
 .@{prefix-cls}--vertical,
 .@{prefix-cls}--horizontal {
-  // 设置选中时子标题的颜色
-  .is-active {
-    & > .el-sub-menu__title {
+  .ant-menu {
+    padding: 6px;
+  }
+
+  .ant-menu-submenu-selected {
+    & > .ant-menu-submenu-title {
       color: var(--left-menu-text-active-color) !important;
     }
   }
 
-  // 设置子菜单悬停的高亮和背景色
-  .el-sub-menu__title,
-  .el-menu-item {
+  .ant-menu-submenu-title,
+  .ant-menu-item {
+    display: flex !important;
+    height: 40px !important;
+    margin: 2px 0 !important;
+    padding-inline: 14px 16px !important;
+    line-height: 40px !important;
+    align-items: center !important;
+    border-radius: 6px !important;
+
     &:hover {
       color: var(--left-menu-text-active-color) !important;
       background-color: var(--left-menu-bg-color) !important;
     }
   }
 
-  // 设置选中时的高亮背景
-  .el-menu-item.is-active {
+  .ant-menu-title-content {
+    display: inline-flex;
+    min-width: 0;
+    margin-inline-start: 0 !important;
+    line-height: 1;
+    align-items: center;
+  }
+
+  .v-menu__title-wrap {
+    display: inline-flex;
+    width: 100%;
+    min-width: 0;
+    line-height: 1;
+    align-items: center;
+  }
+
+  .v-menu__icon {
+    display: inline-flex;
+    width: 18px;
+    min-width: 18px;
+    height: 18px;
+    margin-right: 10px;
+    line-height: 1;
+    align-items: center;
+    justify-content: center;
+
+    .v-icon,
+    span,
+    iconify-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+  }
+
+  .v-menu__title {
+    display: inline-flex;
+    min-width: 0;
+    margin-left: 0;
+    overflow: hidden;
+    font-size: 14px;
+    line-height: 18px;
+    align-items: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ant-menu-item.ant-menu-item-selected {
     position: relative;
     background-color: var(--left-menu-bg-active-color) !important;
 
@@ -294,7 +514,7 @@ export default defineComponent({
     }
 
     &:after {
-      .is-active--after;
+      display: none;
     }
   }
 }

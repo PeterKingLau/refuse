@@ -2,7 +2,7 @@
 import Write from './components/Write.vue'
 import { ContentDetailWrap } from '@/components/ContentDetailWrap'
 import { ref, unref } from 'vue'
-import { ElButton } from 'element-plus'
+import { Button as AButton } from 'ant-design-vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import { useRouter, useRoute } from 'vue-router'
 import { saveTableApi, getTableDetApi } from '@/api/table'
@@ -56,9 +56,9 @@ const save = async () => {
     <Write ref="writeRef" :current-row="currentRow" />
 
     <template #right>
-      <ElButton type="primary" :loading="loading" @click="save">
+      <AButton type="primary" :loading="loading" @click="save">
         {{ t('exampleDemo.save') }}
-      </ElButton>
+      </AButton>
     </template>
   </ContentDetailWrap>
 </template>

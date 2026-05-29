@@ -1,4 +1,4 @@
-<script lang="tsx">
+﻿<script lang="tsx">
 import { computed, defineComponent, unref } from 'vue'
 import { useAppStore } from '@/store/modules/app'
 import { Backtop } from '@/components/Backtop'
@@ -48,12 +48,7 @@ export default defineComponent({
   setup() {
     return () => (
       <section class={[prefixCls, `${prefixCls}__${layout.value}`, 'w-[100%] h-[100%] relative']}>
-        {mobile.value && !collapse.value ? (
-          <div
-            class="absolute top-0 left-0 w-full h-full opacity-30 z-99 bg-[var(--el-color-black)]"
-            onClick={handleClickOutside}
-          ></div>
-        ) : undefined}
+        {mobile.value && !collapse.value ? <div class="absolute top-0 left-0 w-full h-full opacity-30 z-99 bg-[var(--app-color-black)]" onClick={handleClickOutside}></div> : undefined}
 
         {renderLayout()}
 
@@ -71,7 +66,14 @@ export default defineComponent({
 
 .@{prefix-cls} {
   background-color: var(--app-content-bg-color);
-  :deep(.@{elNamespace}-scrollbar__view) {
+
+  :deep(.@{prefix-cls}-content-scrollbar) {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+  }
+
+  :deep(.@{prefix-cls}-content-scrollbar__view) {
     height: 100% !important;
   }
 }

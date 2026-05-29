@@ -6,16 +6,12 @@ import WindiCSS from 'vite-plugin-windicss'
 import VueJsx from '@vitejs/plugin-vue-jsx'
 import EslintPlugin from 'vite-plugin-eslint'
 import VueI18n from '@intlify/unplugin-vue-i18n/vite'
-import { createStyleImportPlugin, ElementPlusResolve } from 'vite-plugin-style-import'
 import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
 import { createHtmlPlugin } from 'vite-plugin-html'
 import VueMarcos from 'unplugin-vue-macros/vite'
 
-
 // https://vitejs.dev/config/
 const root = process.cwd()
-
-
 
 function pathResolve(dir: string) {
   return resolve(root, '.', dir)
@@ -25,10 +21,9 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
   let env = {} as any
   const isBuild = command === 'build'
   if (!isBuild) {
-    env = loadEnv((process.argv[3] === '--mode' ? process.argv[4] : process.argv[3]), root)
+    env = loadEnv(process.argv[3] === '--mode' ? process.argv[4] : process.argv[3], root)
   } else {
     env = loadEnv(mode, root)
-    
   }
   return {
     base: env.VITE_BASE_PATH,
@@ -36,22 +31,12 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
       Vue({
         template: {
           compilerOptions: {
-            isCustomElement: tag => tag === 'iconify-icon'
+            isCustomElement: (tag) => tag === 'iconify-icon'
           }
         }
       }),
       VueJsx(),
       WindiCSS(),
-      createStyleImportPlugin({
-        resolves: [ElementPlusResolve()],
-        libs: [{
-          libraryName: 'element-plus',
-          esModule: true,
-          resolveStyle: (name) => {
-            return `element-plus/es/components/${name.substring(3)}/style/css`
-          }
-        }]
-      }),
       EslintPlugin({
         cache: false,
         include: ['src/**/*.vue', 'src/**/*.ts', 'src/**/*.tsx'] // 检查的文件
@@ -71,7 +56,7 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
         inject: {
           data: {
             title: env.VITE_APP_TITLE,
-            injectScript: `<script src="./inject.js"></script>`,
+            injectScript: `<script src="./inject.js"></script>`
           }
         }
       })
@@ -115,9 +100,9 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
       proxy: {
         // 选项写法
         '/api': {
-          target: 'http://47.108.212.205:9527',
+          target: 'http://192.168.100.26:9527',
           changeOrigin: true,
-          rewrite: path => path.replace(/^\/api/, '')
+          rewrite: (path) => path.replace(/^\/api/, '')
         }
       },
       hmr: {
@@ -130,8 +115,8 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
         'vue',
         'vue-router',
         'vue-types',
-        'element-plus/es/locale/lang/zh-cn',
-        'element-plus/es/locale/lang/en',
+        'ant-design-vue',
+        '@antv/g2',
         'iconify-icon',
         '@vueuse/core',
         'axios',

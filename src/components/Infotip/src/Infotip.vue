@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { PropType } from 'vue'
 import { Highlight } from '@/components/Highlight'
 import { useDesign } from '@/hooks/web/useDesign'
@@ -17,7 +17,7 @@ defineProps({
     default: () => []
   },
   showIndex: propTypes.bool.def(true),
-  highlightColor: propTypes.string.def('var(--el-color-primary)')
+  highlightColor: propTypes.string.def('var(--app-color-primary)')
 })
 
 const emit = defineEmits(['click'])
@@ -28,23 +28,14 @@ const keyClick = (key: string) => {
 </script>
 
 <template>
-  <div
-    :class="[
-      prefixCls,
-      'p-20px mb-20px border-1px border-solid border-[var(--el-color-primary)] bg-[var(--el-color-primary-light-9)]'
-    ]"
-  >
+  <div :class="[prefixCls, 'p-20px mb-20px border-1px border-solid border-[var(--app-color-primary)] bg-[var(--app-color-primary-light-9)]']">
     <div v-if="title" :class="[`${prefixCls}__header`, 'flex items-center']">
-      <Icon icon="bi:exclamation-circle-fill" :size="22" color="var(--el-color-primary)" />
+      <Icon icon="bi:exclamation-circle-fill" :size="22" color="var(--app-color-primary)" />
       <span :class="[`${prefixCls}__title`, 'pl-5px text-16px font-bold']">{{ title }}</span>
     </div>
     <div :class="`${prefixCls}__content`">
       <p v-for="(item, $index) in schema" :key="$index" class="text-14px mt-15px">
-        <Highlight
-          :keys="typeof item === 'string' ? [] : item.keys"
-          :color="highlightColor"
-          @click="keyClick"
-        >
+        <Highlight :keys="typeof item === 'string' ? [] : item.keys" :color="highlightColor" @click="keyClick">
           {{ showIndex ? `${$index + 1}、` : '' }}{{ typeof item === 'string' ? item : item.label }}
         </Highlight>
       </p>

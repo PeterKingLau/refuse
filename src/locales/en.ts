@@ -284,8 +284,7 @@ export default {
     inputPassword: 'input Password',
     passwordStrength: 'Password Strength',
     defaultForm: 'All examples',
-    formDes:
-      'The secondary encapsulation of form components based on ElementPlus realizes data-driven and supports all Form parameters',
+    formDes: 'The secondary encapsulation of form components based on Ant Design Vue realizes data-driven and supports all Form parameters',
     example: 'example',
     operate: 'operate',
     change: 'Change',
@@ -304,27 +303,23 @@ export default {
   guideDemo: {
     guide: 'Guide',
     start: 'Start',
-    message:
-      'The guide page is very useful for some people who enter the project for the first time. You can briefly introduce the functions of the project. The boot page is based on intro js'
+    message: 'The guide page is very useful for some people who enter the project for the first time. You can briefly introduce the functions of the project. The boot page is based on intro js'
   },
   iconDemo: {
     icon: 'Icon',
     localIcon: 'Local Icon',
     iconify: 'Iconify component',
     recommendedUse: 'Recommended use',
-    recommendeDes:
-      'Iconify component basically contains all icons. You can query any icon you want. And packaging will only package the icons used.',
+    recommendeDes: 'Iconify component basically contains all icons. You can query any icon you want. And packaging will only package the icons used.',
     accessAddress: 'Access address'
   },
   echartDemo: {
     echart: 'Echart',
-    echartDes:
-      'Based on the secondary packaging components of eckarts, the width is adaptive. The corresponding chart can be displayed by passing in the options and height attributes.'
+    echartDes: 'Based on the secondary packaging components of eckarts, the width is adaptive. The corresponding chart can be displayed by passing in the options and height attributes.'
   },
   countToDemo: {
     countTo: 'CountTo',
-    countToDes:
-      'The transformation is based on vue-count-to and supports all vue-count-to parameters.',
+    countToDes: 'The transformation is based on vue-count-to and supports all vue-count-to parameters.',
     suffix: 'Suffix',
     prefix: 'Prefix',
     separator: 'Separator',
@@ -370,8 +365,7 @@ export default {
   },
   searchDemo: {
     search: 'Search',
-    searchDes:
-      'Based on the secondary encapsulation of form components, the functions of query and reset are realized',
+    searchDes: 'Based on the secondary encapsulation of form components, the functions of query and reset are realized',
     operate: 'operate',
     change: 'Change',
     grid: 'grid',
@@ -390,7 +384,7 @@ export default {
   },
   tableDemo: {
     table: 'Table',
-    tableDes: 'Secondary packaging of Table components based on ElementPlus',
+    tableDes: 'Secondary packaging of Table components based on Ant Design Vue',
     index: 'Index',
     title: 'Title',
     author: 'Author',
@@ -422,7 +416,7 @@ export default {
   },
   dialogDemo: {
     dialog: 'Dialog',
-    dialogDes: 'Secondary packaging of Dialog components based on ElementPlus',
+    dialogDes: 'Secondary packaging of Dialog components based on Ant Design Vue',
     open: 'Open',
     close: 'Close',
     combineWithForm: 'Combine with form',
@@ -431,11 +425,11 @@ export default {
   imageViewerDemo: {
     open: 'Open',
     imageViewer: 'Image viewer',
-    imageViewerDes: 'Secondary packaging of ImageViewer components based on ElementPlus'
+    imageViewerDes: 'Secondary packaging of ImageViewer components based on Ant Design Vue'
   },
   descriptionsDemo: {
     descriptions: 'Descriptions',
-    descriptionsDes: 'Secondary packaging of Descriptions components based on ElementPlus',
+    descriptionsDes: 'Secondary packaging of Descriptions components based on Ant Design Vue',
     username: 'Username',
     nickName: 'NickName',
     phone: 'Phone',
@@ -459,8 +453,7 @@ export default {
   },
   userDemo: {
     title: 'User management',
-    message:
-      'Because it is simulated data, only two accounts with different permissions are provided, which can be modified and combined by developers according to the actual situation.',
+    message: 'Because it is simulated data, only two accounts with different permissions are provided, which can be modified and combined by developers according to the actual situation.',
     index: 'Index',
     action: 'Action',
     username: 'Username',
@@ -472,6 +465,6 @@ export default {
   },
   inputPasswordDemo: {
     title: 'InputPassword',
-    inputPasswordDes: 'Secondary packaging of Input components based on ElementPlus'
+    inputPasswordDes: 'Secondary packaging of Input components based on Ant Design Vue'
   }
 }

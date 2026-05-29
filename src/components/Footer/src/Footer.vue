@@ -13,10 +13,37 @@ const title = computed(() => appStore.getTitle)
 </script>
 
 <template>
-  <div
-    :class="prefixCls"
-    class="text-center text-[var(--el-text-color-placeholder)] bg-[var(--app-content-bg-color)] h-[var(--app-footer-height)] leading-[var(--app-footer-height)] dark:bg-[var(--el-bg-color)]"
-  >
-    Copyright ©2021-present {{ title }}
+  <div :class="prefixCls">
+    <span class="copyright">Copyright ©2021-present {{ title }}</span>
   </div>
 </template>
+
+<style lang="less" scoped>
+@prefix-cls: ~'@{namespace}-footer';
+
+.@{prefix-cls} {
+  display: flex;
+  height: var(--app-footer-height);
+  padding: 0 24px;
+  color: rgb(0 0 0 / 45%);
+  font-size: 13px;
+  line-height: 1;
+  background-color: var(--app-content-bg-color);
+  border-top: 1px solid rgb(5 5 5 / 6%);
+  align-items: center;
+  justify-content: center;
+}
+
+.copyright {
+  display: inline-flex;
+  align-items: center;
+}
+
+.dark {
+  .@{prefix-cls} {
+    color: rgb(255 255 255 / 45%);
+    background-color: var(--app-bg-color);
+    border-top-color: rgb(255 255 255 / 10%);
+  }
+}
+</style>

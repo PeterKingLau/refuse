@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ContentWrap } from '@/components/ContentWrap'
 import { createImageViewer } from '@/components/ImageViewer'
-import { ElButton } from 'element-plus'
+import { Button as AButton } from 'ant-design-vue'
 import { useI18n } from '@/hooks/web/useI18n'
 
 const { t } = useI18n()
@@ -21,10 +21,7 @@ const open = () => {
 </script>
 
 <template>
-  <ContentWrap
-    :title="t('imageViewerDemo.imageViewer')"
-    :message="t('imageViewerDemo.imageViewerDes')"
-  >
-    <ElButton type="primary" @click="open">{{ t('imageViewerDemo.open') }}</ElButton>
+  <ContentWrap :title="t('imageViewerDemo.imageViewer')" :message="t('imageViewerDemo.imageViewerDes')">
+    <AButton type="primary" @click="open">{{ t('imageViewerDemo.open') }}</AButton>
   </ContentWrap>
 </template>

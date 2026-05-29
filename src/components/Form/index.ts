@@ -1,6 +1,15 @@
 import Form from './src/Form.vue'
-import { ElForm } from 'element-plus'
-import { FormSchema, FormSetPropsType } from '@/types/form'
+import type { FormInstance } from 'ant-design-vue/es/form'
+import type { FormSchema, FormSetPropsType } from '@/types/form'
+
+export type FormValidateCallback = (valid: boolean, fields?: any) => void
+
+export type CompatibleFormInstance = Omit<FormInstance, 'validate'> & {
+  validate: {
+    (callback?: FormValidateCallback): Promise<any>
+    (nameList?: Parameters<FormInstance['validate']>[0], options?: Parameters<FormInstance['validate']>[1]): Promise<any>
+  }
+}
 
 export interface FormExpose {
   setValues: (data: Recordable) => void
@@ -9,7 +18,7 @@ export interface FormExpose {
   addSchema: (formSchema: FormSchema, index?: number) => void
   setSchema: (schemaProps: FormSetPropsType[]) => void
   formModel: Recordable
-  getElFormRef: () => ComponentRef<typeof ElForm>
+  getElFormRef: () => CompatibleFormInstance
 }
 
 export { Form }

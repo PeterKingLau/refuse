@@ -4,16 +4,16 @@ import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
 import { useCssVar } from '@vueuse/core'
 
-const primaryColor = useCssVar('--el-color-primary', document.documentElement)
+const primaryColor = useCssVar('--app-color-primary', document.documentElement)
 
 export const useNProgress = () => {
   NProgress.configure({ showSpinner: false } as NProgressOptions)
 
   const initColor = async () => {
     await nextTick()
-    const bar = document.getElementById('nprogress')?.getElementsByClassName('bar')[0] as ElRef
+    const bar = document.getElementById('nprogress')?.getElementsByClassName('bar')[0] as HTMLElementRef
     if (bar) {
-      bar.style.background = unref(primaryColor.value)
+      bar.style.background = unref(primaryColor.value) || '#1677ff'
     }
   }
 

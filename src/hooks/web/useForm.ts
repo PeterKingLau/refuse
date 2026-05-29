@@ -1,5 +1,4 @@
-import type { Form, FormExpose } from '@/components/Form'
-import type { ElForm } from 'element-plus'
+import type { CompatibleFormInstance, Form, FormExpose } from '@/components/Form'
 import { ref, unref, nextTick } from 'vue'
 import type { FormProps } from '@/components/Form/src/types'
 import { FormSchema, FormSetPropsType } from '@/types/form'
@@ -8,14 +7,14 @@ export const useForm = (props?: FormProps) => {
   // From实例
   const formRef = ref<typeof Form & FormExpose>()
 
-  // ElForm实例
-  const elFormRef = ref<ComponentRef<typeof ElForm>>()
+  // Form实例
+  const elFormRef = ref<CompatibleFormInstance>()
 
   /**
    * @param ref Form实例
-   * @param elRef ElForm实例
+   * @param elRef Form实例
    */
-  const register = (ref: typeof Form & FormExpose, elRef: ComponentRef<typeof ElForm>) => {
+  const register = (ref: typeof Form & FormExpose, elRef: CompatibleFormInstance) => {
     formRef.value = ref
     elFormRef.value = elRef
   }

@@ -1,238 +1,158 @@
 <template>
-  <el-row class="rr">
-    <el-form :model="form" label-width="100px" :inline="true" v-if="showForm">
-      <el-form-item label="垃圾类型：">
-        <el-input v-model="form.typeName" class="eInput" placeholder="请输入垃圾类型" />
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" class="btn" @click="onSearch" v-hasPermi="Permission.sec">
-          <el-icon><Search /></el-icon>
+  <div class="garbage-type-page">
+    <AForm v-if="showForm" :model="form" layout="inline" class="search-form">
+      <AFormItem label="垃圾类型" class="search-form-item">
+        <AInput v-model:value="form.typeName" class="search-input" placeholder="请输入垃圾类型" />
+      </AFormItem>
+
+      <AFormItem class="search-form-action">
+        <AButton type="primary" class="icon-button" @click="onSearch" v-hasPermi="Permission.sec">
+          <template #icon>
+            <Icon icon="ant-design:search-outlined" />
+          </template>
           搜索
-        </el-button>
-      </el-form-item>
+        </AButton>
+      </AFormItem>
 
-      <el-form-item>
-        <el-button class="btn" @click="onReset">
-          <el-icon class="el-icon--left"><RefreshRight /></el-icon>
+      <AFormItem class="search-form-action">
+        <AButton class="icon-button" @click="onReset">
+          <template #icon>
+            <Icon icon="ant-design:reload-outlined" />
+          </template>
           重置
-        </el-button>
-      </el-form-item>
-    </el-form>
-  </el-row>
+        </AButton>
+      </AFormItem>
+    </AForm>
 
-  <el-row>
-    <el-col :span="12">
-      <el-button type="primary" class="btn" @click="OnClickAdd" v-hasPermi="Permission.add">
-        <el-icon><Plus /> </el-icon>
-        新增</el-button
-      >
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <AButton type="primary" class="icon-button" @click="OnClickAdd" v-hasPermi="Permission.add">
+          <template #icon>
+            <Icon icon="ant-design:plus-outlined" />
+          </template>
+          新增
+        </AButton>
 
-      <el-button
-        type="success"
-        class="btn"
-        :disabled="disableUpdate"
-        v-if="false"
-        v-hasPermi="Permission.rev"
-        ><el-icon><EditPen /></el-icon>修改</el-button
-      >
-      <el-button
-        type="danger"
-        class="btn"
-        :disabled="disableRemove"
-        @click="deleteOfDetail"
-        v-hasPermi="Permission.del"
-        ><el-icon><Close /></el-icon>删除</el-button
-      >
-    </el-col>
+        <AButton danger class="icon-button" :disabled="disableRemove" @click="deleteOfDetail" v-hasPermi="Permission.del">
+          <template #icon>
+            <Icon icon="ant-design:delete-outlined" />
+          </template>
+          删除
+        </AButton>
+      </div>
 
-    <el-col :span="12" style="text-align: right">
-      <el-tooltip content="隐藏搜索" placement="top-start">
-        <el-button circle @click="OnClickOfShowForm">
-          <el-icon><Search /></el-icon
-        ></el-button>
-      </el-tooltip>
-      <el-tooltip content="刷新" placement="top-start">
-        <el-button circle @click="onPageRest">
-          <el-icon><RefreshRight /></el-icon>
-        </el-button>
-      </el-tooltip>
-    </el-col>
-  </el-row>
+      <div class="toolbar-right">
+        <ATooltip :title="showForm ? '隐藏搜索' : '显示搜索'">
+          <AButton shape="circle" @click="OnClickOfShowForm">
+            <template #icon>
+              <Icon icon="ant-design:search-outlined" />
+            </template>
+          </AButton>
+        </ATooltip>
+        <ATooltip title="刷新">
+          <AButton shape="circle" @click="onPageRest">
+            <template #icon>
+              <Icon icon="ant-design:reload-outlined" />
+            </template>
+          </AButton>
+        </ATooltip>
+      </div>
+    </div>
 
-  <el-divider />
+    <ATable row-key="id" :columns="columns" :data-source="garbageTypeData" :pagination="false" :row-selection="rowSelection" bordered>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'pic'">
+          <img v-if="record.pic" :src="getImageURL(record.pic)" class="table-image" />
+          <span v-else class="empty-text">暂无</span>
+        </template>
 
-  <el-row>
-    <el-table
-      ref="areaTableRef"
-      :data="garbageTypeData"
-      style="width: 100%"
-      @selection-change="handleSelectionChange"
-    >
-      <el-table-column type="selection" width="55" />
-      <el-table-column label="ID" width="60" property="id" />
-      <el-table-column label="类别名称" width="100" property="label" />
-      <el-table-column v-slot="scope" label="图片" width="120">
-        <img :src="getImageURL(scope.row.pic)" class="imgOfTable" />
-      </el-table-column>
-      <el-table-column label="积分数量" width="80" property="points" />
-      <el-table-column label="积分赠送模式" width="130" property="pointsType.label" />
-      <el-table-column label="创建时间" property="createTime" />
-      <el-table-column label="创建人" width="100" property="staff.name" />
-      <el-table-column label="操作" v-slot="scope" width="150">
-        <div class="buttonOfTables">
-          <el-link
-            type="success"
-            class="bt"
-            @click="handleDetail(scope.row)"
-            v-hasPermi="Permission.rev"
-            >编辑</el-link
-          >
-          <el-link
-            type="danger"
-            class="bt"
-            @click="handleRemove(scope.row)"
-            v-hasPermi="Permission.del"
-            >删除</el-link
-          >
-        </div>
-      </el-table-column>
-    </el-table>
-  </el-row>
+        <template v-else-if="column.key === 'action'">
+          <ASpace>
+            <AButton type="link" class="table-action action-edit" @click="handleDetail(record)" v-hasPermi="Permission.rev">
+              <template #icon>
+                <Icon icon="ant-design:edit-outlined" />
+              </template>
+              编辑
+            </AButton>
+            <AButton type="link" danger class="table-action" @click="handleRemove(record)" v-hasPermi="Permission.del">
+              <template #icon>
+                <Icon icon="ant-design:delete-outlined" />
+              </template>
+              删除
+            </AButton>
+          </ASpace>
+        </template>
+      </template>
+    </ATable>
 
-  <el-dialog title="添加垃圾类别" width="60%" v-model="showDialog">
-    <el-form :model="updateForm" :inline="true" label-width="auto" class="frame">
-      <el-row>
-        <el-col :span="12">
-          <el-form-item label="类型名称:" prop="label">
-            <el-input v-model="updateForm.label" placeholder="请输入类型名称" />
-          </el-form-item>
-        </el-col>
+    <AModal v-model:open="showDialog" :title="isUpdate ? '修改垃圾类别' : '添加垃圾类别'" width="680px" :destroy-on-close="true" @cancel="onCloseDialog">
+      <AForm :model="updateForm" layout="vertical">
+        <ARow :gutter="16">
+          <ACol :span="12">
+            <AFormItem label="类型名称" name="label">
+              <AInput v-model:value="updateForm.label" placeholder="请输入类型名称" />
+            </AFormItem>
+          </ACol>
 
-        <el-col :span="12">
-          <el-form-item label="图片">
-            <el-upload
-              class="avatar-uploader"
-              :action="UpImageURL"
-              :show-file-list="false"
-              :on-success="handleUpdateSuccess"
-              :before-upload="beforeAvatarUpload"
-              :headers="headObject"
-            >
-              <img v-if="updateForm.pic" :src="getImageURL(updateForm.pic)" class="avatar" />
-              <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
-            </el-upload>
-          </el-form-item>
-        </el-col>
-      </el-row>
+          <ACol :span="12">
+            <AFormItem label="积分数量" name="points">
+              <AInputNumber v-model:value="updateForm.points" :min="0" :max="9999" class="w-full" />
+            </AFormItem>
+          </ACol>
 
-      <el-row>
-        <el-col :span="12">
-          <el-form-item label="积分数量">
-            <el-input-number v-model="updateForm.points" :min="0" :max="9999" />
-          </el-form-item>
-        </el-col>
+          <ACol :span="12">
+            <AFormItem label="积分赠送模式" name="pointsMode">
+              <ASelect v-model:value="updateForm.pointsMode" :options="pointTypeOptions" placeholder="请选择积分赠送模式" />
+            </AFormItem>
+          </ACol>
 
-        <el-col :span="12">
-          <el-form-item label="积分赠送模式">
-            <el-select
-              v-model="updateForm.pointsMode"
-              class="m-2"
-              placeholder="Select"
-              size="large"
-              ref="pointTpteSelectRef"
-            >
-              <el-option
-                v-for="item in pointTypeData"
-                :key="item.code"
-                :label="item.label"
-                :value="item.code"
-              />
-            </el-select>
-          </el-form-item>
-        </el-col>
-      </el-row>
+          <ACol :span="12">
+            <AFormItem label="图片">
+              <AUpload class="avatar-uploader" :action="UpImageURL" :show-upload-list="false" :before-upload="beforeAvatarUpload" :headers="headObject" @change="handleUploadChange">
+                <img v-if="updateForm.pic" :src="getImageURL(updateForm.pic)" class="avatar" />
+                <div v-else class="upload-placeholder">
+                  <Icon icon="ant-design:plus-outlined" :size="24" />
+                </div>
+              </AUpload>
+            </AFormItem>
+          </ACol>
+        </ARow>
+      </AForm>
 
-      <el-row class="margeTop">
-        <el-col :span="24" class="toRight">
-          <el-button @click="onCloseDialog">取消</el-button>
-          <el-button type="primary" @click="onAddConfirm"> 确认 </el-button>
-        </el-col>
-      </el-row>
-    </el-form>
-  </el-dialog>
+      <template #footer>
+        <ASpace>
+          <AButton @click="onCloseDialog">取消</AButton>
+          <AButton type="primary" @click="onAddConfirm">确认</AButton>
+        </ASpace>
+      </template>
+    </AModal>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, Ref, computed, onMounted, inject } from 'vue'
-import { PATH_URL, service } from '@/config/axios/service'
-
-import { ElSelect, ElMessage, ElMessageBox } from 'element-plus'
+import { computed, inject, onMounted, reactive, ref } from 'vue'
+import {
+  Button as AButton,
+  Col as ACol,
+  Form as AForm,
+  FormItem as AFormItem,
+  Input as AInput,
+  InputNumber as AInputNumber,
+  Modal as AModal,
+  Row as ARow,
+  Select as ASelect,
+  Space as ASpace,
+  Table as ATable,
+  Tooltip as ATooltip,
+  Upload as AUpload,
+  message
+} from 'ant-design-vue'
+import type { TableColumnsType, UploadChangeParam } from 'ant-design-vue'
 import qs from 'qs'
+import { PATH_URL, service } from '@/config/axios/service'
+import { Icon } from '@/components/Icon'
 
-const reload: any = inject('reload')
-
-const onPageRest = () => {
-  reload()
-}
-
-const getGarbageType = () => {
-  service
-    .post(
-      PATH_URL + '/MachineMange/getGarbageType',
-      qs.stringify({ typeName: form.value.typeName }, { arrayFormat: 'brackets' })
-    )
-    .then((res) => {
-      console.log(res)
-      garbageTypeData.value = res.data
-    })
-}
-
-onMounted(() => {
-  getPointsTypeData()
-  getGarbageType()
-})
-
-const handleDetail = (data) => {
-  console.log(data)
-  isUpdate = true
-  updateForm.value.id = data.id
-  updateForm.value.label = data.label
-  updateForm.value.pic = data.pic
-  updateForm.value.points = data.points
-  updateForm.value.pointsMode = data.pointsMode
-  showDialog.value = true
-}
-
-const handleRemove = (data) => {
-  let title = '你确定要删除这个垃圾类别'
-  ElMessageBox.confirm(title, '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    let deleteArrry: number[] = []
-    deleteArrry.push(data.id)
-    service
-      .post(
-        PATH_URL + '/MachineMange/deleteGarbageType',
-        qs.stringify(
-          {
-            ids: deleteArrry
-          },
-          { arrayFormat: 'brackets' }
-        )
-      )
-      .then(() => {
-        ElMessage('操作成功')
-        getGarbageType()
-      })
-  })
-  console.log(data)
-}
-
-let isUpdate = false
-
-let pointTpteSelectRef = ref(ElSelect)
+type TableKey = string | number
 
 interface PointsType {
   id: number
@@ -240,104 +160,104 @@ interface PointsType {
   code: string
 }
 
-let pointTypeData: PointsType[] = []
+interface GarbageTypeRecord {
+  [key: string]: any
+  id: number
+  label: string
+  pic: string
+  points: number
+  pointsMode: string
+  pointsType?: {
+    label?: string
+  }
+  createTime: string
+  staff?: {
+    name?: string
+  }
+}
+
+interface UpdateData {
+  id: number
+  label: string
+  pic: string
+  points: number
+  pointsMode: string
+  createTime: string
+  staff: any
+}
+
+const reload = inject<() => void>('reload')
+
+const onPageRest = () => {
+  if (reload) {
+    reload()
+    return
+  }
+  getGarbageType()
+}
+
+const Permission = ref({
+  add: 'mac_gag_add',
+  rev: 'mac_gag_rev',
+  del: 'mac_gag_del',
+  sec: 'mac_gag_sec'
+})
+
+const showForm = ref(true)
+const form = reactive({
+  typeName: ''
+})
+
+const getGarbageType = () => {
+  service.post(PATH_URL + '/MachineMange/getGarbageType', qs.stringify({ typeName: form.typeName }, { arrayFormat: 'brackets' })).then((res: any) => {
+    garbageTypeData.value = res.data || []
+    selectedRowKeys.value = []
+    DeleteIdArray = []
+  })
+}
+
+onMounted(() => {
+  getPointsTypeData()
+  getGarbageType()
+})
+
+const handleDetail = (record: Record<string, any>) => {
+  const data = record as GarbageTypeRecord
+  isUpdate.value = true
+  updateForm.id = data.id
+  updateForm.label = data.label
+  updateForm.pic = data.pic
+  updateForm.points = data.points
+  updateForm.pointsMode = data.pointsMode
+  showDialog.value = true
+}
+
+const handleRemove = (record: Record<string, any>) => {
+  const data = record as GarbageTypeRecord
+  deleteGarbageType([data.id], '确定要删除这个垃圾类别吗？')
+}
+
+const pointTypeData = ref<PointsType[]>([])
+
+const pointTypeOptions = computed(() =>
+  pointTypeData.value.map((item) => ({
+    label: item.label,
+    value: item.code
+  }))
+)
+
 const getPointsTypeData = () => {
-  service.get(PATH_URL + '/MachineMange/getPointsType').then((res) => {
-    pointTypeData = res.data
+  service.get(PATH_URL + '/MachineMange/getPointsType').then((res: any) => {
+    pointTypeData.value = res.data || []
   })
 }
 
 //#region 添加 dialog
 
-const onCloseDialog = () => {
-  showDialog.value = false
-}
+const showDialog = ref(false)
+const isUpdate = ref(false)
 
-const onAddConfirm = () => {
-  if (isUpdate) {
-    onUpdate()
-    return
-  }
-
-  let title = '你确定要添加这个垃圾类别'
-  ElMessageBox.confirm(title, '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    service
-      .post(
-        PATH_URL + '/MachineMange/addPointsType',
-        qs.stringify(
-          {
-            points: updateForm.value.points,
-            pointsMode: updateForm.value.pointsMode,
-            label: updateForm.value.label,
-            pic: updateForm.value.pic
-          },
-          { arrayFormat: 'brackets' }
-        )
-      )
-      .then(() => {
-        ElMessage('操作成功')
-        getGarbageType()
-      })
-  })
-
-  showDialog.value = false
-}
-
-const onUpdate = () => {
-  let title = '你确定要修改这个垃圾类别'
-  ElMessageBox.confirm(title, '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    service
-      .post(
-        PATH_URL + '/MachineMange/updatePointsType',
-        qs.stringify(
-          {
-            points: updateForm.value.points,
-            pointsMode: updateForm.value.pointsMode,
-            label: updateForm.value.label,
-            pic: updateForm.value.pic,
-            id: updateForm.value.id
-          },
-          { arrayFormat: 'brackets' }
-        )
-      )
-      .then(() => {
-        ElMessage('操作成功')
-        showDialog.value = false
-        getGarbageType()
-      })
-  })
-}
-
-interface updateData {
-  id: number
-  label: string
-  pic: string
-  points: number
-  pointsMode: any
-  createTime: string
-  staff: any
-}
-let showDialog = ref(false)
-
-const initUpdateForm = () => {
-  updateForm.value.createTime = ''
-  updateForm.value.id = 0
-  updateForm.value.label = ''
-  updateForm.value.pic = ''
-  updateForm.value.points = 10
-  updateForm.value.pointsMode = 'wei'
-  updateForm.value.staff = 0
-}
-
-let updateForm: Ref<updateData> = ref({
+const updateForm = reactive<UpdateData>({
   id: 0,
   label: '',
   pic: '',
@@ -347,165 +267,289 @@ let updateForm: Ref<updateData> = ref({
   staff: ''
 })
 
+const initUpdateForm = () => {
+  updateForm.createTime = ''
+  updateForm.id = 0
+  updateForm.label = ''
+  updateForm.pic = ''
+  updateForm.points = 10
+  updateForm.pointsMode = 'wei'
+  updateForm.staff = ''
+}
+
+const onCloseDialog = () => {
+  showDialog.value = false
+  isUpdate.value = false
+  initUpdateForm()
+}
+
+const onAddConfirm = () => {
+  if (isUpdate.value) {
+    onUpdate()
+    return
+  }
+
+  AModal.confirm({
+    title: '提示',
+    content: '确定要添加这个垃圾类别吗？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      await service.post(
+        PATH_URL + '/MachineMange/addPointsType',
+        qs.stringify(
+          {
+            points: updateForm.points,
+            pointsMode: updateForm.pointsMode,
+            label: updateForm.label,
+            pic: updateForm.pic
+          },
+          { arrayFormat: 'brackets' }
+        )
+      )
+      message.success('操作成功')
+      getGarbageType()
+      onCloseDialog()
+    }
+  })
+}
+
+const onUpdate = () => {
+  AModal.confirm({
+    title: '提示',
+    content: '确定要修改这个垃圾类别吗？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      await service.post(
+        PATH_URL + '/MachineMange/updatePointsType',
+        qs.stringify(
+          {
+            points: updateForm.points,
+            pointsMode: updateForm.pointsMode,
+            label: updateForm.label,
+            pic: updateForm.pic,
+            id: updateForm.id
+          },
+          { arrayFormat: 'brackets' }
+        )
+      )
+      message.success('操作成功')
+      getGarbageType()
+      onCloseDialog()
+    }
+  })
+}
+
 //#endregion
 
 //#region 表格相关
 
-const beforeAvatarUpload = () => {}
-const handleUpdateSuccess = (respon) => {
-  if (respon.code == 200) {
-    updateForm.value.pic = respon.data
-  } else {
-    ElMessage('上传图片出错了')
-  }
-}
+const columns: TableColumnsType<GarbageTypeRecord> = [
+  { title: '类别名称', dataIndex: 'label', key: 'label', width: 140 },
+  { title: '图片', dataIndex: 'pic', key: 'pic', width: 120 },
+  { title: '积分数量', dataIndex: 'points', key: 'points', width: 100 },
+  { title: '积分赠送模式', dataIndex: ['pointsType', 'label'], key: 'pointsType', width: 150 },
+  { title: '创建时间', dataIndex: 'createTime', key: 'createTime', width: 180 },
+  { title: '创建人', dataIndex: ['staff', 'name'], key: 'staffName', width: 120 },
+  { title: '操作', key: 'action', width: 160 }
+]
 
-const headObject = {
-  Authorization: localStorage.getItem('token')
-}
-const garbageTypeData = ref([])
-
+const garbageTypeData = ref<GarbageTypeRecord[]>([])
+const selectedRowKeys = ref<TableKey[]>([])
 let DeleteIdArray: number[] = []
-const handleSelectionChange = (val) => {
-  if (val.length > 0) {
-    disableRemove.value = false
-  } else {
-    disableRemove.value = true
+
+const disableRemove = computed(() => selectedRowKeys.value.length === 0)
+
+const rowSelection = computed(() => ({
+  selectedRowKeys: selectedRowKeys.value,
+  onChange: (keys: TableKey[], rows: GarbageTypeRecord[]) => {
+    selectedRowKeys.value = keys
+    DeleteIdArray = rows.map((row) => row.id)
+  }
+}))
+
+const deleteGarbageType = (ids: number[], content: string) => {
+  if (ids.length === 0) {
+    message.warning('请选择要删除的垃圾类别')
+    return
   }
 
-  DeleteIdArray = []
-  val.forEach((row) => {
-    DeleteIdArray.push(row.id)
+  AModal.confirm({
+    title: '提示',
+    content,
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      await service.post(PATH_URL + '/MachineMange/deleteGarbageType', qs.stringify({ ids }, { arrayFormat: 'brackets' }))
+      message.success('操作成功')
+      getGarbageType()
+    }
   })
 }
 
-// 上传图片地址
-const UpImageURL = computed(() => {
-  return PATH_URL + '/Common/upLoadImage'
-})
+const beforeAvatarUpload = () => true
 
-//获取图片的地址
-const getImageURL = computed(() => (imageURL) => {
-  return PATH_URL + '/Common/downLoadPic/' + imageURL
-})
+const handleUploadChange = (info: UploadChangeParam) => {
+  if (info.file.status !== 'done') return
+
+  const response = info.file.response
+  if (response?.code == 200) {
+    updateForm.pic = response.data
+  } else {
+    message.error('上传图片出错了')
+  }
+}
+
+const headObject = computed(() => ({
+  Authorization: localStorage.getItem('token') || ''
+}))
+
+const UpImageURL = computed(() => PATH_URL + '/Common/upLoadImage')
+
+const getImageURL = (imageURL?: string) => {
+  return imageURL ? PATH_URL + '/Common/downLoadPic/' + imageURL : ''
+}
 
 //#endregion
-
-const Permission = ref({
-  add: 'mac_gag_add',
-  rev: 'mac_gag_rev',
-  del: 'mac_gag_del',
-  sec: 'mac_gag_sec'
-})
-
-//#region 搜索相关
-let showForm = ref(true)
-
-const form = ref({
-  typeName: ''
-})
 
 const onSearch = () => {
   getGarbageType()
 }
 
 const onReset = () => {
-  form.value.typeName = ''
+  form.typeName = ''
+  getGarbageType()
 }
 
-//#endregion
-
-//#region 中间按钮
 const OnClickAdd = () => {
   initUpdateForm()
-  isUpdate = false
+  isUpdate.value = false
   showDialog.value = true
 }
+
 const deleteOfDetail = () => {
-  let title = '你确定要删除这些垃圾类别'
-  ElMessageBox.confirm(title, '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    console.log(DeleteIdArray)
-    service
-      .post(
-        PATH_URL + '/MachineMange/deleteGarbageType',
-        qs.stringify(
-          {
-            ids: DeleteIdArray
-          },
-          { arrayFormat: 'brackets' }
-        )
-      )
-      .then(() => {
-        ElMessage('操作成功')
-        getGarbageType()
-      })
-  })
+  deleteGarbageType([...DeleteIdArray], '确定要删除这些垃圾类别吗？')
 }
 
 const OnClickOfShowForm = () => {
   showForm.value = !showForm.value
 }
-
-let disableUpdate = ref(true)
-let disableRemove = ref(true)
-
-//#endregion
 </script>
 
 <style lang="less" scoped>
-.avatar-uploader .el-upload {
-  position: relative;
-  overflow: hidden;
-  cursor: pointer;
-  border: 1px dashed var(--el-border-color);
+.garbage-type-page {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.search-form {
+  display: flex;
+  padding: 16px 16px 0;
+  background-color: #fff;
   border-radius: 6px;
-  transition: var(--el-transition-duration-fast);
+  flex-wrap: wrap;
+  gap: 0 8px;
+
+  :deep(.ant-form-item) {
+    margin-right: 0;
+    margin-bottom: 16px;
+  }
 }
 
-.avatar-uploader .el-upload:hover {
-  border-color: var(--el-color-primary);
+.search-form-item {
+  flex: 0 1 250px;
 }
 
-.el-icon.avatar-uploader-icon {
-  width: 178px;
-  height: 178px;
-  font-size: 28px;
-  color: #8c939d;
-  text-align: center;
+.search-form-action {
+  flex: 0 0 auto;
 }
 
-.bt {
-  margin-left: 20px;
+.search-input {
+  width: 180px;
 }
 
-.toRight {
-  text-align: right;
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.avatar-uploader .avatar {
+.toolbar-left,
+.toolbar-right {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.icon-button,
+.table-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  :deep(.v-icon),
+  :deep(iconify-icon) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+}
+
+.table-action {
+  height: 24px;
+  padding: 0;
+  gap: 4px;
+}
+
+.action-edit {
+  color: #52c41a;
+}
+
+.table-image {
   display: block;
-  width: 178px;
-  height: 178px;
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  border-radius: 6px;
 }
 
-.imgOfTable {
-  width: 100px;
-  height: 100px;
+.empty-text {
+  color: #8c8c8c;
 }
 
-.frame {
-  .el-form-item {
-    .el-input {
-      width: 150px;
-    }
+.avatar-uploader {
+  :deep(.ant-upload) {
+    width: 104px;
+    height: 104px;
+  }
+}
 
-    .el-select {
-      width: 150px;
-    }
+.avatar {
+  display: block;
+  width: 104px;
+  height: 104px;
+  object-fit: contain;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+}
+
+.upload-placeholder {
+  display: inline-flex;
+  width: 104px;
+  height: 104px;
+  color: #8c8c8c;
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s cubic-bezier(0, 0, 1, 1);
+
+  &:hover {
+    border-color: #1677ff;
   }
 }
 </style>

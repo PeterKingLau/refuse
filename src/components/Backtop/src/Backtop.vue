@@ -1,15 +1,14 @@
 <script setup lang="ts">
-import { ElBacktop } from 'element-plus'
+import { BackTop as ABackTop } from 'ant-design-vue'
 import { useDesign } from '@/hooks/web/useDesign'
 
 const { getPrefixCls, variables } = useDesign()
 
 const prefixCls = getPrefixCls('backtop')
+
+const getTarget = () => document.querySelector<HTMLElement>(`.${variables.namespace}-layout-content-scrollbar`) || window
 </script>
 
 <template>
-  <ElBacktop
-    :class="`${prefixCls}-backtop`"
-    :target="`.${variables.namespace}-layout-content-scrollbar .${variables.elNamespace}-scrollbar__wrap`"
-  />
+  <ABackTop :class="`${prefixCls}-backtop`" :target="getTarget" />
 </template>

@@ -1,374 +1,248 @@
 <template>
-  <el-row class="rr">
-    <el-form
-      :model="SearchFormData"
-      label-width="100px"
-      :inline="true"
-      v-if="showSearchForm"
-      class="frame"
-    >
-      <el-form-item label="设备编号:" label-width="90">
-        <el-input v-model="SearchFormData.dNumber" placeholder="请输入设备编号" />
-      </el-form-item>
+  <div class="maintenance-equipment-page">
+    <AForm v-if="showSearchForm" :model="SearchFormData" layout="horizontal" class="search-form">
+      <AFormItem label="设备编号" class="search-form-item">
+        <AInput v-model:value="SearchFormData.dNumber" placeholder="请输入设备编号" />
+      </AFormItem>
 
-      <el-form-item label="设备名称:" label-width="90">
-        <el-input v-model="SearchFormData.dName" placeholder="请输入设备名称" />
-      </el-form-item>
+      <AFormItem label="设备名称" class="search-form-item">
+        <AInput v-model:value="SearchFormData.dName" placeholder="请输入设备名称" />
+      </AFormItem>
 
-      <el-form-item label="设备区域" label-width="90">
-        <el-select
-          v-model="SearchFormData.dArea"
-          placeholder="请选择设备区域"
-          ref="pointTpteSelectRef"
-        >
-          <el-option
-            v-for="item in deviceAreaArray"
-            :key="item.id"
-            :label="item.areaName"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
+      <AFormItem label="设备区域" class="search-form-item">
+        <ASelect v-model:value="SearchFormData.dArea" :options="deviceAreaOptions" allow-clear placeholder="请选择设备区域" />
+      </AFormItem>
 
-      <el-form-item label="设备型号" label-width="90">
-        <el-select
-          v-model="SearchFormData.dType"
-          placeholder="请选择设备型号"
-          ref="pointTpteSelectRef"
-        >
-          <el-option
-            v-for="item in deviceTypeArray"
-            :key="item.id"
-            :label="item.name"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
+      <AFormItem label="设备型号" class="search-form-item">
+        <ASelect v-model:value="SearchFormData.dType" :options="deviceTypeOptions" allow-clear placeholder="请选择设备型号" />
+      </AFormItem>
 
-      <el-form-item label="设备状态" label-width="90">
-        <el-select
-          v-model="SearchFormData.dStatus"
-          placeholder="请选择设备状态"
-          ref="pointTpteSelectRef"
-        >
-          <el-option
-            v-for="item in deviceStatusArray"
-            :key="item.id"
-            :label="item.label"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
+      <AFormItem label="设备状态" class="search-form-item">
+        <ASelect v-model:value="SearchFormData.dStatus" :options="deviceStatusOptions" allow-clear placeholder="请选择设备状态" />
+      </AFormItem>
 
-      <el-form-item label="在线状态" label-width="90">
-        <el-select
-          v-model="SearchFormData.dOnLine"
-          placeholder="请选择在线状态"
-          ref="pointTpteSelectRef"
-        >
-          <el-option
-            v-for="item in OnLineOption"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          />
-        </el-select>
-      </el-form-item>
+      <AFormItem label="在线状态" class="search-form-item">
+        <ASelect v-model:value="SearchFormData.dOnLine" :options="OnLineOption" allow-clear placeholder="请选择在线状态" />
+      </AFormItem>
 
-      <el-form-item>
-        <el-button type="primary" class="btn" @click="onSearch" v-hasPermi="Permission.sec">
-          <el-icon><Search /></el-icon>
-          搜索
-        </el-button>
-      </el-form-item>
+      <AFormItem class="search-form-actions">
+        <ASpace>
+          <AButton type="primary" class="icon-button" @click="onSearch" v-hasPermi="Permission.sec">
+            <template #icon>
+              <Icon icon="ant-design:search-outlined" />
+            </template>
+            搜索
+          </AButton>
 
-      <el-form-item>
-        <el-button class="btn" @click="onReset">
-          <el-icon class="el-icon--left"><RefreshRight /></el-icon>
-          重置
-        </el-button>
-      </el-form-item>
-    </el-form>
-  </el-row>
-  <el-row>
-    <el-col :span="18" />
-    <el-col :span="6" style="text-align: right">
-      <el-tooltip content="隐藏搜索" placement="top-start">
-        <el-button circle @click="showSearchForm = !showSearchForm">
-          <el-icon><Search /></el-icon
-        ></el-button>
-      </el-tooltip>
-      <el-tooltip content="刷新" placement="top-start">
-        <el-button circle @click="onPageRest">
-          <el-icon><RefreshRight /></el-icon>
-        </el-button>
-      </el-tooltip>
-    </el-col>
-  </el-row>
-  <el-divider />
+          <AButton class="icon-button" @click="onReset">
+            <template #icon>
+              <Icon icon="ant-design:reload-outlined" />
+            </template>
+            重置
+          </AButton>
+        </ASpace>
+      </AFormItem>
+    </AForm>
 
-  <el-row>
-    <el-table ref="areaTableRef" :data="TableData" style="width: 100%">
-      <el-table-column type="selection" width="55" />
-      <el-table-column label="设备编号" width="160" property="serialNumber" />
-      <el-table-column label="设备名称" width="100" property="name" />
+    <div class="toolbar">
+      <div></div>
+      <div class="toolbar-right">
+        <ATooltip :title="showSearchForm ? '隐藏搜索' : '显示搜索'">
+          <AButton shape="circle" @click="showSearchForm = !showSearchForm">
+            <template #icon>
+              <Icon icon="ant-design:search-outlined" />
+            </template>
+          </AButton>
+        </ATooltip>
+        <ATooltip title="刷新">
+          <AButton shape="circle" @click="onPageRest">
+            <template #icon>
+              <Icon icon="ant-design:reload-outlined" />
+            </template>
+          </AButton>
+        </ATooltip>
+      </div>
+    </div>
 
-      <el-table-column label="设备地址" width="160" property="address" />
-      <el-table-column label="是否在线" width="160" property="isOnline" />
-      <el-table-column label="最后在线时间" width="160" property="onlineTime" />
-      <el-table-column label="型号名称" width="180" property="deviceType.name" />
-      <el-table-column label="设备sn" width="180" property="imei" />
+    <ATable row-key="id" :columns="columns" :data-source="TableData" :pagination="false" bordered>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'status'">
+          {{ ConverStatus(record.status) }}
+        </template>
 
-      <el-table-column label="状态" width="180" v-slot="scope">
-        {{ ConverStatus(scope.row.status) }}
-      </el-table-column>
+        <template v-else-if="column.key === 'action'">
+          <AButton type="link" class="table-action" @click="channelSet(record)">子设备</AButton>
+        </template>
+      </template>
+    </ATable>
 
-      <el-table-column label="操作" v-slot="scope" width="150">
-        <div class="buttonOfTables">
-          <el-link type="primary" @click="channelSet(scope.row)">子设备</el-link>
-        </div>
-      </el-table-column>
-    </el-table>
-  </el-row>
-  <el-row>
-    <el-col :span="18">
-      <el-pagination
-        v-model:current-page="currentPage"
+    <div class="pagination-wrap">
+      <APagination
+        v-model:current="currentPage"
         v-model:page-size="pageSize"
-        :small="small"
+        :page-size-options="['5', '10', '15', '20']"
+        :show-size-changer="true"
         :disabled="disabled"
-        layout="total, sizes, prev, pager, next, jumper"
         :total="total"
-        @size-change="handleSizeChange"
-        @current-change="handleSizeChange"
+        :show-total="(totalCount) => `共 ${totalCount} 条`"
+        show-quick-jumper
+        @change="handlePageChange"
+        @show-size-change="handlePageChange"
       />
-    </el-col>
-  </el-row>
+    </div>
 
-  <!-- 操作弹窗-->
-  <el-dialog v-model="operationVisible" title="设备操作" width="80%">
-    <el-row>
-      <el-col :span="5">
-        <div class="left">
-          <div class="title">仓位</div>
-          <div
-            class="channleBox"
-            v-for="item in currentDeviceChannelList"
-            :key="item"
-            @click="setBg(item)"
-            :class="{ selectSytle: selectItem == item }"
-          >
-            <span class="channelItem">{{ item }}</span>
+    <AModal v-model:open="operationVisible" title="设备操作" width="80%" :footer="null" centered>
+      <ARow :gutter="16" class="operation-layout">
+        <ACol :span="5">
+          <div class="channel-panel">
+            <div class="channel-title">仓位</div>
+            <button v-for="item in currentDeviceChannelList" :key="item" type="button" class="channel-box" :class="{ 'channel-box-active': selectItem == item }" @click="setBg(item)">
+              {{ item }}
+            </button>
           </div>
-        </div>
-      </el-col>
-      <el-col :span="19">
-        <div class="right">
-          <el-tabs v-model="activeName" class="demo-tabs">
-            <el-tab-pane label="设备属性" name="first">
-              <el-table height="400" :data="currentChannelInfo">
-                <el-table-column label="属性名称" width="300" align="center" property="label" />
-                <el-table-column label="属性值" width="280" align="center" property="content" />
-                <el-table-column label="更新时间" align="center" property="time" />
-              </el-table>
-            </el-tab-pane>
-            <el-tab-pane label="监控指令" name="second">
-              <el-table :data="RTOArray" stripe style="width: 90%" height="400">
-                <el-table-column label="指令名称" property="label" width="300" align="center" />
+        </ACol>
 
-                <el-table-column
-                  label="创建时间"
-                  property="createTime"
-                  width="180"
-                  align="center"
-                />
-                <el-table-column label="操作" v-slot="scope" width="300" align="center">
-                  <div class="buttonOfTables">
-                    <el-link type="primary" @click="doSend(scope.row)" v-hasPermi="Permission.sen"
-                      >发送</el-link
-                    >
-                    <el-link
-                      type="primary"
-                      @click="sendRecord(scope.row)"
-                      v-hasPermi="Permission.quy"
-                      >发送记录</el-link
-                    >
-                  </div>
-                </el-table-column>
-              </el-table>
-            </el-tab-pane>
-            <el-tab-pane label="配置外设" name="third">
-              <div class="configBox">
-                <div class="extearnalUnitBox">
-                  <div class="allChecked">
-                    <el-checkbox v-model="selectAll" @change="unitSelectAll()"> 全选</el-checkbox>
-                  </div>
-                  <template v-for="item in ExternalUnitArray" :key="item">
-                    <el-checkbox v-model="item.checked">{{ item.label }}</el-checkbox>
+        <ACol :span="19">
+          <ATabs v-model:activeKey="activeName" class="operation-tabs">
+            <ATabPane key="first" tab="设备属性">
+              <ATable row-key="label" size="small" :columns="channelInfoColumns" :data-source="currentChannelInfo" :pagination="false" :scroll="{ y: 400 }" bordered />
+            </ATabPane>
+
+            <ATabPane key="second" tab="监控指令">
+              <ATable row-key="id" size="small" :columns="rtoColumns" :data-source="RTOArray" :pagination="false" :scroll="{ y: 400 }" bordered>
+                <template #bodyCell="{ column, record }">
+                  <template v-if="column.key === 'action'">
+                    <ASpace>
+                      <AButton type="link" class="table-action" @click="doSend(record)" v-hasPermi="Permission.sen">发送</AButton>
+                      <AButton type="link" class="table-action" @click="sendRecord(record)" v-hasPermi="Permission.quy">发送记录</AButton>
+                    </ASpace>
                   </template>
+                </template>
+              </ATable>
+            </ATabPane>
+
+            <ATabPane key="third" tab="配置外设">
+              <div class="config-box">
+                <div class="external-unit-box">
+                  <ACheckbox v-model:checked="selectAll" @change="unitSelectAll">全选</ACheckbox>
+                  <ACheckbox v-for="item in ExternalUnitArray" :key="item.id" :checked="Boolean(item.checked)" @change="(event) => setExternalUnitChecked(item, event)">
+                    {{ item.label }}
+                  </ACheckbox>
                 </div>
-                <div class="paramrenterBox">
-                  <el-row class="paramList">
-                    <el-col :span="8">积分配置</el-col>
-                    <el-col :span="8"
-                      ><el-switch v-model="currentParameter.configurePoints" class="ml-2"
-                    /></el-col>
-                  </el-row>
 
-                  <el-row class="paramList">
-                    <el-col :span="8">是否更新参数</el-col>
-                    <el-col :span="8"
-                      ><el-switch v-model="currentParameter.updateParameter" class="ml-2"
-                    /></el-col>
-                  </el-row>
+                <div class="parameter-box">
+                  <div class="param-list">
+                    <span>积分配置</span>
+                    <ASwitch v-model:checked="currentParameter.configurePoints" />
+                  </div>
 
-                  <el-row class="paramList">
-                    <el-col :span="8">是否更新设备有效性</el-col>
-                    <el-col :span="8"
-                      ><el-switch v-model="currentParameter.availability" class="ml-2"
-                    /></el-col>
-                  </el-row>
+                  <div class="param-list">
+                    <span>是否更新参数</span>
+                    <ASwitch v-model:checked="currentParameter.updateParameter" />
+                  </div>
 
-                  <el-row class="paramList">
-                    <el-col :span="8">信息上报周期</el-col>
-                    <el-col :span="8">
-                      <el-input-number
-                        v-model="currentParameter.transmissionPeriod"
-                        placeholder="请输入"
-                        :min="0"
-                        :max="254"
-                      />
-                    </el-col>
-                    <el-col :span="3">秒</el-col>
-                  </el-row>
+                  <div class="param-list">
+                    <span>是否更新设备有效性</span>
+                    <ASwitch v-model:checked="currentParameter.availability" />
+                  </div>
 
-                  <el-row class="paramList">
-                    <el-col :span="8">烟感上报时间间隔</el-col>
-                    <el-col :span="8">
-                      <el-input-number v-model="currentParameter.smog" placeholder="请输入" />
-                    </el-col>
-                    <el-col :span="3">秒</el-col>
-                  </el-row>
+                  <div class="param-list">
+                    <span>信息上报周期</span>
+                    <AInputNumber v-model:value="currentParameter.transmissionPeriod" :min="0" :max="254" />
+                    <span class="unit-text">秒</span>
+                  </div>
 
-                  <el-row class="paramList">
-                    <el-col :span="8">人体感应延时时间</el-col>
-                    <el-col :span="8">
-                      <el-input-number
-                        v-model="currentParameter.deferred"
-                        placeholder="请输入"
-                        :min="0"
-                        :max="254"
-                      />
-                    </el-col>
-                    <el-col :span="3">秒</el-col>
-                  </el-row>
+                  <div class="param-list">
+                    <span>烟感上报时间间隔</span>
+                    <AInputNumber v-model:value="currentParameter.smog" :min="0" />
+                    <span class="unit-text">秒</span>
+                  </div>
 
-                  <el-row class="paramList">
-                    <el-col :span="8">夹手强制性退出时间</el-col>
-                    <el-col :span="8">
-                      <el-input-number
-                        v-model="currentParameter.gripper"
-                        placeholder="请输入"
-                        :min="0"
-                        :max="254"
-                      />
-                    </el-col>
-                    <el-col :span="3">秒</el-col>
-                  </el-row>
+                  <div class="param-list">
+                    <span>人体感应延时时间</span>
+                    <AInputNumber v-model:value="currentParameter.deferred" :min="0" :max="254" />
+                    <span class="unit-text">秒</span>
+                  </div>
 
-                  <el-row class="paramList">
-                    <el-col :span="8">输入状态检测时间</el-col>
-                    <el-col :span="8">
-                      <el-input-number
-                        v-model="currentParameter.inputCheck"
-                        placeholder="请输入"
-                        :min="0"
-                        :max="254"
-                      />
-                    </el-col>
-                    <el-col :span="3">秒</el-col>
-                  </el-row>
+                  <div class="param-list">
+                    <span>夹手强制性退出时间</span>
+                    <AInputNumber v-model:value="currentParameter.gripper" :min="0" :max="254" />
+                    <span class="unit-text">秒</span>
+                  </div>
 
-                  <el-row class="paramList">
-                    <el-col :span="8">开关门时间</el-col>
-                    <el-col :span="8">
-                      <el-input-number v-model="currentParameter.close" placeholder="请输入" />
-                    </el-col>
-                    <el-col :span="3">秒</el-col>
-                  </el-row>
+                  <div class="param-list">
+                    <span>输入状态检测时间</span>
+                    <AInputNumber v-model:value="currentParameter.inputCheck" :min="0" :max="254" />
+                    <span class="unit-text">秒</span>
+                  </div>
 
-                  <el-row class="paramList">
-                    <el-col :span="8">推杆保持时间</el-col>
-                    <el-col :span="8">
-                      <el-input-number
-                        v-model="currentParameter.push"
-                        placeholder="请输入"
-                        :min="0"
-                        :max="254"
-                      />
-                    </el-col>
-                    <el-col :span="3">秒</el-col>
-                  </el-row>
+                  <div class="param-list">
+                    <span>开关门时间</span>
+                    <AInputNumber v-model:value="currentParameter.close" :min="0" />
+                    <span class="unit-text">秒</span>
+                  </div>
 
-                  <el-row class="paramList">
-                    <el-col :span="8">应用到其他仓位</el-col>
-                    <el-col :span="8">
-                      <el-switch v-model="currentParameter.isAll" class="ml-2" />
-                    </el-col>
-                  </el-row>
+                  <div class="param-list">
+                    <span>推杆保持时间</span>
+                    <AInputNumber v-model:value="currentParameter.push" :min="0" :max="254" />
+                    <span class="unit-text">秒</span>
+                  </div>
+
+                  <div class="param-list">
+                    <span>应用到其他仓位</span>
+                    <ASwitch v-model:checked="currentParameter.isAll" />
+                  </div>
                 </div>
-                <div class="buttonBox">
-                  <el-button type="primary" @click="doSendParam()" v-hasPermi="Permission.rev"
-                    >确定</el-button
-                  >
+
+                <div class="operation-button-box">
+                  <AButton type="primary" @click="doSendParam" v-hasPermi="Permission.rev">确定</AButton>
                 </div>
               </div>
-            </el-tab-pane>
-          </el-tabs>
-        </div>
-      </el-col>
-    </el-row>
-  </el-dialog>
+            </ATabPane>
+          </ATabs>
+        </ACol>
+      </ARow>
+    </AModal>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { Ref, ref, onMounted, inject } from 'vue'
+import { computed, inject, onMounted, Ref, ref } from 'vue'
+import {
+  Button as AButton,
+  Checkbox as ACheckbox,
+  Col as ACol,
+  Form as AForm,
+  FormItem as AFormItem,
+  Input as AInput,
+  InputNumber as AInputNumber,
+  Modal as AModal,
+  Pagination as APagination,
+  Row as ARow,
+  Select as ASelect,
+  Space as ASpace,
+  Switch as ASwitch,
+  Table as ATable,
+  TabPane as ATabPane,
+  Tabs as ATabs,
+  Tooltip as ATooltip,
+  message
+} from 'ant-design-vue'
+import type { TableColumnsType } from 'ant-design-vue'
 import { PATH_URL, service } from '@/config/axios/service'
-import { ElMessage } from 'element-plus'
+import { Icon } from '@/components/Icon'
 
-const reload: any = inject('reload')
-
-const onPageRest = () => {
-  reload()
-}
-
-const Permission = ref({
-  sen: 'min_equ_sen',
-  rev: 'min_equ_rev',
-  quy: 'min_equ_quy',
-  sec: 'min_equ_sec'
-})
-
-let small = ref(false)
-let disabled = ref(false)
-let total = ref(0)
-
-let selectItem = ref(1)
-let activeName = ref('first')
-
-//#region  数据结构
 interface SearchDataStruct {
-  dNumber: string | null
-  dName: string | null
-  dArea: number | null
-  dType: number | null
-  dImei: number | null
-  dStatus: number | null
-  dOnLine: number | null
-  dProductType: number | null
+  dNumber?: string
+  dName?: string
+  dArea?: number
+  dType?: number
+  dImei?: number
+  dStatus?: number
+  dOnLine?: number
+  dProductType?: number
 }
 
-//参数设置 数据结构
 interface ParameterStruct {
   id: number
   channel: number
@@ -397,7 +271,7 @@ interface DeviceAreaStruct {
   areaName: string
 }
 
-interface DeviceTypeStrcut {
+interface DeviceTypeStruct {
   id: number
   name: string
 }
@@ -413,34 +287,41 @@ interface ExternalUnitStruct {
   checked: number | boolean
 }
 
-const OnLineOption = [
-  {
-    value: 0,
-    label: '离线'
-  },
-  {
-    value: 1,
-    label: '在线'
-  }
-]
-
-const doSendParam = () => {
-  currentParameter.value.channel = selectItem.value
-  currentParameter.value.deviceId = currentDevice.id
-
-  if (currentParameter.value.isAll) {
-    currentParameter.value.channel = 0
-  }
-
-  service
-    .post(PATH_URL + '/MachineMange/sendParameter', currentParameter.value)
-    .then((res: any) => {
-      console.log(res)
-      if (res.code == 200) {
-        ElMessage('操作成功')
-      }
-    })
+interface DeviceRecord {
+  [key: string]: any
+  id: number
 }
+
+const reload = inject<() => void>('reload')
+
+const onPageRest = () => {
+  if (reload) {
+    reload()
+    return
+  }
+  getDeviceData()
+}
+
+const Permission = ref({
+  sen: 'min_equ_sen',
+  rev: 'min_equ_rev',
+  quy: 'min_equ_quy',
+  sec: 'min_equ_sec'
+})
+
+const disabled = ref(false)
+const total = ref(0)
+const selectItem = ref(1)
+const activeName = ref('first')
+const showSearchForm = ref(true)
+const currentPage = ref(1)
+const pageSize = ref(5)
+const operationVisible = ref(false)
+
+const OnLineOption = [
+  { value: 0, label: '离线' },
+  { value: 1, label: '在线' }
+]
 
 const defaultParameter: ParameterStruct = {
   id: 0,
@@ -459,218 +340,205 @@ const defaultParameter: ParameterStruct = {
   isAll: false
 }
 
+const currentChannelInfo: Ref<any[]> = ref([])
+const ExternalUnitArray: Ref<ExternalUnitStruct[]> = ref([])
+const selectAll = ref(false)
+const currentParameter: Ref<ParameterStruct> = ref({ ...defaultParameter })
+const TableData = ref<Record<string, any>[]>([])
+const currentDeviceChannelList: Ref<number[]> = ref([])
+const SearchFormData: Ref<SearchDataStruct> = ref({
+  dNumber: '',
+  dName: '',
+  dArea: undefined,
+  dType: undefined,
+  dImei: undefined,
+  dStatus: undefined,
+  dOnLine: undefined,
+  dProductType: undefined
+})
+const RTOArray: Ref<RTOStruct[]> = ref([])
+const deviceAreaArray: Ref<DeviceAreaStruct[]> = ref([])
+const deviceTypeArray: Ref<DeviceTypeStruct[]> = ref([])
+const deviceStatusArray: Ref<DeviceStatusStruct[]> = ref([])
+
+let currentDevice: Record<string, any> | undefined
+
+const deviceAreaOptions = computed(() => deviceAreaArray.value.map((item) => ({ label: item.areaName, value: item.id })))
+const deviceTypeOptions = computed(() => deviceTypeArray.value.map((item) => ({ label: item.name, value: item.id })))
+const deviceStatusOptions = computed(() => deviceStatusArray.value.map((item) => ({ label: item.label, value: item.id })))
+
+const columns: TableColumnsType<Record<string, any>> = [
+  { title: '设备编号', dataIndex: 'serialNumber', key: 'serialNumber', width: 160 },
+  { title: '设备名称', dataIndex: 'name', key: 'name', width: 120 },
+  { title: '设备地址', dataIndex: 'address', key: 'address', width: 180 },
+  { title: '是否在线', dataIndex: 'isOnline', key: 'isOnline', width: 120 },
+  { title: '最后在线时间', dataIndex: 'onlineTime', key: 'onlineTime', width: 180 },
+  { title: '型号名称', dataIndex: ['deviceType', 'name'], key: 'deviceTypeName', width: 160 },
+  { title: '设备sn', dataIndex: 'imei', key: 'imei', width: 180 },
+  { title: '状态', dataIndex: 'status', key: 'status', width: 120 },
+  { title: '操作', key: 'action', width: 120 }
+]
+
+const channelInfoColumns: TableColumnsType<any> = [
+  { title: '属性名称', dataIndex: 'label', key: 'label', width: 240, align: 'center' },
+  { title: '属性值', dataIndex: 'content', key: 'content', width: 220, align: 'center' },
+  { title: '更新时间', dataIndex: 'time', key: 'time', align: 'center' }
+]
+
+const rtoColumns: TableColumnsType<RTOStruct> = [
+  { title: '指令名称', dataIndex: 'label', key: 'label', width: 260, align: 'center' },
+  { title: '创建时间', dataIndex: 'createTime', key: 'createTime', width: 180, align: 'center' },
+  { title: '操作', key: 'action', width: 220, align: 'center' }
+]
+
+const doSendParam = () => {
+  if (!currentDevice) return
+
+  currentParameter.value.channel = currentParameter.value.isAll ? 0 : selectItem.value
+  currentParameter.value.deviceId = currentDevice.id
+
+  service.post(PATH_URL + '/MachineMange/sendParameter', currentParameter.value).then((res: any) => {
+    if (res.code == 200) {
+      message.success('操作成功')
+    }
+  })
+}
+
 const getParameter = () => {
-  let parm = {
+  if (!currentDevice) return
+
+  const parm = {
     deviceId: currentDevice.id,
     channel: selectItem.value
   }
 
   service.post(PATH_URL + '/MachineMange/getChannelInfo', parm).then((res: any) => {
-    console.log('channelInfo', res)
-    console.log('channel', res)
+    const data = res.data
     currentChannelInfo.value = []
-    let data = res.data
 
-    if (!data) {
-      return
-    }
+    if (!data) return
 
-    let cm: any[] = []
-
-    let dp = { label: '', content: '', time: '' }
-
-    dp.label = '链接状态'
-    dp.content = !data ? '未知' : data.linkStatus == 1 ? '正常' : '异常'
-    dp.time = !data ? '未知' : data.updateTime
-
-    cm.push(dp)
-
-    let version = { label: '', content: '', time: '' }
-    version.label = '软件版本'
-    version.content = !data ? '未知' : data.version
-    version.time = !data ? '未知' : data.updateTime
-    cm.push(version)
-
-    let spillOver = { label: '', content: '', time: '' }
-
-    spillOver.label = '是否满溢'
-    spillOver.content = !data ? '未知' : data.spillOver == 0 ? '未满溢' : '满溢'
-    spillOver.time = !data ? '未知' : data.updateTime
-    cm.push(spillOver)
-
-    let doorLock = { label: '', content: '', time: '' }
-    doorLock.label = '清运门锁'
-    doorLock.content = data.doorLock == 0 ? '关闭' : '开启'
-    doorLock.time = data.updateTime
-    cm.push(doorLock)
-
-    let fireStatus = { label: '', content: '', time: '' }
-    fireStatus.label = '灭火器状态'
-    fireStatus.content = data.fireStatus == 0 ? '未启用' : '启用'
-    fireStatus.time = data.updateTime
-    cm.push(fireStatus)
-
-    let ozone = { label: '', content: '', time: '' }
-    ozone.label = '臭氧'
-    ozone.content = data.ozone == 0 ? '未开启' : '开启'
-    ozone.time = data.updateTime
-    cm.push(ozone)
-
-    let antiTrap = { label: '', content: '', time: '' }
-    antiTrap.label = '防夹手'
-    antiTrap.content = data.antiTrap == 0 ? '未开启' : '开启'
-    antiTrap.time = data.updateTime
-    cm.push(antiTrap)
-
-    let smog = { label: '', content: '', time: '' }
-    smog.label = '烟雾'
-    smog.content = data.smog == 0 ? '未开启' : '开启'
-    smog.time = data.updateTime
-    cm.push(smog)
-
-    let humidity = { label: '', content: '', time: '' }
-    humidity.label = '湿度'
-    humidity.content = data.humidity
-    humidity.time = data.updateTime
-    cm.push(humidity)
-
-    let temperature = { label: '', content: '', time: '' }
-    temperature.label = '温度'
-    temperature.content = data.temperature
-    temperature.time = data.updateTime
-    cm.push(temperature)
-
-    let weight = { label: '', content: '', time: '' }
-    weight.label = '重量'
-    weight.content = data.weight
-    weight.time = data.updateTime
-    cm.push(weight)
-
-    currentChannelInfo.value = cm
-    console.log('currentChannelInfo', currentChannelInfo)
+    currentChannelInfo.value = [
+      {
+        label: '链接状态',
+        content: data.linkStatus == 1 ? '正常' : '异常',
+        time: data.updateTime
+      },
+      {
+        label: '软件版本',
+        content: data.version,
+        time: data.updateTime
+      },
+      {
+        label: '是否满溢',
+        content: data.spillOver == 0 ? '未满溢' : '满溢',
+        time: data.updateTime
+      },
+      {
+        label: '清运门锁',
+        content: data.doorLock == 0 ? '关闭' : '开启',
+        time: data.updateTime
+      },
+      {
+        label: '灭火器状态',
+        content: data.fireStatus == 0 ? '未启用' : '启用',
+        time: data.updateTime
+      },
+      {
+        label: '臭氧',
+        content: data.ozone == 0 ? '未开启' : '开启',
+        time: data.updateTime
+      },
+      {
+        label: '防夹手',
+        content: data.antiTrap == 0 ? '未开启' : '开启',
+        time: data.updateTime
+      },
+      {
+        label: '烟雾',
+        content: data.smog == 0 ? '未开启' : '开启',
+        time: data.updateTime
+      },
+      {
+        label: '湿度',
+        content: data.humidity,
+        time: data.updateTime
+      },
+      {
+        label: '温度',
+        content: data.temperature,
+        time: data.updateTime
+      },
+      {
+        label: '重量',
+        content: data.weight,
+        time: data.updateTime
+      }
+    ]
   })
 
   service.post(PATH_URL + '/MachineMange/getDeviceParameter', parm).then((res: any) => {
-    console.log('getParameter', res.data)
     if (res.data) {
-      currentParameter.value = res.data
-      if (currentParameter.value.channel == 0) {
-        currentParameter.value.isAll = true
+      currentParameter.value = {
+        ...res.data,
+        isAll: res.data.channel == 0
       }
     } else {
-      currentParameter.value = defaultParameter
+      currentParameter.value = { ...defaultParameter }
     }
-    console.log('currentParameter', currentParameter)
   })
 }
 
-const setBg = (item: any) => {
+const setBg = (item: number) => {
   selectItem.value = item
   getParameter()
 }
 
-const ConverStatus = (val) => {
-  let temp = ''
+const ConverStatus = (val: number) => {
   switch (val) {
     case 1:
-      temp = '待使用'
-      break
+      return '待使用'
     case 2:
-      temp = '使用中'
-      break
+      return '使用中'
     case 3:
-      temp = '已禁用'
-      break
+      return '已禁用'
     case 4:
-      temp = '故障'
-      break
+      return '故障'
     case 5:
-      temp = '已欠费'
-      break
+      return '已欠费'
     default:
-      temp = '未知'
-      break
+      return '未知'
   }
-
-  return temp
 }
 
-let currentChannelInfo: Ref<any[]> = ref([])
-
-const channelSet = (row: any) => {
+const channelSet = (row: Record<string, any>) => {
   operationVisible.value = true
-  let count: number = row.deviceType.warehouse
+  const count: number = row.deviceType?.warehouse || 0
   currentDeviceChannelList.value = []
   for (let i = 1; i <= count; i++) {
     currentDeviceChannelList.value.push(i)
   }
   currentDevice = row
   selectItem.value = 1
+  activeName.value = 'first'
   getParameter()
 }
 
-//#endregion
-
-// 外部单元列表
-let ExternalUnitArray: Ref<ExternalUnitStruct[]> = ref([])
-let selectAll = ref(false)
 const getExternalUnit = () => {
   service.get(PATH_URL + '/MachineMange/getExternalUnit').then((res: any) => {
-    ExternalUnitArray.value = res.data
-    console.log('ExtrrnalUnit', ExternalUnitArray.value)
+    ExternalUnitArray.value = res.data || []
   })
 }
 
-//点击了全选
 const unitSelectAll = () => {
   ExternalUnitArray.value.forEach((element) => {
     element.checked = selectAll.value
   })
 }
 
-let currentParameter: Ref<ParameterStruct> = ref({
-  id: 0,
-  channel: 0,
-  deferred: 0,
-  smog: 0,
-  gripper: 0,
-  close: 0,
-  push: 0,
-  deviceId: 0,
-  configurePoints: false,
-  updateParameter: false,
-  availability: false,
-  transmissionPeriod: 0,
-  inputCheck: 0,
-  isAll: false
-})
-
-let currentDevice: any
-
-let TableData = ref([])
-
-let currentDeviceChannelList: Ref<number[]> = ref([])
-
-let SearchFormData: Ref<SearchDataStruct> = ref({
-  dNumber: '',
-  dName: '',
-  dArea: null,
-  dType: null,
-  dImei: null,
-  dStatus: null,
-  dOnLine: null,
-  dProductType: null
-})
-let operationVisible = ref(false)
-let RTOArray: Ref<RTOStruct[]> = ref([])
-
-let deviceAreaArray: Ref<DeviceAreaStruct[]> = ref([])
-let deviceTypeArray: Ref<DeviceTypeStrcut[]> = ref([])
-let deviceStatusArray: Ref<DeviceStatusStruct[]> = ref([])
-
-let showSearchForm = ref(true)
-let currentPage = ref(1)
-let pageSize = ref(5)
+const setExternalUnitChecked = (item: ExternalUnitStruct, event: any) => {
+  item.checked = event.target.checked
+}
 
 onMounted(() => {
   getDeviceData()
@@ -681,182 +549,277 @@ onMounted(() => {
   getExternalUnit()
 })
 
-const doSend = (row: any) => {
-  let parm = {
-    deviceId: currentDevice.id,
-    operationId: row.id,
-    channelId: selectItem.value
-  }
+const doSend = (row: Record<string, any>) => {
+  if (!currentDevice) return
 
-  service.post(PATH_URL + '/MachineMange/sendRTO', parm).then((res: any) => {
-    if (res.code == 200) {
-      ElMessage('操作成功')
-    }
-  })
+  service
+    .post(PATH_URL + '/MachineMange/sendRTO', {
+      deviceId: currentDevice.id,
+      operationId: row.id,
+      channelId: selectItem.value
+    })
+    .then((res: any) => {
+      if (res.code == 200) {
+        message.success('操作成功')
+      }
+    })
 }
 
-const sendRecord = (row: any) => {
+const sendRecord = (row: Record<string, any>) => {
   console.log(row)
 }
 
-const handleSizeChange = () => {
+const handlePageChange = (page: number, size: number) => {
+  currentPage.value = page
+  pageSize.value = size
   getDeviceData()
 }
 
 const onSearch = () => {
+  currentPage.value = 1
   getDeviceData()
 }
 
 const onReset = () => {
   SearchFormData.value.dNumber = ''
   SearchFormData.value.dName = ''
-  SearchFormData.value.dArea = null
-  SearchFormData.value.dType = null
-
-  SearchFormData.value.dStatus = null
-  SearchFormData.value.dOnLine = null
+  SearchFormData.value.dArea = undefined
+  SearchFormData.value.dType = undefined
+  SearchFormData.value.dStatus = undefined
+  SearchFormData.value.dOnLine = undefined
+  currentPage.value = 1
+  getDeviceData()
 }
 
 const getDeviceStatus = () => {
-  service.get(PATH_URL + '/MachineMange/getDeviceStatus').then((res) => {
-    deviceStatusArray.value = res.data
+  service.get(PATH_URL + '/MachineMange/getDeviceStatus').then((res: any) => {
+    deviceStatusArray.value = res.data || []
   })
 }
 
 const getDeviceArea = () => {
-  service.post(PATH_URL + '/Permission/getDeviceArea').then((res) => {
-    deviceAreaArray.value = res.data
+  service.post(PATH_URL + '/Permission/getDeviceArea').then((res: any) => {
+    deviceAreaArray.value = res.data || []
   })
 }
 
 const getDeviceData = () => {
-  let parm = {
-    id: SearchFormData.value.dNumber,
-    deviceName: SearchFormData.value.dName,
-    deviceArea: SearchFormData.value.dArea,
-    deviceType: SearchFormData.value.dType,
-    onLine: SearchFormData.value.dOnLine,
-    status: SearchFormData.value.dStatus,
-    page: currentPage.value,
-    size: pageSize.value
-  }
-
-  service.post(PATH_URL + '/MachineMange/getDevice', parm).then((res) => {
-    console.log(res)
-    TableData.value = res.data.records
-    total.value = res.data.total
-  })
+  service
+    .post(PATH_URL + '/MachineMange/getDevice', {
+      id: SearchFormData.value.dNumber,
+      deviceName: SearchFormData.value.dName,
+      deviceArea: SearchFormData.value.dArea,
+      deviceType: SearchFormData.value.dType,
+      onLine: SearchFormData.value.dOnLine,
+      status: SearchFormData.value.dStatus,
+      page: currentPage.value,
+      size: pageSize.value
+    })
+    .then((res: any) => {
+      TableData.value = res.data?.records || []
+      total.value = res.data?.total || 0
+    })
 }
 
 const getDevcieType = () => {
-  service.post(PATH_URL + '/MachineMange/getDeviceType').then((res) => {
-    deviceTypeArray.value = res.data
+  service.post(PATH_URL + '/MachineMange/getDeviceType').then((res: any) => {
+    deviceTypeArray.value = res.data || []
   })
 }
 
 const getRTO = () => {
   service.get(PATH_URL + '/MachineMange/getRTO').then((res: any) => {
-    console.log(res)
-    RTOArray.value = res.data
+    RTOArray.value = res.data || []
   })
 }
 </script>
 
 <style scoped lang="less">
-@dialog-width: 100%;
-@dialog-height: 60vh;
-
-.paramList {
-  width: 100%;
-  height: 2rem;
-  line-height: 2rem;
-}
-
-.configBox {
+.maintenance-equipment-page {
   display: flex;
   width: 100%;
-  height: @dialog-height;
-  flex-direction: row;
-  justify-content: flex-start;
+  flex-direction: column;
+  gap: 16px;
+}
 
-  .extearnalUnitBox {
+.search-form {
+  display: grid;
+  padding: 16px;
+  background-color: #fff;
+  border-radius: 6px;
+  gap: 14px 16px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  align-items: end;
+
+  :deep(.ant-form-item) {
     display: flex;
-
-    height: 50vh;
-    flex: 2;
-    flex-direction: column;
-    justify-content: flex-start;
+    margin-bottom: 0;
+    align-items: center;
+    flex-wrap: nowrap;
   }
 
-  .paramrenterBox {
-    flex: 6;
-
-    height: 50vh;
+  :deep(.ant-form-item-label) {
+    flex: 0 0 80px;
+    padding: 0 10px 0 0;
+    line-height: 1;
+    text-align: right;
+    white-space: nowrap;
   }
 
-  .buttonBox {
-    flex: 2;
+  :deep(.ant-form-item-label > label) {
+    height: 32px;
+    color: #262626;
+    font-weight: 500;
+  }
 
-    height: 50vh;
+  :deep(.ant-form-item-control) {
+    min-width: 0;
+    flex: 1;
+  }
+
+  :deep(.ant-input),
+  :deep(.ant-select) {
+    width: 100%;
   }
 }
 
-.buttonBox {
+.search-form-item,
+.search-form-actions {
+  min-width: 0;
+}
+
+.search-form-actions {
+  :deep(.ant-form-item-control-input-content) {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.toolbar {
   display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  align-content: center;
-}
-
-.buttonOfTables {
-  .el-link {
-    margin-left: 10px;
-  }
-}
-
-.left {
-  display: flex;
-  width: @dialog-width;
-
-  height: @dialog-height;
-  padding-right: 20px;
-  padding-left: 20px;
-  flex-direction: column;
   justify-content: space-between;
   align-items: center;
 }
 
-.right {
-  width: @dialog-width;
-
-  height: @dialog-height;
-  padding-right: 20px;
-  padding-left: 20px;
+.toolbar-right {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
 }
 
-.channleBox {
-  width: 100%;
-  height: 2rem;
-  margin-top: 10px;
+.icon-button,
+.table-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 
+  :deep(.v-icon),
+  :deep(iconify-icon) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+}
+
+.table-action {
+  height: 24px;
+  padding: 0;
+  gap: 4px;
+}
+
+.pagination-wrap {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.operation-layout {
+  min-height: 560px;
+}
+
+.channel-panel {
+  display: flex;
+  min-height: 560px;
+  padding: 12px;
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.channel-title {
+  height: 32px;
+  color: #262626;
+  font-weight: 600;
+  line-height: 32px;
   text-align: center;
 }
 
-.channelItem {
-  width: 1rem;
-  height: 2rem;
-  line-height: 2rem;
-  border-radius: 0.4rem;
+.channel-box {
+  height: 34px;
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  transition: all 0.2s cubic-bezier(0, 0, 1, 1);
+
+  &:hover {
+    color: #1677ff;
+    border-color: #1677ff;
+  }
 }
 
-.selectSytle {
-  background-color: yellowgreen;
+.channel-box-active {
+  color: #fff;
+  background: #1677ff;
+  border-color: #1677ff;
 }
 
-.title {
-  width: 100%;
-  height: 5vh;
-  line-height: 5vh;
-  text-align: center;
+.operation-tabs {
+  min-height: 560px;
+}
+
+.config-box {
+  display: grid;
+  min-height: 480px;
+  grid-template-columns: 180px minmax(0, 1fr) 120px;
+  gap: 16px;
+}
+
+.external-unit-box {
+  display: flex;
+  padding: 12px;
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.parameter-box {
+  display: grid;
+  align-content: start;
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  gap: 12px 16px;
+}
+
+.param-list {
+  display: grid;
+  height: 32px;
+  align-items: center;
+  grid-template-columns: 150px 120px 32px;
+  gap: 8px;
+}
+
+.unit-text {
+  color: #595959;
+}
+
+.operation-button-box {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-end;
 }
 </style>

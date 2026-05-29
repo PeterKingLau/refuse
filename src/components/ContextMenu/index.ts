@@ -1,9 +1,10 @@
 import ContextMenu from './src/ContextMenu.vue'
-import { ElDropdown } from 'element-plus'
+import { Dropdown as ADropdown } from 'ant-design-vue'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
 
 export interface ContextMenuExpose {
-  elDropdownMenuRef: ComponentRef<typeof ElDropdown>
+  close: () => void
+  elDropdownMenuRef: ComponentRef<typeof ADropdown>
   tagItem: RouteLocationNormalizedLoaded
 }
 

@@ -1,203 +1,211 @@
 <template>
-  <el-row>
-    <el-form :model="QueryParm" label-width="100px" :inline="true" v-if="showSearchForm">
-      <el-form-item label="异常记录编号">
-        <el-input v-model="QueryParm.id" class="eInput" placeholder="请输入记录编号" />
-      </el-form-item>
+  <div class="warning-page">
+    <AForm v-if="showSearchForm" :model="QueryParm" layout="horizontal" class="search-form">
+      <AFormItem label="异常记录编号" class="search-form-item">
+        <AInput v-model:value="QueryParm.id" placeholder="请输入记录编号" />
+      </AFormItem>
 
-      <el-form-item label="设备编号">
-        <el-input v-model="QueryParm.serialNumber" class="eInput" placeholder="请输入设备编号" />
-      </el-form-item>
+      <AFormItem label="设备编号" class="search-form-item">
+        <AInput v-model:value="QueryParm.serialNumber" placeholder="请输入设备编号" />
+      </AFormItem>
 
-      <el-form-item label="设备名称">
-        <el-input v-model="QueryParm.deviceName" class="eInput" placeholder="请输入设备名称" />
-      </el-form-item>
+      <AFormItem label="设备名称" class="search-form-item">
+        <AInput v-model:value="QueryParm.deviceName" placeholder="请输入设备名称" />
+      </AFormItem>
 
-      <el-form-item label="故障类型：">
-        <el-select v-model="QueryParm.warningModel">
-          <el-option :value="1" label="运维" key="1" />
-          <el-option :value="2" label="清运" key="2" />
-        </el-select>
-      </el-form-item>
+      <AFormItem label="故障类型" class="search-form-item">
+        <ASelect v-model:value="QueryParm.warningModel" :options="warningModelOptions" allow-clear placeholder="请选择故障类型" />
+      </AFormItem>
 
-      <el-form-item label="设备状态">
-        <el-select v-model="QueryParm.Processed">
-          <el-option :value="1" label="未处理" key="1" />
-          <el-option :value="2" label="暂不处理" key="2" />
-          <el-option :value="3" label="已处理" key="3" />
-        </el-select>
-      </el-form-item>
+      <AFormItem label="设备状态" class="search-form-item">
+        <ASelect v-model:value="QueryParm.Processed" :options="processOptions" allow-clear placeholder="请选择设备状态" />
+      </AFormItem>
 
-      <el-form-item label="产品类型">
-        <el-select v-model="QueryParm.deviceType">
-          <el-option
-            v-for="item in deviceTypeArray"
-            :key="item.id"
-            :label="item.name"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
+      <AFormItem label="产品类型" class="search-form-item">
+        <ASelect v-model:value="QueryParm.deviceType" :options="deviceTypeOptions" allow-clear placeholder="请选择产品类型" />
+      </AFormItem>
 
-      <el-form-item label="运营商：">
-        <el-select v-model="QueryParm.departmentId">
-          <el-option
-            v-for="item in departmentArray"
-            :key="item.id"
-            :label="item.platform_name"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
+      <AFormItem label="运营商" class="search-form-item">
+        <ASelect v-model:value="QueryParm.departmentId" :options="departmentOptions" allow-clear placeholder="请选择运营商" />
+      </AFormItem>
 
-      <el-form-item label="上报时间:">
-        <el-date-picker
-          v-model="operationTime"
-          type="daterange"
-          range-separator="到"
-          start-placeholder="开始时间"
-          end-placeholder="结束时间"
-          value-format="YYYY-MM-DD HH:mm:ss"
-          size="default"
-        />
-      </el-form-item>
+      <AFormItem label="上报时间" class="search-form-item search-form-range">
+        <ARangePicker v-model:value="operationTime" value-format="YYYY-MM-DD HH:mm:ss" class="w-full" start-placeholder="开始时间" end-placeholder="结束时间" />
+      </AFormItem>
 
-      <el-form-item>
-        <el-button type="primary" class="btn" @click="getTableData" v-hasPermi="Permission.sec">
-          <el-icon><Search /></el-icon>
-          搜索
-        </el-button>
-      </el-form-item>
+      <AFormItem class="search-form-actions">
+        <ASpace>
+          <AButton type="primary" class="icon-button" @click="getTableData" v-hasPermi="Permission.sec">
+            <template #icon>
+              <Icon icon="ant-design:search-outlined" />
+            </template>
+            搜索
+          </AButton>
+          <AButton class="icon-button" @click="onReset">
+            <template #icon>
+              <Icon icon="ant-design:reload-outlined" />
+            </template>
+            重置
+          </AButton>
+        </ASpace>
+      </AFormItem>
+    </AForm>
 
-      <el-form-item>
-        <el-button class="btn" @click="onReset">
-          <el-icon class="el-icon--left"><RefreshRight /></el-icon>
-          重置
-        </el-button>
-      </el-form-item>
-    </el-form>
-  </el-row>
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <AButton danger class="icon-button" @click="exportExcel">
+          <template #icon>
+            <Icon icon="ant-design:export-outlined" />
+          </template>
+          导出
+        </AButton>
+        <AButton type="primary" class="icon-button" :disabled="ProcessBatch" @click="doWorkBatch" v-hasPermi="Permission.han">
+          <template #icon>
+            <Icon icon="ant-design:tool-outlined" />
+          </template>
+          批量处理
+        </AButton>
+      </div>
 
-  <!-- 操作按钮-->
-  <el-row>
-    <el-col :span="12">
-      <!-- <el-button type="primary" class="btn" @click="OnClickAdd" v-if="false">
-          <el-icon><Plus /> </el-icon>
-          新增</el-button
-        > -->
+      <div class="toolbar-right">
+        <ATooltip :title="showSearchForm ? '隐藏搜索' : '显示搜索'">
+          <AButton shape="circle" @click="showSearchForm = !showSearchForm">
+            <template #icon>
+              <Icon icon="ant-design:search-outlined" />
+            </template>
+          </AButton>
+        </ATooltip>
+        <ATooltip title="刷新">
+          <AButton shape="circle" @click="onPageRest">
+            <template #icon>
+              <Icon icon="ant-design:reload-outlined" />
+            </template>
+          </AButton>
+        </ATooltip>
+      </div>
+    </div>
 
-      <el-button type="danger" class="btn" @click="exportExcel"
-        ><el-icon><Close /></el-icon>导出</el-button
-      >
-      <el-button
-        type="primary"
-        class="btn"
-        @click="doWorkBatch"
-        :disabled="ProcessBatch"
-        v-hasPermi="Permission.han"
-        ><el-icon><Close /></el-icon>批量处理</el-button
-      >
-    </el-col>
+    <ADivider />
 
-    <el-col :span="12" style="text-align: right">
-      <el-tooltip content="隐藏搜索" placement="top-start">
-        <el-button circle @click="showSearchForm = !showSearchForm">
-          <el-icon><Search /></el-icon
-        ></el-button>
-      </el-tooltip>
-      <el-tooltip content="刷新" placement="top-start">
-        <el-button circle @click="onPageRest">
-          <el-icon><RefreshRight /></el-icon>
-        </el-button>
-      </el-tooltip>
-    </el-col>
-  </el-row>
-  <el-divider />
+    <ATable row-key="id" :columns="columns" :data-source="tableData" :pagination="false" :row-selection="rowSelection" :scroll="{ x: 1900 }" bordered>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'warning_model'">
+          {{ record.warning_model == 1 ? '运维' : '清运' }}
+        </template>
 
-  <el-row>
-    <el-table
-      ref="areaTableRef"
-      :data="tableData"
-      style="width: 100%"
-      @selection-change="handleSelectionChange"
-    >
-      <el-table-column type="selection" width="55" />
-      <el-table-column label="异常编号" width="100" property="id" />
+        <template v-else-if="column.key === 'Processed'">
+          {{ ConvertStatus(record.Processed) }}
+        </template>
 
-      <el-table-column label="故障描述" width="160" property="warningLabel" />
-      <el-table-column label="所属运营商" width="100" property="Platform_name" />
-      <el-table-column label="设备名称" width="100" property="device_name" />
-      <el-table-column label="产品类型" width="100" property="type_name" />
-      <el-table-column label="设备编号" width="100" property="serial_number" />
-      <el-table-column label="仓位名称" width="100" property="garbage_Name" />
-      <el-table-column label="仓位" width="60" property="code" />
-      <el-table-column label="设备地址" width="200" property="address" />
-      <el-table-column label="处理描述" width="80" property="processed_descript" />
-      <el-table-column label="故障类型" width="80" v-slot="scope">
-        {{ scope.row.warning_model == 1 ? '运维' : '清运' }}
-      </el-table-column>
-      <el-table-column label="处理状态" width="100" v-slot="scope">
-        {{ ConvertStatus(scope.row.Processed) }}
-      </el-table-column>
-      <el-table-column label="上报时间" width="200" v-slot="scope">
-        {{ FormatDate(scope.row.create_time) }}
-      </el-table-column>
+        <template v-else-if="column.key === 'create_time'">
+          {{ FormatDate(record.create_time) }}
+        </template>
 
-      <el-table-column label="操作" width="200" v-slot="scope">
-        <el-link type="primary" @click="doWork(scope.row)" v-hasPermi="Permission.han"
-          >处理</el-link
-        >
-      </el-table-column>
-    </el-table>
-  </el-row>
-  <el-row>
-    <el-col :span="18">
-      <el-pagination
-        v-model:current-page="QueryParm.page"
+        <template v-else-if="column.key === 'action'">
+          <AButton type="link" class="table-action" @click="doWork(record)" v-hasPermi="Permission.han">处理</AButton>
+        </template>
+      </template>
+    </ATable>
+
+    <div class="pagination-wrap">
+      <APagination
+        v-model:current="QueryParm.page"
         v-model:page-size="QueryParm.size"
-        :small="small"
+        :page-size-options="['5', '10', '15', '20', '50', '100']"
+        :show-size-changer="true"
         :disabled="disabled"
-        layout="total, sizes, prev, pager, next, jumper"
         :total="QueryParm.total"
-        @size-change="getTableData"
-        @current-change="getTableData"
+        :show-total="(totalCount) => `共 ${totalCount} 条`"
+        show-quick-jumper
+        @change="handlePageChange"
+        @show-size-change="handlePageChange"
       />
-    </el-col>
-  </el-row>
+    </div>
 
-  <el-dialog v-model="ProcessDialogVisible" title="报警处理" width="40%">
-    <el-form :model="ProcessData" label-width="120px">
-      <el-form-item label="处理描述">
-        <el-input v-model="ProcessData.desc" type="textarea" rows="3" />
-      </el-form-item>
-    </el-form>
-    <el-form-item label="设备状态" label-width="120px">
-      <el-radio-group v-model="ProcessData.type">
-        <el-radio :label="1"> 未处理</el-radio>
-        <el-radio :label="2"> 暂不处理</el-radio>
-        <el-radio :label="3"> 已处理</el-radio>
-      </el-radio-group>
-    </el-form-item>
-    <template #footer>
-      <span class="dialog-footer">
-        <el-button @click="ProcessDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="toDo"> 确认</el-button>
-      </span>
-    </template>
-  </el-dialog>
+    <AModal v-model:open="ProcessDialogVisible" title="报警处理" width="520px">
+      <AForm :model="ProcessData" layout="vertical">
+        <AFormItem label="处理描述">
+          <ATextarea v-model:value="ProcessData.desc" :rows="3" />
+        </AFormItem>
+
+        <AFormItem label="设备状态">
+          <ARadioGroup v-model:value="ProcessData.type" :options="processOptions" option-type="button" button-style="solid" />
+        </AFormItem>
+      </AForm>
+
+      <template #footer>
+        <ASpace>
+          <AButton @click="ProcessDialogVisible = false">取消</AButton>
+          <AButton type="primary" @click="toDo">确认</AButton>
+        </ASpace>
+      </template>
+    </AModal>
+  </div>
 </template>
 
 <script setup lang="ts">
+import { computed, inject, onMounted, ref } from 'vue'
+import {
+  Button as AButton,
+  DatePicker as ADatePicker,
+  Divider as ADivider,
+  Form as AForm,
+  FormItem as AFormItem,
+  Input as AInput,
+  Modal as AModal,
+  Pagination as APagination,
+  RadioGroup as ARadioGroup,
+  Select as ASelect,
+  Space as ASpace,
+  Table as ATable,
+  Tooltip as ATooltip,
+  message
+} from 'ant-design-vue'
+import type { TableColumnsType } from 'ant-design-vue'
 import { PATH_URL, service } from '@/config/axios/service'
 import { FormatDate } from '@/utils/tools'
-import { ElMessage } from 'element-plus'
-import { inject } from 'vue'
-import { ref, Ref, onMounted, unref } from 'vue'
+import { Icon } from '@/components/Icon'
 
-const reload: any = inject('reload')
+const ARangePicker = ADatePicker.RangePicker
+const ATextarea = AInput.TextArea
+
+type TableKey = string | number
+type DateRange = [string, string] | undefined
+
+interface WarningQueryStruct {
+  id?: number
+  serialNumber: string
+  deviceName: string
+  warningModel?: number
+  Processed?: number
+  deviceType?: number
+  departmentId?: number
+  sTime: string
+  eTime: string
+  page: number
+  size: number
+  total: number
+}
+
+interface ProcessStruct {
+  ids: number[]
+  type: number
+  desc: string
+}
+
+interface WarningRecord {
+  [key: string]: any
+  id: number
+}
+
+const reload = inject<() => void>('reload')
 
 const onPageRest = () => {
-  reload()
+  if (reload) {
+    reload()
+    return
+  }
+  getTableData()
 }
 
 const Permission = ref({
@@ -205,12 +213,9 @@ const Permission = ref({
   sec: 'ord_war_sec'
 })
 
-let small = ref(false)
-let disabled = ref(false)
-
-let ProcessDialogVisible = ref(false)
-
-let QueryParm = ref({
+const disabled = ref(false)
+const ProcessDialogVisible = ref(false)
+const QueryParm = ref<WarningQueryStruct>({
   id: undefined,
   serialNumber: '',
   deviceName: '',
@@ -225,94 +230,112 @@ let QueryParm = ref({
   total: 0
 })
 
-let ProcessBatch = ref(true)
+const selectedRowKeys = ref<TableKey[]>([])
+const ProcessBatch = computed(() => selectedRowKeys.value.length === 0)
+const tableData = ref<WarningRecord[]>([])
+const showSearchForm = ref(true)
+const departmentArray = ref<any[]>([])
+const deviceTypeArray = ref<any[]>([])
+const operationTime = ref<DateRange>()
+let selectIdArray: number[] = []
+
+const ProcessData = ref<ProcessStruct>({
+  ids: [],
+  type: 1,
+  desc: ''
+})
+
+const warningModelOptions = [
+  { value: 1, label: '运维' },
+  { value: 2, label: '清运' }
+]
+
+const processOptions = [
+  { value: 1, label: '未处理' },
+  { value: 2, label: '暂不处理' },
+  { value: 3, label: '已处理' }
+]
+
+const departmentOptions = computed(() => departmentArray.value.map((item) => ({ label: item.platform_name, value: item.id })))
+const deviceTypeOptions = computed(() => deviceTypeArray.value.map((item) => ({ label: item.name, value: item.id })))
+
+const columns: TableColumnsType<WarningRecord> = [
+  { title: '异常编号', dataIndex: 'id', key: 'id', width: 100 },
+  { title: '故障描述', dataIndex: 'warningLabel', key: 'warningLabel', width: 160 },
+  { title: '所属运营商', dataIndex: 'Platform_name', key: 'Platform_name', width: 140 },
+  { title: '设备名称', dataIndex: 'device_name', key: 'device_name', width: 120 },
+  { title: '产品类型', dataIndex: 'type_name', key: 'type_name', width: 120 },
+  { title: '设备编号', dataIndex: 'serial_number', key: 'serial_number', width: 140 },
+  { title: '仓位名称', dataIndex: 'garbage_Name', key: 'garbage_Name', width: 120 },
+  { title: '仓位', dataIndex: 'code', key: 'code', width: 80 },
+  { title: '设备地址', dataIndex: 'address', key: 'address', width: 220 },
+  { title: '处理描述', dataIndex: 'processed_descript', key: 'processed_descript', width: 120 },
+  { title: '故障类型', dataIndex: 'warning_model', key: 'warning_model', width: 100 },
+  { title: '处理状态', dataIndex: 'Processed', key: 'Processed', width: 120 },
+  { title: '上报时间', dataIndex: 'create_time', key: 'create_time', width: 180 },
+  { title: '操作', key: 'action', width: 120, fixed: 'right' }
+]
+
+const rowSelection = computed(() => ({
+  selectedRowKeys: selectedRowKeys.value,
+  onChange: (keys: TableKey[], rows: WarningRecord[]) => {
+    selectedRowKeys.value = keys
+    selectIdArray = rows.map((row) => row.id)
+  }
+}))
 
 const ConvertStatus = (type: number): string => {
-  let temp = ''
   switch (type) {
     case 1:
-      temp = '未处理'
-      break
+      return '未处理'
     case 2:
-      temp = '暂不处理'
-      break
+      return '暂不处理'
     case 3:
-      temp = '已处理'
-      break
+      return '已处理'
     default:
-      temp = '未知'
+      return '未知'
   }
-  return temp
 }
 
 const doWorkBatch = () => {
-  ProcessData.value.ids = []
-  selectIdArray.forEach((item) => {
-    ProcessData.value.ids.push(item)
-  })
-
-  ProcessData.value.ids = selectIdArray
+  ProcessData.value.ids = [...selectIdArray]
   ProcessData.value.desc = ''
   ProcessData.value.type = 1
-
   ProcessDialogVisible.value = true
 }
 
-let selectIdArray: any[] = []
-
-let tableData: Ref<any[]> = ref([])
-
-const handleSelectionChange = (val: any) => {
-  if (val.length > 0) {
-    ProcessBatch.value = false
-  } else {
-    ProcessBatch.value = true
-  }
-
-  selectIdArray = []
-  let tt = unref(val)
-  tt.forEach((row: any) => {
-    selectIdArray.push(row.id)
-  })
-
-  console.log(selectIdArray)
-}
 const exportExcel = () => {}
+
 onMounted(() => {
   getProduct()
   getDepartment()
   getTableData()
 })
+
+const handlePageChange = (page: number, size: number) => {
+  QueryParm.value.page = page
+  QueryParm.value.size = size
+  getTableData()
+}
+
 const getTableData = () => {
-  QueryParm.value.sTime = operationTime.value[0]
-  QueryParm.value.eTime = operationTime.value[1]
+  QueryParm.value.sTime = operationTime.value?.[0] || ''
+  QueryParm.value.eTime = operationTime.value?.[1] || ''
 
   service.post(PATH_URL + '/MachineMange/getWarningList', QueryParm.value).then((res: any) => {
-    console.log(res)
-    tableData.value = res.data.records
-    QueryParm.value.total = res.data.total
+    tableData.value = res.data?.records || []
+    QueryParm.value.total = res.data?.total || 0
+    selectedRowKeys.value = []
+    selectIdArray = []
   })
 }
-const doWork = (row: any) => {
-  ProcessData.value.ids = []
-  ProcessData.value.ids.push(row.id)
+
+const doWork = (row: Record<string, any>) => {
+  ProcessData.value.ids = [row.id]
   ProcessData.value.desc = ''
   ProcessData.value.type = 1
-
   ProcessDialogVisible.value = true
 }
-
-interface ProcessStruct {
-  ids: number[]
-  type: number
-  desc: string
-}
-
-let ProcessData: Ref<ProcessStruct> = ref({
-  ids: [] as number[],
-  type: 1,
-  desc: ''
-})
 
 const onReset = () => {
   QueryParm.value = {
@@ -329,44 +352,36 @@ const onReset = () => {
     size: 10,
     total: 0
   }
+  operationTime.value = undefined
+  getTableData()
 }
 
 const getProduct = () => {
-  let param = {
-    page: 1,
-    size: 100
-  }
-
-  service.post(PATH_URL + '/MachineMange/getProduct', param).then((res: any) => {
-    deviceTypeArray.value = res.data
-  })
+  service
+    .post(PATH_URL + '/MachineMange/getProduct', {
+      page: 1,
+      size: 100
+    })
+    .then((res: any) => {
+      deviceTypeArray.value = res.data || []
+    })
 }
 
 const getDepartment = () => {
   service.get(PATH_URL + '/Permission/getDepartmentForSelect').then((res: any) => {
-    departmentArray.value = res.data
+    departmentArray.value = res.data || []
   })
 }
 
-let showSearchForm = ref(true)
-
-let departmentArray: Ref<any[]> = ref([])
-
-let deviceTypeArray: Ref<any[]> = ref([])
-let operationTime: Ref<any[]> = ref([])
-
 const toDo = () => {
-  console.log(ProcessData.value)
-
   if (ProcessData.value.desc == '' || ProcessData.value.desc.trim().length == 0) {
-    ElMessage('请填写 处理描述 ')
+    message.warning('请填写处理描述')
     return
   }
 
   service.post(PATH_URL + '/MachineMange/setWarningProcess', ProcessData.value).then((res: any) => {
-    console.log(res)
     if (res.code == 200) {
-      ElMessage('操作成功')
+      message.success('操作成功')
       getTableData()
       ProcessDialogVisible.value = false
     }
@@ -374,4 +389,112 @@ const toDo = () => {
 }
 </script>
 
-<style scoped lang="less"></style>
+<style scoped lang="less">
+.warning-page {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.search-form {
+  display: grid;
+  padding: 16px;
+  background-color: #fff;
+  border-radius: 6px;
+  gap: 14px 16px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  align-items: end;
+
+  :deep(.ant-form-item) {
+    display: flex;
+    margin-bottom: 0;
+    align-items: center;
+    flex-wrap: nowrap;
+  }
+
+  :deep(.ant-form-item-label) {
+    flex: 0 0 96px;
+    padding: 0 10px 0 0;
+    line-height: 1;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  :deep(.ant-form-item-label > label) {
+    height: 32px;
+    color: #262626;
+    font-weight: 500;
+  }
+
+  :deep(.ant-form-item-control) {
+    min-width: 0;
+    flex: 1;
+  }
+
+  :deep(.ant-input),
+  :deep(.ant-select),
+  :deep(.ant-picker) {
+    width: 100%;
+  }
+}
+
+.search-form-item,
+.search-form-actions {
+  min-width: 0;
+}
+
+.search-form-range {
+  grid-column: span 2;
+}
+
+.search-form-actions {
+  :deep(.ant-form-item-control-input-content) {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.toolbar-left,
+.toolbar-right {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.icon-button,
+.table-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  :deep(.ant-btn-icon),
+  :deep(.v-icon),
+  :deep(iconify-icon) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+}
+
+.table-action {
+  height: 24px;
+  padding: 0;
+}
+
+.pagination-wrap {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.w-full {
+  width: 100%;
+}
+</style>

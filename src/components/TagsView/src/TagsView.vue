@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { onMounted, watch, computed, unref, ref, nextTick } from 'vue'
+import { ref, watch, computed, unref, nextTick, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import type { RouteLocationNormalizedLoaded, RouterLinkProps } from 'vue-router'
+import type { RouteLocationNormalizedLoaded, RouterLinkProps, RouteMeta } from 'vue-router'
 import { usePermissionStore } from '@/store/modules/permission'
 import { useTagsViewStore } from '@/store/modules/tagsView'
 import { useAppStore } from '@/store/modules/app'
@@ -10,36 +10,38 @@ import { filterAffixTags } from './helper'
 import { ContextMenu, ContextMenuExpose } from '@/components/ContextMenu'
 import { useDesign } from '@/hooks/web/useDesign'
 import { useTemplateRefsList } from '@vueuse/core'
-import { ElScrollbar } from 'element-plus'
 import { useScrollTo } from '@/hooks/event/useScrollTo'
+import { Icon } from '@/components/Icon'
 
 const { getPrefixCls } = useDesign()
-
 const prefixCls = getPrefixCls('tags-view')
-
 const { t } = useI18n()
-
 const { currentRoute, push, replace } = useRouter()
-
 const permissionStore = usePermissionStore()
-
 const routers = computed(() => permissionStore.getRouters)
-
 const tagsViewStore = useTagsViewStore()
-
 const visitedViews = computed(() => tagsViewStore.getVisitedViews)
-
+const hasMultipleTags = computed(() => unref(visitedViews).length > 1)
 const affixTagArr = ref<RouteLocationNormalizedLoaded[]>([])
-
 const appStore = useAppStore()
-
 const tagsViewIcon = computed(() => appStore.getTagsViewIcon)
 
-// 初始化tag
+const canCloseView = (view?: RouteLocationNormalizedLoaded) => {
+  return unref(hasMultipleTags) && !view?.meta?.affix
+}
+
+const getTagIcon = (view: RouteLocationNormalizedLoaded) => {
+  if (!unref(tagsViewIcon)) return ''
+
+  const metaList = [view.meta, ...((view.matched || []).map((matched) => matched.meta).reverse() as RouteMeta[])]
+
+  const matchedMeta = metaList.find((meta) => meta?.icon)
+  return (matchedMeta?.icon as string) || ''
+}
+
 const initTags = () => {
   affixTagArr.value = filterAffixTags(unref(routers))
   for (const tag of unref(affixTagArr)) {
-    // Must have tag name
     if (tag.name) {
       tagsViewStore.addVisitedView(tag)
     }
@@ -48,7 +50,6 @@ const initTags = () => {
 
 const selectedTag = ref<RouteLocationNormalizedLoaded>()
 
-// 新增tag
 const addTags = () => {
   const { name } = unref(currentRoute)
   if (name) {
@@ -58,7 +59,6 @@ const addTags = () => {
   return false
 }
 
-// 关闭选中的tag
 const closeSelectedTag = (view: RouteLocationNormalizedLoaded) => {
   if (view?.meta?.affix) return
   tagsViewStore.delView(view)
@@ -67,18 +67,15 @@ const closeSelectedTag = (view: RouteLocationNormalizedLoaded) => {
   }
 }
 
-// 关闭全部
 const closeAllTags = () => {
   tagsViewStore.delAllViews()
   toLastView()
 }
 
-// 关闭其他
 const closeOthersTags = () => {
   tagsViewStore.delOthersViews(unref(selectedTag) as RouteLocationNormalizedLoaded)
 }
 
-// 重新加载
 const refreshSelectedTag = async (view?: RouteLocationNormalizedLoaded) => {
   if (!view) return
   tagsViewStore.delCachedView()
@@ -90,36 +87,28 @@ const refreshSelectedTag = async (view?: RouteLocationNormalizedLoaded) => {
   })
 }
 
-// 关闭左侧
 const closeLeftTags = () => {
   tagsViewStore.delLeftViews(unref(selectedTag) as RouteLocationNormalizedLoaded)
 }
 
-// 关闭右侧
 const closeRightTags = () => {
   tagsViewStore.delRightViews(unref(selectedTag) as RouteLocationNormalizedLoaded)
 }
 
-// 跳转到最后一个
 const toLastView = () => {
-  const visitedViews = tagsViewStore.getVisitedViews
-  const latestView = visitedViews.slice(-1)[0]
+  const visitedViewsList = tagsViewStore.getVisitedViews
+  const latestView = visitedViewsList.slice(-1)[0]
   if (latestView) {
     push(latestView)
   } else {
-    if (
-      unref(currentRoute).path === permissionStore.getAddRouters[0].path ||
-      unref(currentRoute).path === permissionStore.getAddRouters[0].redirect
-    ) {
+    if (unref(currentRoute).path === permissionStore.getAddRouters[0].path || unref(currentRoute).path === permissionStore.getAddRouters[0].redirect) {
       addTags()
       return
     }
-    // You can set another route
     push(permissionStore.getAddRouters[0].path)
   }
 }
 
-// 滚动到选中的tag
 const moveToCurrentTag = async () => {
   await nextTick()
   for (const v of unref(visitedViews)) {
@@ -128,7 +117,6 @@ const moveToCurrentTag = async () => {
       if (v.fullPath !== unref(currentRoute).fullPath) {
         tagsViewStore.updateVisitedView(unref(currentRoute))
       }
-
       break
     }
   }
@@ -136,19 +124,25 @@ const moveToCurrentTag = async () => {
 
 const tagLinksRefs = useTemplateRefsList<RouterLinkProps>()
 
+const getScrollWrap = () => unref(scrollbarRef)
+
+const getTagFullPath = (tag?: Nullable<RouterLinkProps>) => {
+  return (tag?.to as RouteLocationNormalizedLoaded | undefined)?.fullPath
+}
+
 const moveToTarget = (currentTag: RouteLocationNormalizedLoaded) => {
-  const wrap$ = unref(scrollbarRef)?.wrap$
+  const wrap$ = getScrollWrap()
+  if (!wrap$) return
+
   let firstTag: Nullable<RouterLinkProps> = null
   let lastTag: Nullable<RouterLinkProps> = null
 
   const tagList = unref(tagLinksRefs)
-  // find first tag and last tag
   if (tagList.length > 0) {
     firstTag = tagList[0]
     lastTag = tagList[tagList.length - 1]
   }
-  if ((firstTag?.to as RouteLocationNormalizedLoaded).fullPath === currentTag.fullPath) {
-    // 直接滚动到0的位置
+  if (getTagFullPath(firstTag) === currentTag.fullPath) {
     const { start } = useScrollTo({
       el: wrap$!,
       position: 'scrollLeft',
@@ -156,8 +150,7 @@ const moveToTarget = (currentTag: RouteLocationNormalizedLoaded) => {
       duration: 500
     })
     start()
-  } else if ((lastTag?.to as RouteLocationNormalizedLoaded).fullPath === currentTag.fullPath) {
-    // 滚动到最后的位置
+  } else if (getTagFullPath(lastTag) === currentTag.fullPath) {
     const { start } = useScrollTo({
       el: wrap$!,
       position: 'scrollLeft',
@@ -166,19 +159,16 @@ const moveToTarget = (currentTag: RouteLocationNormalizedLoaded) => {
     })
     start()
   } else {
-    // find preTag and nextTag
-    const currentIndex: number = tagList.findIndex(
-      (item) => (item?.to as RouteLocationNormalizedLoaded).fullPath === currentTag.fullPath
-    )
+    const currentIndex: number = tagList.findIndex((item) => getTagFullPath(item) === currentTag.fullPath)
+    if (currentIndex < 0) return
+
     const tgsRefs = document.getElementsByClassName(`${prefixCls}__item`)
 
     const prevTag = tgsRefs[currentIndex - 1] as HTMLElement
     const nextTag = tgsRefs[currentIndex + 1] as HTMLElement
+    if (!prevTag || !nextTag) return
 
-    // the tag's offsetLeft after of nextTag
     const afterNextTagOffsetLeft = nextTag.offsetLeft + nextTag.offsetWidth + 4
-
-    // the tag's offsetLeft before of prevTag
     const beforePrevTagOffsetLeft = prevTag.offsetLeft - 4
 
     if (afterNextTagOffsetLeft > unref(scrollLeftNumber) + wrap$!.offsetWidth) {
@@ -201,41 +191,36 @@ const moveToTarget = (currentTag: RouteLocationNormalizedLoaded) => {
   }
 }
 
-// 是否是当前tag
 const isActive = (route: RouteLocationNormalizedLoaded): boolean => {
   return route.path === unref(currentRoute).path
 }
 
-// 所有右键菜单组件的元素
 const itemRefs = useTemplateRefsList<ComponentRef<typeof ContextMenu & ContextMenuExpose>>()
 
-// 右键菜单装填改变的时候
 const visibleChange = (visible: boolean, tagItem: RouteLocationNormalizedLoaded) => {
   if (visible) {
     for (const v of unref(itemRefs)) {
-      const elDropdownMenuRef = v.elDropdownMenuRef
       if (tagItem.fullPath !== v.tagItem.fullPath) {
-        elDropdownMenuRef?.handleClose()
+        v.close()
       }
     }
   }
 }
 
-// elscroll 实例
-const scrollbarRef = ref<ComponentRef<typeof ElScrollbar>>()
+const scrollbarRef = ref<HTMLElement>()
 
-// 保存滚动位置
 const scrollLeftNumber = ref(0)
 
-const scroll = ({ scrollLeft }) => {
-  scrollLeftNumber.value = scrollLeft as number
+const scroll = (event: Event) => {
+  scrollLeftNumber.value = (event.target as HTMLElement).scrollLeft
 }
 
-// 移动到某个位置
 const move = (to: number) => {
-  const wrap$ = unref(scrollbarRef)?.wrap$
+  const wrap$ = getScrollWrap()
+  if (!wrap$) return
+
   const { start } = useScrollTo({
-    el: wrap$!,
+    el: wrap$,
     position: 'scrollLeft',
     to: unref(scrollLeftNumber) + to,
     duration: 500
@@ -258,24 +243,13 @@ watch(
 </script>
 
 <template>
-  <div
-    :id="prefixCls"
-    :class="prefixCls"
-    class="flex w-full relative bg-[#fff] dark:bg-[var(--el-bg-color)]"
-  >
-    <span
-      :class="`${prefixCls}__tool`"
-      class="w-[var(--tags-view-height)] h-[var(--tags-view-height)] text-center leading-[var(--tags-view-height)] cursor-pointer"
-      @click="move(-200)"
-    >
-      <Icon
-        icon="ep:d-arrow-left"
-        :color="appStore.getIsDark ? 'var(--el-text-color-regular)' : '#333'"
-      />
+  <div :id="prefixCls" :class="prefixCls" class="flex w-full relative items-center bg-[#f0f2f5] dark:bg-[#141414]">
+    <span :class="`${prefixCls}__tool`" class="w-[var(--tags-view-height)] h-[var(--tags-view-height)] cursor-pointer" @click="move(-200)">
+      <Icon icon="ant-design:double-left-outlined" :color="appStore.getIsDark ? 'var(--app-text-color-regular)' : '#595959'" />
     </span>
-    <div class="overflow-hidden flex-1">
-      <ElScrollbar ref="scrollbarRef" class="h-full" @scroll="scroll">
-        <div class="flex h-full">
+    <div class="overflow-hidden flex-1 h-full">
+      <div ref="scrollbarRef" class="scroll-container h-full overflow-x-auto overflow-y-hidden whitespace-nowrap" @scroll="scroll">
+        <div class="flex h-full tags-wrapper items-center">
           <ContextMenu
             :ref="itemRefs.set"
             :schema="[
@@ -290,7 +264,7 @@ watch(
               {
                 icon: 'ant-design:close-outlined',
                 label: t('common.closeTab'),
-                disabled: !!visitedViews?.length && selectedTag?.meta.affix,
+                disabled: !canCloseView(item),
                 command: () => {
                   closeSelectedTag(item)
                 }
@@ -299,10 +273,7 @@ watch(
                 divided: true,
                 icon: 'ant-design:vertical-right-outlined',
                 label: t('common.closeTheLeftTab'),
-                disabled:
-                  !!visitedViews?.length &&
-                  (item.fullPath === visitedViews[0].fullPath ||
-                    selectedTag?.fullPath !== item.fullPath),
+                disabled: !!visitedViews?.length && (item.fullPath === visitedViews[0].fullPath || selectedTag?.fullPath !== item.fullPath),
                 command: () => {
                   closeLeftTags()
                 }
@@ -310,10 +281,7 @@ watch(
               {
                 icon: 'ant-design:vertical-left-outlined',
                 label: t('common.closeTheRightTab'),
-                disabled:
-                  !!visitedViews?.length &&
-                  (item.fullPath === visitedViews[visitedViews.length - 1].fullPath ||
-                    selectedTag?.fullPath !== item.fullPath),
+                disabled: !!visitedViews?.length && (item.fullPath === visitedViews[visitedViews.length - 1].fullPath || selectedTag?.fullPath !== item.fullPath),
                 command: () => {
                   closeRightTags()
                 }
@@ -347,60 +315,40 @@ watch(
             ]"
             @visible-change="visibleChange"
           >
-            <div>
+            <div class="tag-content-wrap">
+              <svg class="tag-bg tag-bg-left" width="10" height="100%">
+                <path d="M 0 100 A 10 10 0 0 0 10 90 L 10 0 L 10 100 Z" />
+              </svg>
+
+              <svg class="tag-bg tag-bg-right" width="10" height="100%">
+                <path d="M 10 100 A 10 10 0 0 1 0 90 L 0 0 L 0 100 Z" />
+              </svg>
+
+              <div class="tag-divider"></div>
+
               <router-link :ref="tagLinksRefs.set" :to="{ ...item }" custom v-slot="{ navigate }">
-                <div
-                  @click="navigate"
-                  class="h-full flex justify-center items-center whitespace-nowrap pl-15px"
-                >
-                  <Icon
-                    v-if="
-                      item?.matched &&
-                      item?.matched[1] &&
-                      item?.matched[1]?.meta?.icon &&
-                      tagsViewIcon
-                    "
-                    :icon="item?.matched[1]?.meta?.icon"
-                    :size="12"
-                    class="mr-5px"
-                  />
-                  {{ t(item?.meta?.title as string) }}
-                  <Icon
-                    :class="`${prefixCls}__item--close`"
-                    color="#333"
-                    icon="ant-design:close-outlined"
-                    :size="12"
-                    @click.prevent.stop="closeSelectedTag(item)"
-                  />
+                <div @click="navigate" class="tag-inner">
+                  <Icon v-if="getTagIcon(item)" :icon="getTagIcon(item)" :size="14" class="mr-[6px] tag-icon" />
+                  <span class="tag-text">{{ t(item?.meta?.title as string) }}</span>
+                  <div v-if="canCloseView(item)" :class="`${prefixCls}__item--close`" @click.prevent.stop="closeSelectedTag(item)">
+                    <Icon icon="ant-design:close-outlined" :size="12" />
+                  </div>
                 </div>
               </router-link>
             </div>
           </ContextMenu>
         </div>
-      </ElScrollbar>
+      </div>
     </div>
-    <span
-      :class="`${prefixCls}__tool`"
-      class="w-[var(--tags-view-height)] h-[var(--tags-view-height)] text-center leading-[var(--tags-view-height)] cursor-pointer"
-      @click="move(200)"
-    >
-      <Icon
-        icon="ep:d-arrow-right"
-        :color="appStore.getIsDark ? 'var(--el-text-color-regular)' : '#333'"
-      />
+    <span :class="`${prefixCls}__tool`" class="w-[var(--tags-view-height)] h-[var(--tags-view-height)] cursor-pointer" @click="move(200)">
+      <Icon icon="ant-design:double-right-outlined" :color="appStore.getIsDark ? 'var(--app-text-color-regular)' : '#595959'" />
     </span>
-    <span
-      :class="`${prefixCls}__tool`"
-      class="w-[var(--tags-view-height)] h-[var(--tags-view-height)] text-center leading-[var(--tags-view-height)] cursor-pointer"
-      @click="refreshSelectedTag(selectedTag)"
-    >
-      <Icon
-        icon="ant-design:reload-outlined"
-        :color="appStore.getIsDark ? 'var(--el-text-color-regular)' : '#333'"
-      />
+    <span :class="`${prefixCls}__tool`" class="w-[var(--tags-view-height)] h-[var(--tags-view-height)] cursor-pointer" @click="refreshSelectedTag(selectedTag)">
+      <Icon icon="ant-design:reload-outlined" :color="appStore.getIsDark ? 'var(--app-text-color-regular)' : '#595959'" />
     </span>
     <ContextMenu
       trigger="click"
+      placement="bottomRight"
       :schema="[
         {
           icon: 'ant-design:sync-outlined',
@@ -412,7 +360,12 @@ watch(
         {
           icon: 'ant-design:close-outlined',
           label: t('common.closeTab'),
-          disabled: !!visitedViews?.length && selectedTag?.meta.affix
+          disabled: !canCloseView(selectedTag),
+          command: () => {
+            if (selectedTag) {
+              closeSelectedTag(selectedTag)
+            }
+          }
         },
         {
           divided: true,
@@ -426,9 +379,7 @@ watch(
         {
           icon: 'ant-design:vertical-left-outlined',
           label: t('common.closeTheRightTab'),
-          disabled:
-            !!visitedViews?.length &&
-            selectedTag?.fullPath === visitedViews[visitedViews.length - 1].fullPath,
+          disabled: !!visitedViews?.length && selectedTag?.fullPath === visitedViews[visitedViews.length - 1].fullPath,
           command: () => {
             closeRightTags()
           }
@@ -450,14 +401,8 @@ watch(
         }
       ]"
     >
-      <span
-        :class="`${prefixCls}__tool`"
-        class="w-[var(--tags-view-height)] h-[var(--tags-view-height)] text-center leading-[var(--tags-view-height)] cursor-pointer block"
-      >
-        <Icon
-          icon="ant-design:setting-outlined"
-          :color="appStore.getIsDark ? 'var(--el-text-color-regular)' : '#333'"
-        />
+      <span :class="`${prefixCls}__tool`" class="w-[var(--tags-view-height)] h-[var(--tags-view-height)] cursor-pointer block">
+        <Icon icon="ant-design:setting-outlined" :color="appStore.getIsDark ? 'var(--app-text-color-regular)' : '#595959'" />
       </span>
     </ContextMenu>
   </div>
@@ -467,68 +412,209 @@ watch(
 @prefix-cls: ~'@{namespace}-tags-view';
 
 .@{prefix-cls} {
-  :deep(.@{elNamespace}-scrollbar__view) {
-    height: 100%;
+  height: var(--tags-view-height);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
+
+  .scroll-container {
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .tags-wrapper {
+    padding-left: 10px;
   }
 
   &__tool {
     position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #595959;
+    background-color: transparent;
+    transition: all 0.2s;
+    z-index: 10;
+
+    :deep(.v-icon),
+    :deep(iconify-icon) {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
 
     &:hover {
+      background-color: #e6f4ff;
       :deep(span) {
-        color: var(--el-color-black) !important;
+        color: var(--app-color-primary) !important;
       }
     }
 
     &:after {
       position: absolute;
-      top: 1px;
+      top: 10%;
       left: 0;
       width: 100%;
-      height: calc(~'100% - 1px');
-      border-right: 1px solid var(--tags-view-border-color);
-      border-left: 1px solid var(--tags-view-border-color);
+      height: 80%;
+      border-left: 1px solid #d9d9d9;
       content: '';
     }
   }
 
   &__item {
     position: relative;
-    top: 2px;
-    height: calc(~'100% - 4px');
-    padding-right: 25px;
-    margin-left: 4px;
-    font-size: 12px;
+    height: 28px;
+    min-width: 120px;
+    max-width: 200px;
+    flex-shrink: 0;
     cursor: pointer;
-    border: 1px solid #d9d9d9;
+    margin-right: 0;
+    z-index: 1;
+
+    .tag-content-wrap {
+      position: relative;
+      height: 100%;
+      display: flex;
+      padding: 0;
+      align-items: stretch;
+    }
+
+    .tag-bg {
+      position: absolute;
+      bottom: 0;
+      display: none;
+      fill: transparent;
+      transition: fill 0.2s cubic-bezier(0, 0, 1, 1);
+      z-index: 1;
+    }
+
+    .tag-bg-left {
+      left: 0;
+    }
+
+    .tag-bg-right {
+      right: 0;
+    }
+
+    .tag-inner {
+      flex: 1;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      line-height: 1;
+      background-color: transparent;
+      border-radius: 8px 8px 0 0;
+      transition: background-color 0.2s cubic-bezier(0, 0, 1, 1);
+      position: relative;
+      z-index: 2;
+    }
+
+    .tag-icon {
+      color: #8c8c8c;
+      line-height: 1;
+    }
+
+    .tag-text {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 13px;
+      line-height: 1;
+      color: #595959;
+      user-select: none;
+    }
+
+    .tag-divider {
+      position: absolute;
+      right: -1px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 1px;
+      height: 12px;
+      background-color: rgb(0 0 0 / 14%);
+      z-index: 3;
+      transition: opacity 0.2s;
+    }
 
     &--close {
-      position: absolute;
-      top: 50%;
-      right: 5px;
-      display: none;
-      transform: translate(0, -50%);
-    }
-    &:not(.@{prefix-cls}__item--affix):hover {
-      .@{prefix-cls}__item--close {
-        display: block;
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      margin-left: 4px;
+      opacity: 0;
+      transition: all 0.2s;
+      color: #8c8c8c;
+      line-height: 1;
+
+      :deep(.v-icon),
+      :deep(iconify-icon) {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+      }
+
+      &:hover {
+        background-color: #f0f0f0;
+        color: #262626;
       }
     }
-  }
 
-  &__item:not(.is-active) {
-    &:hover {
-      color: var(--el-color-primary);
+    &:last-child {
+      .tag-divider {
+        opacity: 0;
+      }
     }
-  }
 
-  &__item.is-active {
-    color: var(--el-color-white);
-    background-color: var(--el-color-primary);
-    border: 1px solid var(--el-color-primary);
-    .@{prefix-cls}__item--close {
-      :deep(span) {
-        color: var(--el-color-white) !important;
+    &:not(.is-active):hover {
+      z-index: 2;
+
+      .tag-inner {
+        background-color: #e6f4ff;
+      }
+      .tag-bg {
+        fill: #e6f4ff;
+      }
+      .tag-divider {
+        opacity: 0;
+      }
+      & + .@{prefix-cls}__item .tag-divider {
+        opacity: 0;
+      }
+      .@{prefix-cls}__item--close {
+        opacity: 1;
+      }
+    }
+
+    &.is-active {
+      z-index: 3;
+
+      .tag-inner {
+        background-color: #fff;
+      }
+      .tag-bg {
+        fill: #fff;
+      }
+      .tag-divider {
+        opacity: 0;
+      }
+      & + .@{prefix-cls}__item .tag-divider {
+        opacity: 0;
+      }
+      .tag-text {
+        color: var(--app-color-primary);
+        font-weight: 500;
+      }
+      .tag-icon {
+        color: var(--app-color-primary);
+      }
+      .@{prefix-cls}__item--close {
+        opacity: 1;
       }
     }
   }
@@ -536,41 +622,63 @@ watch(
 
 .dark {
   .@{prefix-cls} {
+    box-shadow: 0 1px 0 #303030;
+
     &__tool {
+      color: #a6a6a6;
+
       &:hover {
-        :deep(span) {
-          color: #fff !important;
-        }
+        background-color: #1f1f1f;
       }
 
       &:after {
-        border-right: 1px solid var(--el-border-color);
-        border-left: 1px solid var(--el-border-color);
+        border-left: 1px solid #303030;
       }
     }
 
     &__item {
-      position: relative;
-      top: 2px;
-      height: calc(~'100% - 4px');
-      padding-right: 25px;
-      font-size: 12px;
-      cursor: pointer;
-      border: 1px solid var(--el-border-color);
-    }
-
-    &__item:not(.is-active) {
-      &:hover {
-        color: var(--el-color-primary);
+      .tag-divider {
+        background-color: rgb(255 255 255 / 16%);
       }
-    }
 
-    &__item.is-active {
-      color: var(--el-color-white);
-      background-color: var(--el-color-primary);
-      .@{prefix-cls}__item--close {
-        :deep(span) {
-          color: var(--el-color-white) !important;
+      .tag-icon {
+        color: #8c8c8c;
+      }
+
+      .tag-text {
+        color: #a6a6a6;
+      }
+
+      &--close {
+        color: #8c8c8c;
+
+        &:hover {
+          background-color: #262626;
+          color: #d9d9d9;
+        }
+      }
+
+      &:not(.is-active):hover {
+        .tag-inner {
+          background-color: #1f1f1f;
+        }
+        .tag-bg {
+          fill: #1f1f1f;
+        }
+      }
+
+      &.is-active {
+        .tag-inner {
+          background-color: #141414;
+        }
+        .tag-bg {
+          fill: #141414;
+        }
+        .tag-text {
+          color: var(--app-color-primary);
+        }
+        .tag-icon {
+          color: var(--app-color-primary);
         }
       }
     }

@@ -1,22 +1,16 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import type {
-  Router,
-  RouteLocationNormalized,
-  RouteRecordNormalized,
-  RouteMeta,
-  RouteRecordRaw
-} from 'vue-router'
+import type { Router, RouteLocationNormalized, RouteRecordNormalized, RouteMeta, RouteRecordRaw } from 'vue-router'
 import { isUrl } from '@/utils/is'
 import { omit, cloneDeep } from 'lodash-es'
 
 //自定义接收到的 meta
 export interface CustomMeta {
-  alwaysShow: boolean
-  icon: string
-  id: number
-  menuId: number
-  status: boolean
-  title: string
+  alwaysShow?: boolean
+  icon?: string
+  id?: number
+  menuId?: number
+  status?: boolean | string | number | null
+  title?: string
 }
 
 //自定义路由项
@@ -25,16 +19,37 @@ export interface MyCustomRouteRaw {
   path: string
   name: string
   component: string
-  redirect: string
-  parentId: number
-  soft: number
-  sign: string
-  status: boolean
-  meta: CustomMeta
+  redirect?: string | null
+  parentId?: number | null
+  soft?: number | null
+  sign?: string | null
+  status?: boolean | string | number | null
+  label?: string
+  meta?: CustomMeta
   children?: MyCustomRouteRaw[]
 }
 
 const modules = import.meta.glob('../views/**/*.{vue,tsx}')
+
+const normalizeRouteComponent = (component: string) => {
+  return component.replace(/^\/+/, '').replace(/\.(vue|tsx)$/i, '')
+}
+
+const getRouteModule = (component: string) => {
+  const normalizedComponent = normalizeRouteComponent(component)
+  const vueModuleKey = `../${normalizedComponent}.vue`
+  const tsxModuleKey = `../${normalizedComponent}.tsx`
+
+  if (modules[vueModuleKey] || modules[tsxModuleKey]) {
+    return modules[vueModuleKey] || modules[tsxModuleKey]
+  }
+
+  const lowerVueModuleKey = vueModuleKey.toLowerCase()
+  const lowerTsxModuleKey = tsxModuleKey.toLowerCase()
+  const moduleKey = Object.keys(modules).find((key) => key.toLowerCase() === lowerVueModuleKey || key.toLowerCase() === lowerTsxModuleKey)
+
+  return moduleKey ? modules[moduleKey] : undefined
+}
 
 /* Layout */
 export const Layout = () => import('@/layout/Layout.vue')
@@ -64,11 +79,7 @@ export const getRawRoute = (route: RouteLocationNormalized): RouteLocationNormal
 }
 
 // 前端控制路由生成
-export const generateRoutesFn1 = (
-  routes: AppRouteRecordRaw[],
-  keys: string[],
-  basePath = '/'
-): AppRouteRecordRaw[] => {
+export const generateRoutesFn1 = (routes: AppRouteRecordRaw[], keys: string[], basePath = '/'): AppRouteRecordRaw[] => {
   const res: AppRouteRecordRaw[] = []
 
   for (const route of routes) {
@@ -82,11 +93,7 @@ export const generateRoutesFn1 = (
 
     let onlyOneChild: Nullable<string> = null
     if (route.children && route.children.length === 1 && !meta.alwaysShow) {
-      onlyOneChild = (
-        isUrl(route.children[0].path)
-          ? route.children[0].path
-          : pathResolve(pathResolve(basePath, route.path), route.children[0].path)
-      ) as string
+      onlyOneChild = (isUrl(route.children[0].path) ? route.children[0].path : pathResolve(pathResolve(basePath, route.path), route.children[0].path)) as string
     }
 
     // 开发者可以根据实际情况进行扩展
@@ -126,14 +133,13 @@ export const generateRoutesFn2 = (routes: AppCustomRouteRecordRaw[]): AppRouteRe
     }
 
     if (route.component) {
-      const comModule = modules[`../${route.component}.vue`] || modules[`../${route.component}.tsx`]
       const component = route.component as string
+      const comModule = getRouteModule(component)
       if (!comModule && !component.includes('#')) {
         console.error(`未找到${route.component}.vue文件或${route.component}.tsx文件，请创建`)
       } else {
         // 动态加载路由文件，可根据实际情况进行自定义逻辑
-        data.component =
-          component === '#' ? Layout : component.includes('##') ? getParentLayout() : comModule
+        data.component = component === '#' ? Layout : component.includes('##') ? getParentLayout() : comModule
       }
     }
     // recursive child routes
@@ -153,35 +159,32 @@ export const generateRoutesFn3 = (_routes: MyCustomRouteRaw[]): AppRouteRecordRa
 
   for (const route of _routes) {
     const tempMeta: RouteMeta = {}
-    if (route.meta.icon) {
-      tempMeta.icon = route.meta.icon
+    const routeMeta = route.meta || {}
+
+    if (routeMeta.icon) {
+      tempMeta.icon = routeMeta.icon
     }
-    tempMeta.title = route.meta.title
-    tempMeta.alwaysShow = route.meta.alwaysShow
+    tempMeta.title = routeMeta.title
+    tempMeta.alwaysShow = routeMeta.alwaysShow
 
     const data: AppRouteRecordRaw = {
       path: route.path,
       name: route.name,
-      redirect: route.redirect,
+      redirect: route.redirect || undefined,
       meta: tempMeta
     }
-    console.log(route)
     if (route.component) {
-      console.log(route)
-      const comModule = modules[`../${route.component}.vue`] || modules[`../${route.component}.tsx`]
       const component = route.component as string
+      const comModule = getRouteModule(component)
       if (!comModule && !component.includes('#')) {
         console.error(`未找到${route.component}.vue文件或${route.component}.tsx文件，请创建`)
       } else {
         // 动态加载路由文件，可根据实际情况进行自定义逻辑
-        data.component =
-          component === '#' ? Layout : component.includes('##') ? getParentLayout() : comModule
+        data.component = component === '#' ? Layout : component.includes('##') ? getParentLayout() : comModule
       }
     }
 
     // recursive child routes
-    debugger
-    console.log(data)
     if (route.children) {
       data.children = generateRoutesFn3(route.children as MyCustomRouteRaw[])
     }
@@ -245,11 +248,7 @@ const promoteRouteLevel = (route: AppRouteRecordRaw) => {
 }
 
 // 添加所有子菜单
-const addToChildren = (
-  routes: RouteRecordNormalized[],
-  children: AppRouteRecordRaw[],
-  routeModule: AppRouteRecordRaw
-) => {
+const addToChildren = (routes: RouteRecordNormalized[], children: AppRouteRecordRaw[], routeModule: AppRouteRecordRaw) => {
   for (let index = 0; index < children.length; index++) {
     const child = children[index]
     const route = routes.find((item) => item.name === child.name)

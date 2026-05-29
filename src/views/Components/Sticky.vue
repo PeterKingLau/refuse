@@ -2,7 +2,7 @@
 import { ContentWrap } from '@/components/ContentWrap'
 import { useI18n } from '@/hooks/web/useI18n'
 import { Sticky } from '@/components/Sticky'
-import { ElAffix } from 'element-plus'
+import { Affix as AAffix } from 'ant-design-vue'
 
 const { t } = useI18n()
 </script>
@@ -16,9 +16,9 @@ const { t } = useI18n()
     <p style="margin: 80px">Content</p>
     <p style="margin: 80px">Content</p>
 
-    <el-affix :offset="150">
+    <AAffix :offset-top="150">
       <div style="padding: 10px; background-color: lightblue">Affix 距离顶部150px </div>
-    </el-affix>
+    </AAffix>
     <p style="margin: 80px">Content</p>
     <p style="margin: 80px">Content</p>
     <p style="margin: 80px">Content</p>
@@ -46,9 +46,9 @@ const { t } = useI18n()
     <p style="margin: 80px">Content</p>
     <p style="margin: 80px">Content</p>
 
-    <el-affix :offset="150" position="bottom">
+    <AAffix :offset-bottom="150">
       <div style="padding: 10px; background-color: lightblue">Affix 距离底部150px </div>
-    </el-affix>
+    </AAffix>
 
     <p style="margin: 80px">Content</p>
     <p style="margin: 80px">Content</p>

@@ -16,9 +16,7 @@ const isMobile = computed(() => appStore.getMobile)
 
 const restaurants = ref<Recordable[]>([])
 const querySearch = (queryString: string, cb: Fn) => {
-  const results = queryString
-    ? restaurants.value.filter(createFilter(queryString))
-    : restaurants.value
+  const results = queryString ? restaurants.value.filter(createFilter(queryString)) : restaurants.value
   // call callback function to return suggestions
   cb(results)
 }
@@ -333,15 +331,7 @@ const generateData = () => {
   return data
 }
 
-const holidays = [
-  '2021-10-01',
-  '2021-10-02',
-  '2021-10-03',
-  '2021-10-04',
-  '2021-10-05',
-  '2021-10-06',
-  '2021-10-07'
-]
+const holidays = ['2021-10-01', '2021-10-02', '2021-10-03', '2021-10-04', '2021-10-05', '2021-10-06', '2021-10-07']
 
 const isHoliday = ({ dayjs }) => {
   return holidays.includes(dayjs.format('YYYY-MM-DD'))
@@ -665,11 +655,7 @@ const schema = reactive<FormSchema[]>([
     value: null,
     componentProps: {
       voidIcon: useIcon({ icon: 'ep:chat-round' }),
-      icons: [
-        useIcon({ icon: 'ep:chat-round' }),
-        useIcon({ icon: 'ep:chat-line-round' }),
-        useIcon({ icon: 'ep:chat-dot-round' })
-      ]
+      icons: [useIcon({ icon: 'ep:chat-round' }), useIcon({ icon: 'ep:chat-line-round' }), useIcon({ icon: 'ep:chat-dot-round' })]
     }
   },
   {
@@ -1039,10 +1025,10 @@ const schema = reactive<FormSchema[]>([
   <ContentWrap :title="t('formDemo.defaultForm')" :message="t('formDemo.formDes')">
     <Form :schema="schema" label-width="auto" :label-position="isMobile ? 'top' : 'right'">
       <template #field4-prefix>
-        <Icon icon="ep:calendar" class="el-input__icon" />
+        <Icon icon="ep:calendar" class="form-input-icon" />
       </template>
       <template #field4-suffix>
-        <Icon icon="ep:calendar" class="el-input__icon" />
+        <Icon icon="ep:calendar" class="form-input-icon" />
       </template>
 
       <template #field5-prepend> Http:// </template>
@@ -1055,28 +1041,28 @@ const schema = reactive<FormSchema[]>([
 
       <template #field15-option="{ item }">
         <span style="float: left">{{ item.label }}</span>
-        <span style="float: right; font-size: 13px; color: var(--el-text-color-secondary)">
+        <span style="float: right; font-size: 13px; color: var(--app-text-color-secondary)">
           {{ item.value }}
         </span>
       </template>
 
       <template #field17-option="{ item }">
         <span style="float: left">{{ item.label }}</span>
-        <span style="float: right; font-size: 13px; color: var(--el-text-color-secondary)">
+        <span style="float: right; font-size: 13px; color: var(--app-text-color-secondary)">
           {{ item.value }}
         </span>
       </template>
 
       <template #field20-default="{ item }">
         <span style="float: left">{{ item.label }}</span>
-        <span style="float: right; font-size: 13px; color: var(--el-text-color-secondary)">
+        <span style="float: right; font-size: 13px; color: var(--app-text-color-secondary)">
           {{ item.value }}
         </span>
       </template>
 
       <template #field22-default="{ item }">
         <span style="float: left">{{ item.label }}</span>
-        <span style="float: right; font-size: 13px; color: var(--el-text-color-secondary)">
+        <span style="float: right; font-size: 13px; color: var(--app-text-color-secondary)">
           {{ item.value }}
         </span>
       </template>

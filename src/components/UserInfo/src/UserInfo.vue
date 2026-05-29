@@ -1,5 +1,15 @@
 <script setup lang="ts">
-import { ElDropdown, ElDropdownMenu, ElDropdownItem, ElMessageBox, ElMessage } from 'element-plus'
+import {
+  Button as AButton,
+  Dropdown as ADropdown,
+  Form as AForm,
+  FormItem as AFormItem,
+  InputPassword as AInputPassword,
+  Menu as AMenu,
+  MenuItem as AMenuItem,
+  Modal as AModal,
+  message
+} from 'ant-design-vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import { useCache } from '@/hooks/web/useCache'
 import { resetRouter } from '@/router'
@@ -8,6 +18,11 @@ import { useDesign } from '@/hooks/web/useDesign'
 import { useTagsViewStore } from '@/store/modules/tagsView'
 import { ref, Ref, onMounted } from 'vue'
 import { PATH_URL, service } from '@/config/axios/service'
+import { Icon } from '@/components/Icon'
+
+defineOptions({
+  inheritAttrs: false
+})
 
 const tagsViewStore = useTagsViewStore()
 
@@ -34,12 +49,12 @@ const getSelf = () => {
 }
 
 const loginOut = () => {
-  ElMessageBox.confirm(t('common.loginOutMessage'), t('common.reminder'), {
-    confirmButtonText: t('common.ok'),
-    cancelButtonText: t('common.cancel'),
-    type: 'warning'
-  })
-    .then(async () => {
+  AModal.confirm({
+    title: t('common.reminder'),
+    content: t('common.loginOutMessage'),
+    okText: t('common.ok'),
+    cancelText: t('common.cancel'),
+    onOk: async () => {
       wsCache.clear()
       // AxiosStore.setToken(' ')
       localStorage.removeItem('token')
@@ -47,8 +62,8 @@ const loginOut = () => {
       tagsViewStore.delAllViews()
       resetRouter() // 重置静态路由表
       replace('/login')
-    })
-    .catch(() => {})
+    }
+  })
 }
 
 let dialogVisible = ref(false)
@@ -64,16 +79,11 @@ const changePassword = () => {
 
 const doChange = () => {
   if (changeData.value.newpwd1 != changeData.value.newpwd2) {
-    ElMessage('两次输入的新密码不同')
+    message.warning('两次输入的新密码不同')
     return
   }
-  if (
-    changeData.value.oldpwd == null ||
-    changeData.value.oldpwd.lenght == 0 ||
-    changeData.value.newpwd1 == null ||
-    changeData.value.newpwd1.lenght == 0
-  ) {
-    ElMessage('密码不能为空')
+  if (changeData.value.oldpwd == null || changeData.value.oldpwd.lenght == 0 || changeData.value.newpwd1 == null || changeData.value.newpwd1.lenght == 0) {
+    message.warning('密码不能为空')
     return
   }
 
@@ -85,7 +95,7 @@ const doChange = () => {
   console.log('updatePassword', param)
   service.post(PATH_URL + '/admin/updatePassword', param).then((res: any) => {
     if (res.code == 200) {
-      ElMessage('操作成功')
+      message.success('操作成功')
       dialogVisible.value = false
     }
   })
@@ -93,56 +103,134 @@ const doChange = () => {
 </script>
 
 <template>
-  <ElDropdown :class="prefixCls" trigger="click">
-    <div class="flex items-center">
-      <img
-        src="@/assets/imgs/avatar.jpg"
-        alt=""
-        class="w-[calc(var(--logo-height)-25px)] rounded-[50%]"
-      />
-      <span class="<lg:hidden text-14px pl-[5px] text-[var(--top-header-text-color)]">{{
-        admin.username
-      }}</span>
+  <ADropdown :trigger="['click']" placement="bottomRight" :overlay-class-name="`${prefixCls}-dropdown`">
+    <div v-bind="$attrs" :class="prefixCls" class="flex items-center">
+      <img src="@/assets/imgs/avatar.jpg" alt="" class="user-avatar" />
+      <span class="<lg:hidden user-name text-[var(--top-header-text-color)]">{{ admin.username }}</span>
+      <Icon icon="ant-design:down-outlined" :size="12" class="<lg:hidden user-arrow text-[var(--top-header-text-color)]" />
     </div>
-    <template #dropdown>
-      <ElDropdownMenu>
-        <ElDropdownItem divided>
-          <div @click="changePassword">修改密码</div>
-        </ElDropdownItem>
-      </ElDropdownMenu>
-      <ElDropdownMenu>
-        <ElDropdownItem divided>
-          <div @click="loginOut">{{ t('common.loginOut') }}</div>
-        </ElDropdownItem>
-      </ElDropdownMenu>
+    <template #overlay>
+      <AMenu>
+        <AMenuItem key="change-password" class="user-menu-option" @click="changePassword">
+          <span class="user-menu-item">
+            <Icon icon="ant-design:lock-outlined" :size="15" class="user-menu-item__icon" />
+            <span>修改密码</span>
+          </span>
+        </AMenuItem>
+        <AMenuItem key="logout" class="user-menu-option user-menu-option--danger" @click="loginOut">
+          <span class="user-menu-item user-menu-item--danger">
+            <Icon icon="ant-design:poweroff-outlined" :size="15" class="user-menu-item__icon" />
+            <span>{{ t('common.loginOut') }}</span>
+          </span>
+        </AMenuItem>
+      </AMenu>
     </template>
-  </ElDropdown>
+  </ADropdown>
 
-  <el-dialog v-model="dialogVisible" title="修改密码" width="30%">
-    <el-form :inline="true" :model="changeData" class="showColumn">
-      <el-form-item label="旧密码">
-        <el-input type="password" v-model="changeData.oldpwd" placeholder="请输入旧数据" />
-      </el-form-item>
-      <el-form-item label="新密码">
-        <el-input type="password" v-model="changeData.newpwd1" placeholder="请输入新数据" />
-      </el-form-item>
-      <el-form-item label="新密码">
-        <el-input type="password" v-model="changeData.newpwd2" placeholder="请再次输入新数据" />
-      </el-form-item>
-    </el-form>
+  <AModal v-model:open="dialogVisible" title="修改密码" width="30%">
+    <AForm :model="changeData" class="showColumn">
+      <AFormItem label="旧密码">
+        <AInputPassword v-model:value="changeData.oldpwd" placeholder="请输入旧密码" />
+      </AFormItem>
+      <AFormItem label="新密码">
+        <AInputPassword v-model:value="changeData.newpwd1" placeholder="请输入新密码" />
+      </AFormItem>
+      <AFormItem label="确认密码">
+        <AInputPassword v-model:value="changeData.newpwd2" placeholder="请再次输入新密码" />
+      </AFormItem>
+    </AForm>
     <template #footer>
       <span class="dialog-footer">
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="doChange"> 确定 </el-button>
+        <AButton @click="dialogVisible = false">取消</AButton>
+        <AButton type="primary" @click="doChange">确定</AButton>
       </span>
     </template>
-  </el-dialog>
+  </AModal>
 </template>
 
 <style lang="less" scoped>
+@prefix-cls: ~'@{namespace}-user-info';
+
 .showColumn {
   display: flex;
   flex-direction: column;
   justify-content: center;
+}
+
+.dialog-footer {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.user-menu-item {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+
+  &__icon {
+    flex: none;
+  }
+
+  &--danger {
+    color: #ff4d4f;
+  }
+}
+
+.@{prefix-cls} {
+  gap: 6px;
+  line-height: 1;
+  align-items: center;
+}
+
+.user-avatar {
+  width: calc(var(--logo-height) - 25px);
+  height: calc(var(--logo-height) - 25px);
+  border-radius: 50%;
+  flex: none;
+}
+
+.user-name {
+  display: inline-flex;
+  height: 20px;
+  font-size: 14px;
+  line-height: 20px;
+  align-items: center;
+}
+
+.user-arrow {
+  display: inline-flex;
+  width: 12px;
+  height: 12px;
+  line-height: 1;
+  align-items: center;
+  justify-content: center;
+}
+</style>
+
+<style lang="less">
+@prefix-cls: ~'@{namespace}-user-info';
+
+.@{prefix-cls}-dropdown {
+  .ant-dropdown-menu {
+    min-width: 118px;
+    padding: 4px;
+    border-radius: 4px;
+  }
+
+  .ant-dropdown-menu-item.user-menu-option {
+    height: 32px;
+    padding: 0 10px;
+    line-height: 32px;
+    border-radius: 3px;
+  }
+
+  .ant-dropdown-menu-item.user-menu-option--danger {
+    color: #ff4d4f;
+
+    &:hover {
+      color: #ff4d4f;
+      background-color: #fff1f0;
+    }
+  }
 }
 </style>

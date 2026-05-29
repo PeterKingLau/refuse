@@ -1,285 +1,290 @@
 <template>
-  <el-row>
-    <el-form :model="searchFormData" label-width="100px" :inline="true" v-if="showSearchForm">
-      <el-form-item label="产品编号：">
-        <el-input v-model="searchFormData.id" class="eInput" placeholder="请输入产品编号" />
-      </el-form-item>
-      <el-form-item label="产品名称：">
-        <el-input v-model="searchFormData.name" class="eInput" placeholder="请输入产品名称" />
-      </el-form-item>
+  <div class="product-page">
+    <AForm v-if="showSearchForm" :model="searchFormData" layout="inline" class="search-form">
+      <AFormItem label="产品编号" class="search-form-item">
+        <AInput v-model:value="searchFormData.id" class="search-input" placeholder="请输入产品编号" />
+      </AFormItem>
 
-      <el-form-item>
-        <el-button type="primary" class="btn" @click="getProductData" v-hasPermi="Permission.sec">
-          <el-icon><Search /></el-icon>
+      <AFormItem label="产品名称" class="search-form-item">
+        <AInput v-model:value="searchFormData.name" class="search-input" placeholder="请输入产品名称" />
+      </AFormItem>
+
+      <AFormItem class="search-form-action">
+        <AButton type="primary" class="icon-button" @click="getProductData" v-hasPermi="Permission.sec">
+          <template #icon>
+            <Icon icon="ant-design:search-outlined" />
+          </template>
           搜索
-        </el-button>
-      </el-form-item>
+        </AButton>
+      </AFormItem>
 
-      <el-form-item>
-        <el-button class="btn" @click="onReset">
-          <el-icon class="el-icon--left"><RefreshRight /></el-icon>
+      <AFormItem class="search-form-action">
+        <AButton class="icon-button" @click="onReset">
+          <template #icon>
+            <Icon icon="ant-design:reload-outlined" />
+          </template>
           重置
-        </el-button>
-      </el-form-item>
-    </el-form>
-  </el-row>
+        </AButton>
+      </AFormItem>
+    </AForm>
 
-  <el-row>
-    <el-col :span="12">
-      <el-button type="primary" class="btn" @click="OnClickAdd" v-hasPermi="Permission.add">
-        <el-icon><Plus /> </el-icon>
-        新增</el-button
-      >
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <AButton type="primary" class="icon-button" @click="OnClickAdd" v-hasPermi="Permission.add">
+          <template #icon>
+            <Icon icon="ant-design:plus-outlined" />
+          </template>
+          新增
+        </AButton>
 
-      <el-button
-        type="success"
-        class="btn"
-        :disabled="disableUpdate"
-        v-if="false"
-        v-hasPermi="Permission.rev"
-        ><el-icon><EditPen /></el-icon>修改</el-button
-      >
-      <el-button
-        type="danger"
-        class="btn"
-        :disabled="disableRemove"
-        @click="deleteOfDetail"
-        v-hasPermi="Permission.del"
-        ><el-icon><Close /></el-icon>删除</el-button
-      >
-    </el-col>
-
-    <el-col :span="12" style="text-align: right">
-      <el-tooltip content="隐藏搜索" placement="top-start">
-        <el-button circle @click="OnClickOfShowForm">
-          <el-icon><Search /></el-icon
-        ></el-button>
-      </el-tooltip>
-      <el-tooltip content="刷新" placement="top-start">
-        <el-button circle @click="onPageRest">
-          <el-icon><RefreshRight /></el-icon>
-        </el-button>
-      </el-tooltip>
-    </el-col>
-  </el-row>
-
-  <el-divider />
-  <el-row>
-    <el-table
-      ref="areaTableRef"
-      :data="productTableData"
-      style="width: 100%"
-      @selection-change="handleSelectionChange"
-    >
-      <el-table-column type="selection" width="55" />
-      <el-table-column label="ID" width="60" property="id" />
-      <el-table-column label="产品名称" width="100" property="name" />
-      <el-table-column v-slot="scope" label="图片" width="120">
-        <img :src="getImageURL(scope.row.pic)" class="imgOfTable" />
-      </el-table-column>
-
-      <el-table-column label="外设" width="120">
-        <template #default="scope">
-          <div v-for="item in scope.row.peripherals" :key="item.id">
-            <div class="depInTable">{{ item.label }}</div>
-          </div>
-        </template>
-      </el-table-column>
-      <el-table-column label="产品规格" width="100" property="specifications" />
-      <el-table-column label="创建人" width="100" property="staff.name" />
-      <el-table-column label="创建时间" width="180" property="createTime" />
-      <el-table-column label="授权人" width="100" property="authorizer.name" />
-      <el-table-column label="授权时间" width="180" property="authorizedTime" />
-      <el-table-column label="操作" v-slot="scope" width="150">
-        <div class="buttonOfTables">
-          <el-link class="bt" type="success" @click="handleDetail(scope.row)">查看</el-link>
-          <el-link
-            class="bt"
-            type="danger"
-            @click="handleRemove(scope.row)"
-            v-hasPermi="Permission.emp"
-            >授权</el-link
-          >
-        </div>
-      </el-table-column>
-    </el-table>
-  </el-row>
-  <el-row>
-    <el-col :span="18">
-      <el-pagination
-        v-model:current-page="currentPage"
-        v-model:page-size="pageSize"
-        :small="small"
-        layout="prev, pager, next, jumper"
-        :total="total"
-        @size-change="handleSizeChange"
-        @current-change="handleSizeChange"
-      />
-    </el-col>
-  </el-row>
-
-  <el-dialog title="添加产品类型" width="60%" v-model="showDialog">
-    <el-form :model="updateForm" :inline="true" label-width="auto" class="frame">
-      <el-row>
-        <el-col :span="12">
-          <el-form-item label="产品名称：" label-width="100">
-            <el-input v-model="updateForm.name" placeholder="请输入类型名称" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="产品规格：" label-width="100">
-            <el-input v-model="updateForm.specifications" placeholder="请输入类型规格" />
-          </el-form-item>
-        </el-col>
-      </el-row>
-
-      <el-row>
-        <el-col :span="12">
-          <el-form-item label="图片" label-width="100">
-            <el-upload
-              class="avatar-uploader"
-              :action="UpImageURL"
-              :show-file-list="false"
-              :on-success="handleUpdateSuccess"
-              :before-upload="beforeAvatarUpload"
-              :headers="headObject"
-            >
-              <img v-if="updateForm.pic" :src="getImageURL(updateForm.pic)" class="avatar" />
-              <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
-            </el-upload>
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="产品外设：" label-width="100">
-            <el-select
-              v-model="updateForm.peripheralList"
-              multiple
-              placeholder="请选择产品外设"
-              style="width: 240px"
-            >
-              <el-option
-                v-for="item in PeripheralTreeData"
-                :key="item.id"
-                :label="item.label"
-                :value="item.id"
-              />
-            </el-select>
-          </el-form-item>
-        </el-col>
-      </el-row>
-
-      <el-row class="margeTop">
-        <el-col :span="24" style="text-align: right">
-          <el-button @click="onCloseDialog">取消</el-button>
-          <el-button type="primary" @click="onAddConfirm"> 确认 </el-button>
-        </el-col>
-      </el-row>
-    </el-form>
-  </el-dialog>
-
-  <el-dialog title="查看产品类型" width="40%" v-model="showCheckDialog">
-    <el-form :model="currentData" label-width="100">
-      <el-form-item label="产品名称">
-        {{ currentData.name }}
-      </el-form-item>
-      <el-form-item label="图片">
-        <img :src="getImageURL(currentData.pic)" class="pic" />
-      </el-form-item>
-    </el-form>
-    <el-form-item label="外设" label-width="100">
-      <div class="vv">
-        <div class="bb" v-for="item in currentData.peripherals" :key="item.id">{{
-          item.label
-        }}</div>
+        <AButton danger class="icon-button" :disabled="disableRemove" @click="deleteOfDetail" v-hasPermi="Permission.del">
+          <template #icon>
+            <Icon icon="ant-design:delete-outlined" />
+          </template>
+          删除
+        </AButton>
       </div>
-    </el-form-item>
-    <el-form-item label="总授权数量" label-width="100"> {{ cc.count }}台 </el-form-item>
-    <el-form-item label="剩余授权数量" label-width="100"> {{ cc.cc }}台 </el-form-item>
-    <el-form-item label="创建人" label-width="100">
-      {{ currentData.authorizer.name }}
-    </el-form-item>
-    <el-form-item label="创建时间" label-width="100">
-      {{ currentData.authorizedTime }}
-    </el-form-item>
-  </el-dialog>
 
-  <el-dialog title="授权产品信息" width="40%" v-model="showAuthorizationDialog">
-    <el-form :model="authData" :inline="true" label-width="auto" class="frame" :rules="rules">
-      <el-row>
-        <el-form-item label="产品名称:" label-width="120" prop="name">
+      <div class="toolbar-right">
+        <ATooltip :title="showSearchForm ? '隐藏搜索' : '显示搜索'">
+          <AButton shape="circle" @click="OnClickOfShowForm">
+            <template #icon>
+              <Icon icon="ant-design:search-outlined" />
+            </template>
+          </AButton>
+        </ATooltip>
+        <ATooltip title="刷新">
+          <AButton shape="circle" @click="onPageRest">
+            <template #icon>
+              <Icon icon="ant-design:reload-outlined" />
+            </template>
+          </AButton>
+        </ATooltip>
+      </div>
+    </div>
+
+    <ATable row-key="id" :columns="columns" :data-source="productTableData" :pagination="false" :row-selection="rowSelection" bordered>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'pic'">
+          <img v-if="record.pic" :src="getImageURL(record.pic)" class="table-image" />
+          <span v-else class="empty-text">暂无</span>
+        </template>
+
+        <template v-else-if="column.key === 'peripherals'">
+          <div v-if="record.peripherals?.length" class="tag-list">
+            <ATag v-for="item in record.peripherals" :key="item.id" color="blue">
+              {{ item.label }}
+            </ATag>
+          </div>
+          <span v-else class="empty-text">暂无</span>
+        </template>
+
+        <template v-else-if="column.key === 'action'">
+          <ASpace>
+            <AButton type="link" class="table-action action-view" @click="handleDetail(record)">
+              <template #icon>
+                <Icon icon="ant-design:eye-outlined" />
+              </template>
+              查看
+            </AButton>
+            <AButton type="link" danger class="table-action" @click="handleRemove(record)" v-hasPermi="Permission.emp">
+              <template #icon>
+                <Icon icon="ant-design:safety-certificate-outlined" />
+              </template>
+              授权
+            </AButton>
+          </ASpace>
+        </template>
+      </template>
+    </ATable>
+
+    <div class="pagination-wrap">
+      <APagination v-model:current="currentPage" v-model:page-size="pageSize" :total="total" :show-total="(totalCount) => `共 ${totalCount} 条`" show-quick-jumper @change="handlePageChange" />
+    </div>
+
+    <AModal v-model:open="showDialog" title="添加产品类型" width="680px" :destroy-on-close="true" @cancel="onCloseDialog">
+      <AForm :model="updateForm" layout="vertical">
+        <ARow :gutter="16">
+          <ACol :span="12">
+            <AFormItem label="产品名称" name="name">
+              <AInput v-model:value="updateForm.name" placeholder="请输入产品名称" />
+            </AFormItem>
+          </ACol>
+
+          <ACol :span="12">
+            <AFormItem label="产品规格" name="specifications">
+              <AInput v-model:value="updateForm.specifications" placeholder="请输入产品规格" />
+            </AFormItem>
+          </ACol>
+
+          <ACol :span="12">
+            <AFormItem label="产品外设" name="peripheralList">
+              <ASelect v-model:value="updateForm.peripheralList" mode="multiple" :options="peripheralOptions" placeholder="请选择产品外设" />
+            </AFormItem>
+          </ACol>
+
+          <ACol :span="12">
+            <AFormItem label="图片">
+              <AUpload class="avatar-uploader" :action="UpImageURL" :show-upload-list="false" :before-upload="beforeAvatarUpload" :headers="headObject" @change="handleUploadChange">
+                <img v-if="updateForm.pic" :src="getImageURL(updateForm.pic)" class="avatar" />
+                <div v-else class="upload-placeholder">
+                  <Icon icon="ant-design:plus-outlined" :size="24" />
+                </div>
+              </AUpload>
+            </AFormItem>
+          </ACol>
+        </ARow>
+      </AForm>
+
+      <template #footer>
+        <ASpace>
+          <AButton @click="onCloseDialog">取消</AButton>
+          <AButton type="primary" @click="onAddConfirm">确认</AButton>
+        </ASpace>
+      </template>
+    </AModal>
+
+    <AModal v-model:open="showCheckDialog" title="查看产品类型" width="640px" :footer="null">
+      <ADescriptions bordered size="small" :column="1">
+        <ADescriptionsItem label="产品名称">{{ currentData.name || '-' }}</ADescriptionsItem>
+        <ADescriptionsItem label="图片">
+          <img v-if="currentData.pic" :src="getImageURL(currentData.pic)" class="preview-image" />
+          <span v-else class="empty-text">暂无</span>
+        </ADescriptionsItem>
+        <ADescriptionsItem label="外设">
+          <div v-if="currentData.peripherals?.length" class="tag-list">
+            <ATag v-for="item in currentData.peripherals" :key="item.id" color="blue">
+              {{ item.label }}
+            </ATag>
+          </div>
+          <span v-else class="empty-text">暂无</span>
+        </ADescriptionsItem>
+        <ADescriptionsItem label="总授权数量">{{ cc.count ?? 0 }} 台</ADescriptionsItem>
+        <ADescriptionsItem label="剩余授权数量">{{ cc.cc ?? 0 }} 台</ADescriptionsItem>
+        <ADescriptionsItem label="授权人">{{ currentData.authorizer?.name || currentData.authorized?.name || '-' }}</ADescriptionsItem>
+        <ADescriptionsItem label="授权时间">{{ currentData.authorizedTime || '-' }}</ADescriptionsItem>
+      </ADescriptions>
+    </AModal>
+
+    <AModal v-model:open="showAuthorizationDialog" title="授权产品信息" width="560px" :destroy-on-close="true" @cancel="onclostAuthDialog">
+      <AForm :model="authData" :rules="rules" layout="vertical">
+        <AFormItem label="产品名称" name="name">
           <span>{{ authData.name }}</span>
-        </el-form-item>
-      </el-row>
+        </AFormItem>
 
-      <el-row>
-        <el-form-item label="图片:" label-width="120">
-          <img v-if="authData.pic" :src="getImageURL(authData.pic)" class="imgOfTable" />
-        </el-form-item>
-      </el-row>
+        <AFormItem label="图片">
+          <img v-if="authData.pic" :src="getImageURL(authData.pic)" class="table-image" />
+          <span v-else class="empty-text">暂无</span>
+        </AFormItem>
 
-      <el-row>
-        <el-form-item label="授权运营商:" label-width="120" prop="region">
-          <el-select
-            v-model="authData.departmentId"
-            placeholder="请选择要授权的运营商"
-            ref="pointTpteSelectRef"
-          >
-            <el-option
-              v-for="item in Departments"
-              :key="item.id"
-              :label="item.platform_name"
-              :value="item.id"
-            />
-          </el-select>
-        </el-form-item>
-      </el-row>
+        <AFormItem label="授权运营商" name="departmentId">
+          <ASelect v-model:value="authData.departmentId" :options="departmentOptions" placeholder="请选择要授权的运营商" />
+        </AFormItem>
 
-      <el-row>
-        <el-form-item label="规格类型:" label-width="120" prop="region">
-          <el-select v-model="authData.type" placeholder="请选择规格类型">
-            <el-option label="常规型" :value="1" />
-          </el-select>
-        </el-form-item>
-      </el-row>
+        <AFormItem label="规格类型" name="type">
+          <ASelect v-model:value="authData.type" :options="[{ label: '常规型', value: 1 }]" placeholder="请选择规格类型" />
+        </AFormItem>
 
-      <el-row>
-        <el-form-item label="授权数量:" label-width="120" prop="numberOfAuth">
-          <el-input v-model="authData.numberOfAuth" placeholder="请输入授权数量" />
-        </el-form-item>
-      </el-row>
+        <AFormItem label="授权数量" name="numberOfAuth">
+          <AInputNumber v-model:value="authData.numberOfAuth" :min="0" class="w-full" placeholder="请输入授权数量" />
+        </AFormItem>
 
-      <el-row>
-        <el-form-item label="收费金额:" label-width="120" prop="money">
-          <el-input v-model="authData.money" placeholder="请输入收费的金额" />
-        </el-form-item>
-      </el-row>
+        <AFormItem label="收费金额" name="money">
+          <AInputNumber v-model:value="authData.money" :min="0" class="w-full" placeholder="请输入收费金额" />
+        </AFormItem>
 
-      <el-row>
-        <el-form-item label="免费时长:" label-width="120" prop="free">
-          <el-input v-model="authData.free" placeholder="请输入免费时长： 单位：(天/台)" />
-        </el-form-item>
-      </el-row>
+        <AFormItem label="免费时长">
+          <AInputNumber v-model:value="authData.free" :min="0" class="w-full" placeholder="请输入免费时长，单位：天/台" />
+        </AFormItem>
+      </AForm>
 
-      <el-row class="margeTop">
-        <el-col :span="24" style="margin-top: 5px; text-align: right">
-          <el-button @click="onclostAuthDialog">取消</el-button>
-          <el-button type="primary" @click="doAuth"> 确认 </el-button>
-        </el-col>
-      </el-row>
-    </el-form>
-  </el-dialog>
+      <template #footer>
+        <ASpace>
+          <AButton @click="onclostAuthDialog">取消</AButton>
+          <AButton type="primary" @click="doAuth">确认</AButton>
+        </ASpace>
+      </template>
+    </AModal>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, Ref, computed, onMounted, reactive, inject } from 'vue'
-import { PATH_URL, service } from '@/config/axios/service'
-
-import { ElSelect, ElMessage, ElMessageBox, FormRules } from 'element-plus'
+import { computed, inject, onMounted, reactive, ref } from 'vue'
+import {
+  Button as AButton,
+  Col as ACol,
+  Descriptions as ADescriptions,
+  DescriptionsItem as ADescriptionsItem,
+  Form as AForm,
+  FormItem as AFormItem,
+  Input as AInput,
+  InputNumber as AInputNumber,
+  Modal as AModal,
+  Pagination as APagination,
+  Row as ARow,
+  Select as ASelect,
+  Space as ASpace,
+  Table as ATable,
+  Tag as ATag,
+  Tooltip as ATooltip,
+  Upload as AUpload,
+  message
+} from 'ant-design-vue'
+import type { TableColumnsType, UploadChangeParam } from 'ant-design-vue'
+import type { Rule } from 'ant-design-vue/es/form'
 import qs from 'qs'
-const reload: any = inject('reload')
+import { PATH_URL, service } from '@/config/axios/service'
+import { Icon } from '@/components/Icon'
+
+type TableKey = string | number
+
+interface PeripheralData {
+  id: number
+  label: string
+}
+
+interface DepartmentStruct {
+  id: number | string
+  platform_name: string
+}
+
+interface ProductRecord {
+  [key: string]: any
+  id: number
+  name: string
+  pic: string
+  specifications: string
+  createTime: string
+  authorizedTime?: string
+  numberOfAuthorized: number
+  money: number
+  numberFree: number
+  staff?: {
+    name?: string
+  }
+  authorizer?: {
+    name?: string
+  }
+  authorized?: {
+    name?: string
+  }
+  peripherals?: PeripheralData[]
+  peripheralList?: number[]
+}
+
+interface SearchData {
+  id?: number | string
+  name: string
+}
+
+const reload = inject<() => void>('reload')
 
 const onPageRest = () => {
-  reload()
+  if (reload) {
+    reload()
+    return
+  }
+  getProductType()
 }
 
 const Permission = ref({
@@ -290,33 +295,107 @@ const Permission = ref({
   sec: 'mac_pro_sec'
 })
 
-onMounted(() => {
-  getPeripheralData()
-  getProductType()
-  getDepartments()
+const searchFormData = reactive<SearchData>({
+  id: undefined,
+  name: ''
 })
-interface tableData {
-  id: number | undefined
-  name: string
-  pic: string
-  specifications: string
-  createTime: string
-  numberOfAuthorized: number
-  money: number
-  numberFree: number
-  staff?: any
-  authorized?: any
-  toDepartment?: any
-  department?: any
-  peripheralList?: []
+
+const showSearchForm = ref(true)
+const productTableData = ref<ProductRecord[]>([])
+const selectedRowKeys = ref<TableKey[]>([])
+let DeleteIdArray: number[] = []
+
+const currentPage = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
+
+const columns: TableColumnsType<ProductRecord> = [
+  { title: '产品名称', dataIndex: 'name', key: 'name', width: 140 },
+  { title: '图片', dataIndex: 'pic', key: 'pic', width: 120 },
+  { title: '外设', dataIndex: 'peripherals', key: 'peripherals', width: 180 },
+  { title: '产品规格', dataIndex: 'specifications', key: 'specifications', width: 140 },
+  { title: '创建人', dataIndex: ['staff', 'name'], key: 'staffName', width: 120 },
+  { title: '创建时间', dataIndex: 'createTime', key: 'createTime', width: 180 },
+  { title: '授权人', dataIndex: ['authorizer', 'name'], key: 'authorizerName', width: 120 },
+  { title: '授权时间', dataIndex: 'authorizedTime', key: 'authorizedTime', width: 180 },
+  { title: '操作', key: 'action', width: 160 }
+]
+
+const disableRemove = computed(() => selectedRowKeys.value.length === 0)
+
+const rowSelection = computed(() => ({
+  selectedRowKeys: selectedRowKeys.value,
+  onChange: (keys: TableKey[], rows: ProductRecord[]) => {
+    selectedRowKeys.value = keys
+    DeleteIdArray = rows.map((row) => row.id)
+  }
+}))
+
+const onReset = () => {
+  searchFormData.id = undefined
+  searchFormData.name = ''
+  currentPage.value = 1
+  getProductType()
 }
 
-interface SearchData {
-  id: number | undefined | string
-  name: string
+const getProductData = () => {
+  currentPage.value = 1
+  getProductType()
 }
 
-let updateForm: Ref<tableData> = ref({
+const getProductType = () => {
+  const parm = {
+    id: searchFormData.id,
+    name: searchFormData.name,
+    page: currentPage.value,
+    size: pageSize.value
+  }
+
+  service.post(PATH_URL + '/MachineMange/getProduct', parm).then((res: any) => {
+    const data = res.data
+    const records = Array.isArray(data) ? data : data?.records || []
+    productTableData.value = records
+    total.value = Array.isArray(data) ? data.length : data?.total || records.length
+    selectedRowKeys.value = []
+    DeleteIdArray = []
+  })
+}
+
+const handlePageChange = (page: number, size: number) => {
+  currentPage.value = page
+  pageSize.value = size
+  getProductType()
+}
+
+const deleteOfDetail = () => {
+  deleteProduct([...DeleteIdArray], '确定要删除这些产品类型吗？')
+}
+
+const deleteProduct = (ids: number[], content: string) => {
+  if (ids.length === 0) {
+    message.warning('请选择要删除的产品类型')
+    return
+  }
+
+  AModal.confirm({
+    title: '提示',
+    content,
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      await doRemove(ids)
+    }
+  })
+}
+
+const OnClickOfShowForm = () => {
+  showSearchForm.value = !showSearchForm.value
+}
+
+const showDialog = ref(false)
+const isUpdate = ref(false)
+
+const updateForm = reactive<ProductRecord>({
   id: 0,
   name: '',
   pic: '',
@@ -324,193 +403,136 @@ let updateForm: Ref<tableData> = ref({
   numberOfAuthorized: 0,
   money: 0,
   createTime: '',
-  numberFree: 0
+  numberFree: 0,
+  peripheralList: []
 })
 
-let productTableData: Ref<tableData[]> = ref([])
-
-let DeleteIdArray: number[] = []
-const handleSelectionChange = (val) => {
-  if (val.length > 0) {
-    disableRemove.value = false
-  } else {
-    disableRemove.value = true
-  }
-
-  DeleteIdArray = []
-  val.forEach((row) => {
-    DeleteIdArray.push(row.id)
-  })
+const resetUpdateForm = () => {
+  updateForm.id = 0
+  updateForm.name = ''
+  updateForm.pic = ''
+  updateForm.specifications = ''
+  updateForm.numberOfAuthorized = 0
+  updateForm.money = 0
+  updateForm.createTime = ''
+  updateForm.numberFree = 0
+  updateForm.peripheralList = []
 }
-
-let searchFormData: Ref<SearchData> = ref({ id: undefined, name: '' })
-const onReset = () => {
-  searchFormData.value.id = undefined
-  searchFormData.value.name = ''
-}
-
-let showSearchForm = ref(true)
-const getProductData = () => {
-  getProductType()
-}
-
-//#region  添加按钮相关
 
 const OnClickAdd = () => {
+  isUpdate.value = false
+  resetUpdateForm()
   showDialog.value = true
 }
 
-let disableUpdate = ref(true)
-let disableRemove = ref(true)
-
-const deleteOfDetail = () => {
-  let title = '你确定要删除这些产品类型吗？'
-  ElMessageBox.confirm(title, '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    doRemove(DeleteIdArray)
-  })
-}
-const OnClickOfShowForm = () => {
-  showSearchForm.value = !showSearchForm.value
-}
-
-//#endregion
-
-//#region  添加dialog 相关
-let showDialog = ref(false)
-
 const onCloseDialog = () => {
   showDialog.value = false
+  isUpdate.value = false
+  resetUpdateForm()
 }
-let isUpdate = false
+
 const onAddConfirm = () => {
-  if (isUpdate) {
+  if (isUpdate.value) {
     onUpdate()
     return
   }
 
-  let title = '你确定要添加这个产品类别'
-  ElMessageBox.confirm(title, '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    service
-      .post(
+  AModal.confirm({
+    title: '提示',
+    content: '确定要添加这个产品类别吗？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      await service.post(
         PATH_URL + '/MachineMange/addProduct',
         qs.stringify(
           {
-            name: updateForm.value.name,
-            pic: updateForm.value.pic,
-            spec: updateForm.value.specifications,
-            ids: updateForm.value.peripheralList
+            name: updateForm.name,
+            pic: updateForm.pic,
+            spec: updateForm.specifications,
+            ids: updateForm.peripheralList
           },
           { arrayFormat: 'brackets' }
         )
       )
-      .then(() => {
-        ElMessage('操作成功')
-        showDialog.value = false
-        getProductType()
-      })
+      message.success('操作成功')
+      onCloseDialog()
+      getProductType()
+    }
   })
 }
 
 const onUpdate = () => {}
 
-// 上传图片地址
-const UpImageURL = computed(() => {
-  return PATH_URL + '/Common/upLoadImage'
-})
+const UpImageURL = computed(() => PATH_URL + '/Common/upLoadImage')
 
-//获取图片的地址
-const getImageURL = computed(() => (imageURL) => {
-  return PATH_URL + '/Common/downLoadPic/' + imageURL
-})
+const getImageURL = (imageURL?: string) => {
+  return imageURL ? PATH_URL + '/Common/downLoadPic/' + imageURL : ''
+}
 
-const handleUpdateSuccess = (respon) => {
-  if (respon.code == 200) {
-    updateForm.value.pic = respon.data
+const beforeAvatarUpload = () => true
+
+const headObject = computed(() => ({
+  Authorization: localStorage.getItem('token') || ''
+}))
+
+const handleUploadChange = (info: UploadChangeParam) => {
+  if (info.file.status !== 'done') return
+
+  const response = info.file.response
+  if (response?.code == 200) {
+    updateForm.pic = response.data
   } else {
-    ElMessage('上传图片出错了')
+    message.error('上传图片出错了')
   }
 }
 
-const beforeAvatarUpload = () => {}
-const headObject = {
-  Authorization: localStorage.getItem('token')
-}
+const PeripheralTreeData = ref<PeripheralData[]>([])
 
-interface PeripheralData {
-  id: number
-  label: string
-}
+const peripheralOptions = computed(() =>
+  PeripheralTreeData.value.map((item) => ({
+    label: item.label,
+    value: item.id
+  }))
+)
 
-let PeripheralTreeData: Ref<PeripheralData[]> = ref([])
 const getPeripheralData = () => {
-  service.get(PATH_URL + '/MachineMange/getPeripheral').then((res) => {
-    console.log(res)
-    PeripheralTreeData.value = res.data
+  service.get(PATH_URL + '/MachineMange/getPeripheral').then((res: any) => {
+    PeripheralTreeData.value = res.data || []
   })
 }
 
-let currentPage = ref(1)
-let pageSize = ref(10)
-let small = ref(false)
-let total = ref(0)
-let handleSizeChange = () => {}
+const showCheckDialog = ref(false)
+const currentData = ref<Partial<ProductRecord>>({})
+const cc = ref<Record<string, number>>({})
 
-const getProductType = () => {
-  let parm = {
-    id: searchFormData.value.id,
-    name: searchFormData.value.name,
-    page: currentPage.value,
-    size: pageSize.value
-  }
-  service.post(PATH_URL + '/MachineMange/getProduct', parm).then((res) => {
-    console.log(res)
-    productTableData.value = res.data
-  })
-}
-
-let showCheckDialog = ref(false)
-let currentData: Ref<any> = ref({})
-let cc: Ref<any> = ref({})
-const handleDetail = (val) => {
+const handleDetail = (record: Record<string, any>) => {
+  const val = record as ProductRecord
   currentData.value = val
   service.get(PATH_URL + '/MachineMange/getEmpower?productId=' + val.id).then((res: any) => {
-    console.log('rr', res)
-    cc.value = res.data
-    console.log('reflect', cc)
+    cc.value = res.data || {}
   })
 
   showCheckDialog.value = true
-  console.log('currentData', currentData.value)
 }
 
-const handleRemove = (val) => {
+const handleRemove = (record: Record<string, any>) => {
+  const val = record as ProductRecord
+  authData.id = val.id
+  authData.name = val.name
+  authData.free = 365
+  authData.money = 100
+  authData.numberOfAuth = 100
+  authData.departmentId = undefined
+  authData.pic = val.pic
+  authData.type = 1
   showAuthorizationDialog.value = true
-  console.log('hahsh', val)
-  authData.value.id = val.id
-  authData.value.name = val.name
-  authData.value.free = 365
-  authData.value.money = 100
-  authData.value.numberOfAuth = 100
-  authData.value.departmentId = ''
-  authData.value.pic = val.pic
-  authData.value.type = 1
 }
-//#endregion
 
-//#region 授权 dialog
-
-let authData = ref({
+const authData = reactive({
   id: 0,
   pic: '',
-  departmentId: {},
+  departmentId: undefined as number | string | undefined,
   numberOfAuth: 0,
   money: 0,
   free: 0,
@@ -518,125 +540,214 @@ let authData = ref({
   type: 1
 })
 
-let showAuthorizationDialog = ref(false)
+const showAuthorizationDialog = ref(false)
+const Departments = ref<DepartmentStruct[]>([])
 
-interface DepartmentStruct {
-  id: number | string
-  platform_name: string
-}
-
-let Departments: Ref<DepartmentStruct[]> = ref([])
+const departmentOptions = computed(() =>
+  Departments.value.map((item) => ({
+    label: item.platform_name,
+    value: item.id
+  }))
+)
 
 const getDepartments = () => {
-  service.get(PATH_URL + '/Permission/getDepartmentForSelect').then((res) => {
-    console.log(res)
-    Departments.value = res.data
+  service.get(PATH_URL + '/Permission/getDepartmentForSelect').then((res: any) => {
+    Departments.value = res.data || []
   })
 }
 
 const onclostAuthDialog = () => {
   showAuthorizationDialog.value = false
 }
+
 const doAuth = () => {
-  let title = '你确定要授权这个产品类别'
-  ElMessageBox.confirm(title, '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    service
-      .post(
+  AModal.confirm({
+    title: '提示',
+    content: '确定要授权这个产品类别吗？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      await service.post(
         PATH_URL + '/MachineMange/AuthorizeThePorduct',
         qs.stringify(
           {
-            productId: authData.value.id,
-            departmentId: authData.value.departmentId,
-            number: authData.value.numberOfAuth,
-            money: authData.value.money,
-            free: authData.value.free,
-            type: authData.value.type
+            productId: authData.id,
+            departmentId: authData.departmentId,
+            number: authData.numberOfAuth,
+            money: authData.money,
+            free: authData.free,
+            type: authData.type
           },
           { arrayFormat: 'brackets' }
         )
       )
-      .then(() => {
-        ElMessage('操作成功')
-        showAuthorizationDialog.value = false
-        getProductType()
-      })
+      message.success('操作成功')
+      showAuthorizationDialog.value = false
+      getProductType()
+    }
   })
 }
 
-const doRemove = (ids: number[]) => {
-  service
-    .post(
-      PATH_URL + '/MachineMange/deletrProduct',
-      qs.stringify(
-        {
-          ids: ids
-        },
-        { arrayFormat: 'brackets' }
-      )
+const doRemove = async (ids: number[]) => {
+  await service.post(
+    PATH_URL + '/MachineMange/deletrProduct',
+    qs.stringify(
+      {
+        ids
+      },
+      { arrayFormat: 'brackets' }
     )
-    .then(() => {
-      ElMessage('操作成功')
-      getProductType()
-    })
+  )
+  message.success('操作成功')
+  getProductType()
 }
 
-const rules = reactive<FormRules>({
+const rules = reactive<Record<string, Rule[]>>({
   name: [{ required: true, message: '请输入产品类型名称', trigger: 'blur' }],
-  region: [
-    {
-      required: true,
-      message: '请选择要授权的运营商',
-      trigger: 'blur'
-    }
-  ],
-  numberOfAuth: [
-    {
-      type: 'number',
-      required: true,
-      message: '请输入要授权的设备数量',
-      trigger: 'blur'
-    }
-  ],
-  money: [
-    {
-      required: true,
-      message: '请输入收费金额',
-      trigger: 'blur'
-    }
-  ],
-  free: [
-    {
-      required: true,
-      message: '请输入免费时长',
-      trigger: 'blur'
-    }
-  ]
+  departmentId: [{ required: true, message: '请选择要授权的运营商', trigger: 'change' }],
+  numberOfAuth: [{ type: 'number', required: true, message: '请输入要授权的设备数量', trigger: 'change' }],
+  money: [{ type: 'number', required: true, message: '请输入收费金额', trigger: 'change' }]
 })
 
-//#endregion
+onMounted(() => {
+  getPeripheralData()
+  getProductType()
+  getDepartments()
+})
 </script>
 
-<style scoped>
-.imgOfTable {
-  width: 100px;
-  height: 100px;
+<style lang="less" scoped>
+.product-page {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.pic {
-  width: 200px;
-  height: auto;
+.search-form {
+  display: flex;
+  padding: 16px 16px 0;
+  background-color: #fff;
+  border-radius: 6px;
+  flex-wrap: wrap;
+  gap: 0 8px;
+
+  :deep(.ant-form-item) {
+    margin-right: 0;
+    margin-bottom: 16px;
+  }
 }
 
-.bt {
-  margin-left: 20px;
+.search-form-item {
+  flex: 0 1 250px;
 }
 
-.depInTable {
-  margin: 2px;
-  background-color: rgb(210, 240, 230);
+.search-form-action {
+  flex: 0 0 auto;
+}
+
+.search-input {
+  width: 180px;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.toolbar-left,
+.toolbar-right {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.icon-button,
+.table-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  :deep(.v-icon),
+  :deep(iconify-icon) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+}
+
+.table-action {
+  height: 24px;
+  padding: 0;
+  gap: 4px;
+}
+
+.action-view {
+  color: #52c41a;
+}
+
+.table-image {
+  display: block;
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+.preview-image {
+  display: block;
+  max-width: 220px;
+  max-height: 180px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.empty-text {
+  color: #8c8c8c;
+}
+
+.pagination-wrap {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.avatar-uploader {
+  :deep(.ant-upload) {
+    width: 104px;
+    height: 104px;
+  }
+}
+
+.avatar {
+  display: block;
+  width: 104px;
+  height: 104px;
+  object-fit: contain;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+}
+
+.upload-placeholder {
+  display: inline-flex;
+  width: 104px;
+  height: 104px;
+  color: #8c8c8c;
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s cubic-bezier(0, 0, 1, 1);
+
+  &:hover {
+    border-color: #1677ff;
+  }
 }
 </style>

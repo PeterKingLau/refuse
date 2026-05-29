@@ -59,7 +59,7 @@ watch(
 
 .@{prefix-cls} {
   .is-active {
-    border-color: var(--el-color-primary);
+    border-color: var(--app-color-primary);
   }
 }
 </style>

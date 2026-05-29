@@ -2,7 +2,7 @@
 import { Form } from '@/components/Form'
 import { PropType, computed, unref, ref } from 'vue'
 import { propTypes } from '@/utils/propTypes'
-import { ElButton } from 'element-plus'
+import { Button as AButton } from 'ant-design-vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import { useForm } from '@/hooks/web/useForm'
 import { findIndex } from '@/utils'
@@ -24,9 +24,7 @@ const props = defineProps({
   // 操作按钮风格位置
   layout: propTypes.string.validate((v: string) => ['inline', 'bottom'].includes(v)).def('inline'),
   // 底部按钮的对齐方式
-  buttomPosition: propTypes.string
-    .validate((v: string) => ['left', 'center', 'right'].includes(v))
-    .def('center'),
+  buttomPosition: propTypes.string.validate((v: string) => ['left', 'center', 'right'].includes(v)).def('center'),
   showSearch: propTypes.bool.def(true),
   showReset: propTypes.bool.def(true),
   // 是否显示伸缩
@@ -94,47 +92,39 @@ const setVisible = () => {
 </script>
 
 <template>
-  <Form
-    :is-custom="false"
-    :label-width="labelWidth"
-    hide-required-asterisk
-    :inline="inline"
-    :is-col="isCol"
-    :schema="newSchema"
-    @register="register"
-  >
+  <Form :is-custom="false" :label-width="labelWidth" hide-required-asterisk :inline="inline" :is-col="isCol" :schema="newSchema" @register="register">
     <template #action>
       <div v-if="layout === 'inline'">
-        <ElButton v-if="showSearch" type="primary" @click="search">
-          <Icon icon="ep:search" class="mr-5px" />
+        <AButton v-if="showSearch" type="primary" @click="search">
+          <Icon icon="ant-design:search-outlined" class="mr-5px" />
           {{ t('common.query') }}
-        </ElButton>
-        <ElButton v-if="showReset" @click="reset">
-          <Icon icon="ep:refresh-right" class="mr-5px" />
+        </AButton>
+        <AButton v-if="showReset" @click="reset">
+          <Icon icon="ant-design:reload-outlined" class="mr-5px" />
           {{ t('common.reset') }}
-        </ElButton>
-        <ElButton v-if="expand" text @click="setVisible">
+        </AButton>
+        <AButton v-if="expand" type="link" @click="setVisible">
           {{ t(visible ? 'common.shrink' : 'common.expand') }}
           <Icon :icon="visible ? 'ant-design:up-outlined' : 'ant-design:down-outlined'" />
-        </ElButton>
+        </AButton>
       </div>
     </template>
   </Form>
 
   <template v-if="layout === 'bottom'">
     <div :style="bottonButtonStyle">
-      <ElButton v-if="showSearch" type="primary" @click="search">
-        <Icon icon="ep:search" class="mr-5px" />
+      <AButton v-if="showSearch" type="primary" @click="search">
+        <Icon icon="ant-design:search-outlined" class="mr-5px" />
         {{ t('common.query') }}
-      </ElButton>
-      <ElButton v-if="showReset" @click="reset">
-        <Icon icon="ep:refresh-right" class="mr-5px" />
+      </AButton>
+      <AButton v-if="showReset" @click="reset">
+        <Icon icon="ant-design:reload-outlined" class="mr-5px" />
         {{ t('common.reset') }}
-      </ElButton>
-      <ElButton v-if="expand" text @click="setVisible">
+      </AButton>
+      <AButton v-if="expand" type="link" @click="setVisible">
         {{ t(visible ? 'common.shrink' : 'common.expand') }}
         <Icon :icon="visible ? 'ant-design:up-outlined' : 'ant-design:down-outlined'" />
-      </ElButton>
+      </AButton>
     </div>
   </template>
 </template>

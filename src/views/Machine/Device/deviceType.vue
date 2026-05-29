@@ -1,222 +1,190 @@
 <template>
-  <el-row class="rr">
-    <el-form :model="SearchForm" label-width="100px" :inline="true" v-if="showSearchForm">
-      <el-form-item label="产品类型" label-width="90">
-        <el-select
-          v-model="SearchForm.productId"
-          placeholder="请选择产品类型"
-          ref="pointTpteSelectRef"
-        >
-          <el-option
-            v-for="item in PorductTypeArray"
-            :key="item.id"
-            :label="item.name"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
+  <div class="device-type-page">
+    <AForm v-if="showSearchForm" :model="SearchForm" layout="inline" class="search-form">
+      <AFormItem label="产品类型" class="search-form-item">
+        <ASelect v-model:value="SearchForm.productId" :options="productOptions" allow-clear placeholder="请选择产品类型" />
+      </AFormItem>
 
-      <el-form-item label="型号名称：" label-width="90">
-        <el-input v-model="SearchForm.deviceTypeName" class="eInput" placeholder="请输入型号名称" />
-      </el-form-item>
-      <el-form-item label="仓位数量：" label-width="90">
-        <el-input v-model="SearchForm.warehouses" class="eInput" placeholder="请输入仓位数量" />
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" class="btn" @click="onSearch" v-hasPermi="Permission.sec">
-          <el-icon><Search /></el-icon>
+      <AFormItem label="型号名称" class="search-form-item">
+        <AInput v-model:value="SearchForm.deviceTypeName" class="search-input" placeholder="请输入型号名称" />
+      </AFormItem>
+
+      <AFormItem label="仓位数量" class="search-form-item">
+        <AInputNumber v-model:value="SearchForm.warehouses" :min="0" class="search-input" placeholder="请输入仓位数量" />
+      </AFormItem>
+
+      <AFormItem class="search-form-action">
+        <AButton type="primary" class="icon-button" @click="onSearch" v-hasPermi="Permission.sec">
+          <template #icon>
+            <Icon icon="ant-design:search-outlined" />
+          </template>
           搜索
-        </el-button>
-      </el-form-item>
+        </AButton>
+      </AFormItem>
 
-      <el-form-item>
-        <el-button class="btn" @click="onReset">
-          <el-icon class="el-icon--left"><RefreshRight /></el-icon>
+      <AFormItem class="search-form-action">
+        <AButton class="icon-button" @click="onReset">
+          <template #icon>
+            <Icon icon="ant-design:reload-outlined" />
+          </template>
           重置
-        </el-button>
-      </el-form-item>
-    </el-form>
-  </el-row>
+        </AButton>
+      </AFormItem>
+    </AForm>
 
-  <el-row>
-    <el-col :span="12">
-      <el-button type="primary" class="btn" @click="OnClickAdd" v-hasPermi="Permission.add">
-        <el-icon><Plus /> </el-icon>
-        新增</el-button
-      >
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <AButton type="primary" class="icon-button" @click="OnClickAdd" v-hasPermi="Permission.add">
+          <template #icon>
+            <Icon icon="ant-design:plus-outlined" />
+          </template>
+          新增
+        </AButton>
+      </div>
 
-      <el-link
-        type="success"
-        class="btn"
-        :disabled="disableUpdate"
-        v-if="false"
-        v-hasPermi="Permission.rev"
-        ><el-icon><EditPen /></el-icon>修改</el-link
-      >
-      <el-button
-        type="danger"
-        v-if="false"
-        class="btn"
-        :disabled="disableRemove"
-        @click="deleteOfDetail"
-        v-hasPermi="Permission.del"
-        ><el-icon><Close /></el-icon>删除</el-button
-      >
-    </el-col>
+      <div class="toolbar-right">
+        <ATooltip :title="showSearchForm ? '隐藏搜索' : '显示搜索'">
+          <AButton shape="circle" @click="OnClickOfShowForm">
+            <template #icon>
+              <Icon icon="ant-design:search-outlined" />
+            </template>
+          </AButton>
+        </ATooltip>
+        <ATooltip title="刷新">
+          <AButton shape="circle" @click="onPageRest">
+            <template #icon>
+              <Icon icon="ant-design:reload-outlined" />
+            </template>
+          </AButton>
+        </ATooltip>
+      </div>
+    </div>
 
-    <el-col :span="12" style="text-align: right">
-      <el-tooltip content="隐藏搜索" placement="top-start">
-        <el-button circle @click="OnClickOfShowForm">
-          <el-icon><Search /></el-icon
-        ></el-button>
-      </el-tooltip>
-      <el-tooltip content="刷新" placement="top-start">
-        <el-button circle @click="onPageRest">
-          <el-icon><RefreshRight /></el-icon>
-        </el-button>
-      </el-tooltip>
-    </el-col>
-  </el-row>
-
-  <el-divider />
-  <el-row>
-    <el-table
-      ref="areaTableRef"
-      :data="TableData"
-      style="width: 100%"
-      @selection-change="handleSelectionChange"
-    >
-      <el-table-column label="记录编号" width="100" property="id" />
-      <el-table-column label="产品类型" width="100" property="product.name" />
-
-      <el-table-column label="型号名称" width="100" property="name" />
-      <el-table-column label="仓位数量" width="100" property="warehouse" />
-      <el-table-column label="生产厂家" width="100" property="manufacturer" />
-      <el-table-column label="屏幕类型" width="100">
-        <template #default="scope">
-          <span>{{ converScreenModel(scope.row.screenModel) }}</span>
+    <ATable row-key="id" :columns="columns" :data-source="TableData" :pagination="false" bordered>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'screenModel'">
+          {{ converScreenModel(record.screenModel) }}
         </template>
-      </el-table-column>
-      <el-table-column label="屏幕尺寸" width="100" property="screenClass.label" />
-      <el-table-column label="创建时间" width="180" property="createTime" />
-      <el-table-column label="创建人" width="100" property="staff.name" />
-      <el-table-column label="操作时间" width="180" property="updateTime" />
-      <el-table-column label="操作" v-slot="scope" width="150">
-        <div class="buttonOfTables">
-          <el-link
-            class="bt"
-            type="success"
-            @click="handleDetail(scope.row)"
-            v-hasPermi="Permission.del"
-            >修改</el-link
-          >
-          <el-link
-            class="bt"
-            type="danger"
-            @click="handleRemove(scope.row)"
-            v-hasPermi="Permission.del"
-            >删除</el-link
-          >
-        </div>
-      </el-table-column>
-    </el-table>
-  </el-row>
 
-  <el-dialog v-model="addDialogFormVisible" :title="updateTitle">
-    <el-form :model="addFormData" label-width="100">
-      <el-row>
-        <el-form-item label="产品类型:" label-width=" 100">
-          <el-select
-            v-model="addFormData.product"
-            placeholder="Select"
-            ref="pointTpteSelectRef"
-            :disabled="isUpdate"
-          >
-            <el-option
-              v-for="item in PorductTypeArray"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-            />
-          </el-select>
-        </el-form-item>
-      </el-row>
-      <el-row>
-        <el-form-item label="型号名称:" label-width="100">
-          <el-input v-model="addFormData.name" placeholder="请输入型号名称" />
-        </el-form-item>
-      </el-row>
-      <el-row>
-        <el-form-item label="图片" label-width="100">
-          <el-upload
-            class="avatar-uploader"
-            :action="UpImageURL"
-            :show-file-list="false"
-            :on-success="handleUpdateSuccess"
-            :before-upload="beforeAvatarUpload"
-            :headers="headObject"
-          >
-            <img v-if="addFormData.pic" :src="getImageURL(addFormData.pic)" class="avatar" />
-            <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
-          </el-upload>
-        </el-form-item>
-      </el-row>
-      <el-row>
-        <el-form-item label="生产厂家:" label-width="100">
-          <el-input v-model="addFormData.manufacturer" placeholder="请输入生产厂家名称" />
-        </el-form-item>
-      </el-row>
-      <el-row>
-        <el-form-item label="仓位数量:" label-width="100">
-          <el-input-number v-model="addFormData.warehouse" />
-        </el-form-item>
-      </el-row>
-      <el-row>
-        <el-form-item label="屏幕模式:" label-width="100">
-          <el-radio-group v-model="addFormData.screenModel" @change="screenModelSelect">
-            <el-radio :label="1">横屏</el-radio>
-            <el-radio :label="2">竖屏</el-radio>
-            <el-radio :label="0">无屏</el-radio>
-          </el-radio-group>
-        </el-form-item>
-      </el-row>
-      <el-row>
-        <el-form-item label="屏幕尺寸:" label-width=" 100" v-if="showScreenClassSelect">
-          <el-select
-            v-model="addFormData.screenClass"
-            placeholder="请选择屏幕尺寸"
-            ref="pointTpteSelectRef"
-          >
-            <el-option
-              v-for="item in ScreenClassArray"
-              :key="item.id"
-              :label="item.label"
-              :value="item.id"
-            />
-          </el-select>
-        </el-form-item>
-      </el-row>
-    </el-form>
-    <template #footer>
-      <span class="dialog-footer">
-        <el-button @click="addDialogFormVisible = false">取消</el-button>
-        <el-button type="primary" @click="onAddConfirm"> 确认 </el-button>
-      </span>
-    </template>
-  </el-dialog>
+        <template v-else-if="column.key === 'action'">
+          <ASpace>
+            <AButton type="link" class="table-action action-edit" @click="handleDetail(record)" v-hasPermi="Permission.rev">
+              <template #icon>
+                <Icon icon="ant-design:edit-outlined" />
+              </template>
+              修改
+            </AButton>
+            <AButton type="link" danger class="table-action" @click="handleRemove(record)" v-hasPermi="Permission.del">
+              <template #icon>
+                <Icon icon="ant-design:delete-outlined" />
+              </template>
+              删除
+            </AButton>
+          </ASpace>
+        </template>
+      </template>
+    </ATable>
+
+    <AModal v-model:open="addDialogFormVisible" :title="updateTitle" width="680px" :destroy-on-close="true" @cancel="closeDeviceTypeDialog">
+      <AForm :model="addFormData" layout="vertical">
+        <ARow :gutter="16">
+          <ACol :span="12">
+            <AFormItem label="产品类型" name="product">
+              <span v-if="isUpdate" class="form-text">{{ productDisplayName }}</span>
+              <ASelect v-else v-model:value="addFormData.product" :options="productOptions" placeholder="请选择产品类型" />
+            </AFormItem>
+          </ACol>
+
+          <ACol :span="12">
+            <AFormItem label="型号名称" name="name">
+              <AInput v-model:value="addFormData.name" placeholder="请输入型号名称" />
+            </AFormItem>
+          </ACol>
+
+          <ACol :span="12">
+            <AFormItem label="生产厂家" name="manufacturer">
+              <AInput v-model:value="addFormData.manufacturer" placeholder="请输入生产厂家名称" />
+            </AFormItem>
+          </ACol>
+
+          <ACol :span="12">
+            <AFormItem label="仓位数量" name="warehouse">
+              <AInputNumber v-model:value="addFormData.warehouse" :min="0" class="w-full" />
+            </AFormItem>
+          </ACol>
+
+          <ACol :span="12">
+            <AFormItem label="屏幕模式" name="screenModel">
+              <ARadioGroup v-model:value="addFormData.screenModel" @change="screenModelSelect">
+                <ARadio :value="1">横屏</ARadio>
+                <ARadio :value="2">竖屏</ARadio>
+                <ARadio :value="0">无屏</ARadio>
+              </ARadioGroup>
+            </AFormItem>
+          </ACol>
+
+          <ACol v-if="showScreenClassSelect" :span="12">
+            <AFormItem label="屏幕尺寸" name="screenClass">
+              <ASelect v-model:value="addFormData.screenClass" :options="screenClassOptions" placeholder="请选择屏幕尺寸" />
+            </AFormItem>
+          </ACol>
+
+          <ACol :span="12">
+            <AFormItem label="图片">
+              <AUpload class="avatar-uploader" :action="UpImageURL" :show-upload-list="false" :before-upload="beforeAvatarUpload" :headers="headObject" @change="handleUploadChange">
+                <img v-if="addFormData.pic" :src="getImageURL(addFormData.pic)" class="avatar" />
+                <div v-else class="upload-placeholder">
+                  <Icon icon="ant-design:plus-outlined" :size="24" />
+                </div>
+              </AUpload>
+            </AFormItem>
+          </ACol>
+        </ARow>
+      </AForm>
+
+      <template #footer>
+        <ASpace>
+          <AButton @click="closeDeviceTypeDialog">取消</AButton>
+          <AButton type="primary" @click="onAddConfirm">确认</AButton>
+        </ASpace>
+      </template>
+    </AModal>
+  </div>
 </template>
 
 <script setup lang="ts">
+import { computed, inject, onMounted, reactive, ref } from 'vue'
+import {
+  Button as AButton,
+  Col as ACol,
+  Form as AForm,
+  FormItem as AFormItem,
+  Input as AInput,
+  InputNumber as AInputNumber,
+  Modal as AModal,
+  Radio as ARadio,
+  RadioGroup as ARadioGroup,
+  Row as ARow,
+  Select as ASelect,
+  Space as ASpace,
+  Table as ATable,
+  Tooltip as ATooltip,
+  Upload as AUpload,
+  message
+} from 'ant-design-vue'
+import type { TableColumnsType, UploadChangeParam } from 'ant-design-vue'
 import { PATH_URL, service } from '@/config/axios/service'
-import { ref, Ref, onMounted, computed, inject } from 'vue'
-
-import { ElSelect, ElMessage, ElMessageBox, ElTable } from 'element-plus'
+import { Icon } from '@/components/Icon'
 import qs from 'qs'
 
-const reload: any = inject('reload')
+const reload = inject<() => void>('reload')
 
 const onPageRest = () => {
-  reload()
+  if (reload) {
+    reload()
+    return
+  }
+  getDeviceTypeData()
 }
 
 const Permission = ref({
@@ -226,11 +194,10 @@ const Permission = ref({
   sec: 'mac_dvt_sec'
 })
 
-//#region 数据结构
 interface SearchDataStruct {
-  productId: number | undefined
+  productId?: number
   deviceTypeName: string
-  warehouses: number | undefined
+  warehouses?: number
 }
 
 interface ProductTypeStruct {
@@ -238,131 +205,81 @@ interface ProductTypeStruct {
   name: string
 }
 
-interface DeviceTypeStrcut {
-  id: number
-  product: any
-  name: string
-  warehouse: number
-  manufacturer: string
-  screenClass: any
-  screenModel: number
-  createTime: string
-  staff: any
-  updateTime: string
-  pic: string
-}
-
 interface ScreenClassStruct {
   id: number
   label: string
 }
 
-//#endregion
-
-//#region  初始化
-let ScreenClassArray: Ref<ScreenClassStruct[]> = ref([])
-const getScreenClassData = () => {
-  service.get(PATH_URL + '/MachineMange/getScreenClass').then((res) => {
-    ScreenClassArray.value = res.data
-  })
+interface DeviceTypeStruct {
+  [key: string]: any
+  id: number
+  product:
+    | {
+        id?: number
+        name?: string
+      }
+    | number
+    | null
+  name: string
+  warehouse: number
+  manufacturer: string
+  screenClass:
+    | {
+        id?: number
+        label?: string
+      }
+    | number
+    | string
+    | null
+  screenModel: number
+  createTime: string
+  staff?: {
+    name?: string
+  } | null
+  updateTime: string
+  pic: string
 }
 
-onMounted(() => {
-  getDeviceTypeData()
-  getProductTypeData()
-  getScreenClassData()
-})
-
-const headObject = {
-  Authorization: localStorage.getItem('token')
+interface DeviceTypeFormStruct {
+  id: number
+  product?: number
+  name: string
+  warehouse: number
+  manufacturer: string
+  screenClass?: number | string
+  screenModel: number
+  createTime: string
+  staff?: {
+    name?: string
+  } | null
+  updateTime: string
+  pic: string
 }
 
-// 上传图片地址
-const UpImageURL = computed(() => {
-  return PATH_URL + '/Common/upLoadImage'
-})
+const ScreenClassArray = ref<ScreenClassStruct[]>([])
+const PorductTypeArray = ref<ProductTypeStruct[]>([])
+const TableData = ref<DeviceTypeStruct[]>([])
 
-//获取图片的地址
-const getImageURL = computed(() => (imageURL) => {
-  return PATH_URL + '/Common/downLoadPic/' + imageURL
-})
-
-const getProductTypeData = () => {
-  let parm = {
-    id: '',
-    name: '',
-    page: 1,
-    size: 99999
-  }
-  service.post(PATH_URL + '/MachineMange/getProduct', parm).then((res) => {
-    console.log(res)
-    PorductTypeArray.value = res.data
-  })
-}
-
-//#endregion
-//#region 搜索框
-
-let PorductTypeArray: Ref<ProductTypeStruct[]> = ref([])
-
-let showSearchForm = ref(true)
-let SearchForm: Ref<SearchDataStruct> = ref({
+const showSearchForm = ref(true)
+const SearchForm = reactive<SearchDataStruct>({
   productId: undefined,
   deviceTypeName: '',
   warehouses: undefined
 })
 
-const onSearch = () => {
-  getDeviceTypeData()
-}
-const onReset = () => {
-  SearchForm.value = {
-    productId: undefined,
-    deviceTypeName: '',
-    warehouses: undefined
-  }
-}
+const updateTitle = ref('')
+const addDialogFormVisible = ref(false)
+const isUpdate = ref(false)
+const showScreenClassSelect = ref(false)
+const editingProductName = ref('')
 
-//#endregion
-
-//#region  中间添加按钮
-let disableUpdate = ref(true)
-let disableRemove = ref(true)
-const OnClickAdd = () => {
-  updateTitle.value = '添加设备类型'
-  iniaddFormData()
-  addDialogFormVisible.value = true
-  isUpdate.value = false
-}
-
-const iniaddFormData = () => {
-  addFormData.value.product = 1
-  addFormData.value.name = ''
-  addFormData.value.pic = ''
-  addFormData.value.manufacturer = ''
-  addFormData.value.warehouse = 0
-  addFormData.value.screenModel = 0
-  addFormData.value.screenClass = ''
-  addFormData.value.id = 0
-}
-
-const deleteOfDetail = () => {}
-const OnClickOfShowForm = () => {
-  showSearchForm.value = !showSearchForm.value
-}
-//#endregion
-
-//#region 添加dialog
-let updateTitle = ref('')
-let addDialogFormVisible = ref(false)
-
-let addFormData: Ref<DeviceTypeStrcut> = ref({
+const addFormData = reactive<DeviceTypeFormStruct>({
   id: 0,
-  product: null,
+  product: undefined,
   name: '',
   warehouse: 0,
   manufacturer: '',
-  screenClass: null,
+  screenClass: undefined,
   screenModel: 0,
   createTime: '',
   staff: null,
@@ -370,150 +287,231 @@ let addFormData: Ref<DeviceTypeStrcut> = ref({
   pic: ''
 })
 
-let isUpdate = ref(false)
+const columns: TableColumnsType<DeviceTypeStruct> = [
+  { title: '产品类型', dataIndex: ['product', 'name'], key: 'productName', width: 140 },
+  { title: '型号名称', dataIndex: 'name', key: 'name', width: 140 },
+  { title: '仓位数量', dataIndex: 'warehouse', key: 'warehouse', width: 110 },
+  { title: '生产厂家', dataIndex: 'manufacturer', key: 'manufacturer', width: 140 },
+  { title: '屏幕类型', dataIndex: 'screenModel', key: 'screenModel', width: 110 },
+  { title: '屏幕尺寸', dataIndex: ['screenClass', 'label'], key: 'screenClassLabel', width: 120 },
+  { title: '创建时间', dataIndex: 'createTime', key: 'createTime', width: 180 },
+  { title: '创建人', dataIndex: ['staff', 'name'], key: 'staffName', width: 120 },
+  { title: '操作时间', dataIndex: 'updateTime', key: 'updateTime', width: 180 },
+  { title: '操作', key: 'action', width: 150 }
+]
 
-let onAddConfirm = () => {
-  let title = ''
-  if (isUpdate.value) {
-    title = '你确定要修改这个设备类型'
-    doUpdataDeviceType(title)
-    return
-  } else {
-    title = '你确定要添加这个设备类型'
-    doAddDeviceType(title)
-  }
+const productOptions = computed(() =>
+  PorductTypeArray.value.map((item) => ({
+    label: item.name,
+    value: item.id
+  }))
+)
+
+const productDisplayName = computed(() => {
+  const matchedProduct = PorductTypeArray.value.find((item) => item.id === addFormData.product)
+  return matchedProduct?.name || editingProductName.value || '-'
+})
+
+const screenClassOptions = computed(() =>
+  ScreenClassArray.value.map((item) => ({
+    label: item.label,
+    value: item.id
+  }))
+)
+
+const headObject = computed(() => ({
+  Authorization: localStorage.getItem('token') || ''
+}))
+
+const UpImageURL = computed(() => PATH_URL + '/Common/upLoadImage')
+
+const getImageURL = (imageURL?: string) => {
+  return imageURL ? PATH_URL + '/Common/downLoadPic/' + imageURL : ''
 }
 
-const doAddDeviceType = (title) => {
-  ElMessageBox.confirm(title, '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    let mode = null
-    if (addFormData.value.screenModel != 0) {
-      mode = addFormData.value.screenClass
-    }
-    service
-      .post(
+const getScreenClassData = () => {
+  service.get(PATH_URL + '/MachineMange/getScreenClass').then((res: any) => {
+    ScreenClassArray.value = res.data || []
+  })
+}
+
+const getProductTypeData = () => {
+  const parm = {
+    id: '',
+    name: '',
+    page: 1,
+    size: 99999
+  }
+
+  service.post(PATH_URL + '/MachineMange/getProduct', parm).then((res: any) => {
+    const data = res.data
+    PorductTypeArray.value = Array.isArray(data) ? data : data?.records || []
+  })
+}
+
+const onSearch = () => {
+  getDeviceTypeData()
+}
+
+const onReset = () => {
+  SearchForm.productId = undefined
+  SearchForm.deviceTypeName = ''
+  SearchForm.warehouses = undefined
+  getDeviceTypeData()
+}
+
+const OnClickAdd = () => {
+  updateTitle.value = '添加设备类型'
+  initAddFormData()
+  isUpdate.value = false
+  addDialogFormVisible.value = true
+}
+
+const initAddFormData = () => {
+  addFormData.product = PorductTypeArray.value[0]?.id
+  addFormData.name = ''
+  addFormData.pic = ''
+  addFormData.manufacturer = ''
+  addFormData.warehouse = 0
+  addFormData.screenModel = 0
+  addFormData.screenClass = undefined
+  addFormData.id = 0
+  editingProductName.value = ''
+  showScreenClassSelect.value = false
+}
+
+const closeDeviceTypeDialog = () => {
+  addDialogFormVisible.value = false
+  isUpdate.value = false
+  initAddFormData()
+}
+
+const OnClickOfShowForm = () => {
+  showSearchForm.value = !showSearchForm.value
+}
+
+const onAddConfirm = () => {
+  if (isUpdate.value) {
+    doUpdateDeviceType('确定要修改这个设备类型吗？')
+    return
+  }
+  doAddDeviceType('确定要添加这个设备类型吗？')
+}
+
+const getSelectedProductId = () => {
+  return addFormData.product
+}
+
+const getSelectedScreenClassId = () => {
+  return addFormData.screenClass
+}
+
+const doAddDeviceType = (content: string) => {
+  AModal.confirm({
+    title: '提示',
+    content,
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      const screenClass = addFormData.screenModel === 0 ? null : getSelectedScreenClassId()
+      await service.post(
         PATH_URL + '/MachineMange/addDeviceType',
         qs.stringify(
           {
-            product: addFormData.value.product,
-            name: addFormData.value.name,
-            warehouse: addFormData.value.warehouse,
-            manufacturer: addFormData.value.manufacturer,
-            screenClass: mode,
-            screenModel: addFormData.value.screenModel,
-            pic: addFormData.value.pic
+            product: getSelectedProductId(),
+            name: addFormData.name,
+            warehouse: addFormData.warehouse,
+            manufacturer: addFormData.manufacturer,
+            screenClass,
+            screenModel: addFormData.screenModel,
+            pic: addFormData.pic
           },
           { arrayFormat: 'brackets' }
         )
       )
-      .then(() => {
-        ElMessage('操作成功')
-        getDeviceTypeData()
-        addDialogFormVisible.value = false
-      })
+      message.success('操作成功')
+      getDeviceTypeData()
+      closeDeviceTypeDialog()
+    }
   })
 }
 
-const doUpdataDeviceType = (title) => {
-  ElMessageBox.confirm(title, '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    let model = null
-    if (addFormData.value.screenModel != 0) {
-      model = addFormData.value.screenClass
-    }
-    service
-      .post(
+const doUpdateDeviceType = (content: string) => {
+  AModal.confirm({
+    title: '提示',
+    content,
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      const screenClass = addFormData.screenModel === 0 ? null : getSelectedScreenClassId()
+      await service.post(
         PATH_URL + '/MachineMange/updateDeviceType',
         qs.stringify(
           {
-            id: addFormData.value.id,
-            name: addFormData.value.name,
-            warehouse: addFormData.value.warehouse,
-            manufacturer: addFormData.value.manufacturer,
-            screenClass: model,
-            screenModel: addFormData.value.screenModel,
-            pic: addFormData.value.pic
+            id: addFormData.id,
+            name: addFormData.name,
+            warehouse: addFormData.warehouse,
+            manufacturer: addFormData.manufacturer,
+            screenClass,
+            screenModel: addFormData.screenModel,
+            pic: addFormData.pic
           },
           { arrayFormat: 'brackets' }
         )
       )
-      .then(() => {
-        ElMessage('操作成功')
-        getDeviceTypeData()
-        addDialogFormVisible.value = false
-      })
+      message.success('操作成功')
+      getDeviceTypeData()
+      closeDeviceTypeDialog()
+    }
   })
 }
 
-const handleUpdateSuccess = (respon) => {
-  if (respon.code == 200) {
-    addFormData.value.pic = respon.data
-  } else {
-    ElMessage('上传图片出错了')
-  }
-}
-const beforeAvatarUpload = () => {}
-let showScreenClassSelect = ref(false)
+const beforeAvatarUpload = () => true
 
-const screenModelSelect = (val) => {
-  console.log('screenModel', val)
-  if (val == 0) {
-    showScreenClassSelect.value = false
+const handleUploadChange = (info: UploadChangeParam) => {
+  if (info.file.status !== 'done') return
+
+  const response = info.file.response
+  if (response?.code == 200) {
+    addFormData.pic = response.data
   } else {
-    showScreenClassSelect.value = true
+    message.error('上传图片出错了')
   }
 }
 
-//#endregion
-
-//#region  表格相关
-let areaTableRef = ref(ElTable)
-let TableData: Ref<DeviceTypeStrcut[]> = ref([])
-let DeleteIdArray: number[] = []
-const handleSelectionChange = (val) => {
-  if (val.length > 0) {
-    disableRemove.value = false
-  } else {
-    disableRemove.value = true
+const screenModelSelect = () => {
+  showScreenClassSelect.value = addFormData.screenModel !== 0
+  if (addFormData.screenModel === 0) {
+    addFormData.screenClass = undefined
   }
-
-  DeleteIdArray = []
-  val.forEach((row) => {
-    DeleteIdArray.push(row.id)
-  })
 }
 
-const handleDetail = (val: DeviceTypeStrcut) => {
-  console.log('val', val)
+const handleDetail = (record: Record<string, any>) => {
+  const val = record as DeviceTypeStruct
   isUpdate.value = true
-  addFormData.value.product = val.product.id
-  addFormData.value.name = val.name
-  addFormData.value.pic = val.pic
-  addFormData.value.manufacturer = val.manufacturer
-  addFormData.value.warehouse = val.warehouse
-  addFormData.value.screenModel = val.screenModel
-  addFormData.value.screenClass = val.screenClass?.id
-  addFormData.value.id = val.id
+  addFormData.product = typeof val.product === 'object' ? val.product?.id : val.product || undefined
+  editingProductName.value = typeof val.product === 'object' ? val.product?.name || '' : ''
+  addFormData.name = val.name
+  addFormData.pic = val.pic
+  addFormData.manufacturer = val.manufacturer
+  addFormData.warehouse = val.warehouse
+  addFormData.screenModel = val.screenModel
+  addFormData.screenClass = typeof val.screenClass === 'object' ? val.screenClass?.id || undefined : val.screenClass || undefined
+  addFormData.id = val.id
   updateTitle.value = '修改设备类型'
   addDialogFormVisible.value = true
-  screenModelSelect(addFormData.value.screenModel)
+  showScreenClassSelect.value = addFormData.screenModel !== 0
 }
 
-const handleRemove = (val) => {
-  ElMessageBox.confirm('你确定要删除这个设备类型?', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    service
-      .post(
+const handleRemove = (record: Record<string, any>) => {
+  const val = record as DeviceTypeStruct
+  AModal.confirm({
+    title: '提示',
+    content: '确定要删除这个设备类型吗？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      await service.post(
         PATH_URL + '/MachineMange/deleteDeviceType',
         qs.stringify(
           {
@@ -522,30 +520,25 @@ const handleRemove = (val) => {
           { arrayFormat: 'brackets' }
         )
       )
-      .then(() => {
-        ElMessage('操作成功')
-        getDeviceTypeData()
-        addDialogFormVisible.value = false
-      })
+      message.success('操作成功')
+      getDeviceTypeData()
+      addDialogFormVisible.value = false
+    }
   })
 }
 
-//获取图片的地址
-const converScreenModel = computed(() => (val: number) => {
-  let temp = ''
+const converScreenModel = (val: number) => {
   switch (val) {
     case 0:
-      temp = '无屏'
-      break
+      return '无屏'
     case 1:
-      temp = '横屏'
-      break
+      return '横屏'
     case 2:
-      temp = '竖屏'
-      break
+      return '竖屏'
+    default:
+      return '-'
   }
-  return temp
-})
+}
 
 const getDeviceTypeData = () => {
   service
@@ -553,53 +546,134 @@ const getDeviceTypeData = () => {
       PATH_URL + '/MachineMange/getDeviceType',
       qs.stringify(
         {
-          productId: SearchForm.value.productId,
-          name: SearchForm.value.deviceTypeName,
-          warehouse: SearchForm.value.warehouses
+          productId: SearchForm.productId,
+          name: SearchForm.deviceTypeName,
+          warehouse: SearchForm.warehouses
         },
         { arrayFormat: 'brackets' }
       )
     )
-    .then((res) => {
-      console.log('deviceType', res)
-      TableData.value = res.data
+    .then((res: any) => {
+      TableData.value = res.data || []
     })
 }
 
-//#endregion
+onMounted(() => {
+  getDeviceTypeData()
+  getProductTypeData()
+  getScreenClassData()
+})
 </script>
 
-<style scoped>
-.avatar-uploader .avatar {
-  display: block;
-  width: 120px;
-  height: 120px;
+<style lang="less" scoped>
+.device-type-page {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 16px;
 }
-</style>
 
-<style>
-.avatar-uploader .el-upload {
-  position: relative;
-  overflow: hidden;
-  cursor: pointer;
-  border: 1px dashed var(--el-border-color);
+.search-form {
+  display: flex;
+  padding: 16px 16px 0;
+  background-color: #fff;
   border-radius: 6px;
-  transition: var(--el-transition-duration-fast);
+  flex-wrap: wrap;
+  gap: 0 8px;
+
+  :deep(.ant-form-item) {
+    margin-right: 0;
+    margin-bottom: 16px;
+  }
 }
 
-.avatar-uploader .el-upload:hover {
-  border-color: var(--el-color-primary);
+.search-form-item {
+  flex: 0 1 250px;
 }
 
-.bt {
-  margin-left: 20px;
+.search-form-action {
+  flex: 0 0 auto;
 }
 
-.el-icon.avatar-uploader-icon {
-  width: 120px;
-  height: 120px;
-  font-size: 28px;
-  color: #8c939d;
-  text-align: center;
+.search-input {
+  width: 180px;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.toolbar-left,
+.toolbar-right {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.icon-button,
+.table-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  :deep(.v-icon),
+  :deep(iconify-icon) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+}
+
+.table-action {
+  height: 24px;
+  padding: 0;
+  gap: 4px;
+}
+
+.form-text {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  color: #262626;
+  line-height: 32px;
+}
+
+.action-edit {
+  color: #52c41a;
+}
+
+.avatar-uploader {
+  :deep(.ant-upload) {
+    width: 104px;
+    height: 104px;
+  }
+}
+
+.avatar {
+  display: block;
+  width: 104px;
+  height: 104px;
+  object-fit: contain;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+}
+
+.upload-placeholder {
+  display: inline-flex;
+  width: 104px;
+  height: 104px;
+  color: #8c8c8c;
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s cubic-bezier(0, 0, 1, 1);
+
+  &:hover {
+    border-color: #1677ff;
+  }
 }
 </style>

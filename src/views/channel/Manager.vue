@@ -1,248 +1,242 @@
 <template>
-  <el-row class="rr">
-    <el-form :model="form" label-width="100px" :inline="true" v-if="showForm">
-      <el-form-item label="昵称：">
-        <el-input v-model="form.nickName" class="eInput" placeholder="请输入昵称" />
-      </el-form-item>
+  <div class="channel-manager">
+    <AForm v-if="showForm" :model="form" layout="inline" class="search-form">
+      <AFormItem label="昵称" class="search-form-item">
+        <AInput v-model:value="form.nickName" class="search-input" placeholder="请输入昵称" />
+      </AFormItem>
 
-      <el-form-item label="联系人：">
-        <el-input v-model="form.contacts" class="eInput" placeholder="请输入联系人" />
-      </el-form-item>
+      <AFormItem label="联系人" class="search-form-item">
+        <AInput v-model:value="form.contacts" class="search-input" placeholder="请输入联系人" />
+      </AFormItem>
 
-      <el-form-item label="公司电话">
-        <el-input v-model="form.fixed_telephone" class="eInput" placeholder="请输入公司电话" />
-      </el-form-item>
+      <AFormItem label="公司电话" class="search-form-item">
+        <AInput v-model:value="form.fixed_telephone" class="search-input" placeholder="请输入公司电话" />
+      </AFormItem>
 
-      <el-form-item>
-        <el-button type="primary" class="btn" @click="onSearch" v-hasPermi="Permission.sec">
-          <el-icon><Search /></el-icon>
+      <AFormItem class="search-form-action">
+        <AButton type="primary" class="icon-button" @click="onSearch" v-hasPermi="Permission.sec">
+          <template #icon>
+            <Icon icon="ant-design:search-outlined" />
+          </template>
           搜索
-        </el-button>
-      </el-form-item>
+        </AButton>
+      </AFormItem>
 
-      <el-form-item>
-        <el-button class="btn" @click="onReset">
-          <el-icon class="el-icon--left"><RefreshRight /></el-icon>
+      <AFormItem class="search-form-action">
+        <AButton class="icon-button" @click="onReset">
+          <template #icon>
+            <Icon icon="ant-design:reload-outlined" />
+          </template>
           重置
-        </el-button>
-      </el-form-item>
-    </el-form>
-  </el-row>
+        </AButton>
+      </AFormItem>
+    </AForm>
 
-  <el-row>
-    <el-col :span="12">
-      <el-button type="primary" class="btn" @click="OnClickAdd" v-hasPermi="Permission.add">
-        <el-icon><Plus /> </el-icon>
-        新增</el-button
-      >
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <AButton type="primary" class="icon-button" @click="OnClickAdd" v-hasPermi="Permission.add">
+          <template #icon>
+            <Icon icon="ant-design:plus-outlined" />
+          </template>
+          新增
+        </AButton>
 
-      <el-button type="success" class="btn" :disabled="disableUpdate" v-hasPermi="Permission.rev"
-        ><el-icon><EditPen /></el-icon>修改</el-button
-      >
-      <el-button
-        type="danger"
-        class="btn"
-        :disabled="disableRemove"
-        @click="BatchDelete"
-        v-hasPermi="Permission.del"
-        ><el-icon><Close /></el-icon>删除</el-button
-      >
-    </el-col>
+        <AButton class="icon-button" :disabled="disableUpdate" @click="handleSelectedUpdate" v-hasPermi="Permission.rev">
+          <template #icon>
+            <Icon icon="ant-design:edit-outlined" />
+          </template>
+          修改
+        </AButton>
 
-    <el-col :span="12" class="right">
-      <el-tooltip content="隐藏搜索" placement="top-start">
-        <el-button circle @click="OnClickOfShowForm">
-          <el-icon><Search /></el-icon
-        ></el-button>
-      </el-tooltip>
-      <el-tooltip content="刷新" placement="top-start">
-        <el-button circle @click="onPageRest">
-          <el-icon><RefreshRight /></el-icon>
-        </el-button>
-      </el-tooltip>
-    </el-col>
-  </el-row>
+        <AButton danger class="icon-button" :disabled="disableRemove" @click="BatchDelete" v-hasPermi="Permission.del">
+          <template #icon>
+            <Icon icon="ant-design:delete-outlined" />
+          </template>
+          删除
+        </AButton>
+      </div>
 
-  <el-row style="margin-top: 20px">
-    <el-table
-      ref="multipleTableRef"
-      :data="tableData"
-      style="width: 100%"
-      @selection-change="handleSelectionChange"
-    >
-      <el-table-column type="selection" width="55" />
-      <el-table-column label="ID" width="60" property="id" />
+      <div class="toolbar-right">
+        <ATooltip :title="showForm ? '隐藏搜索' : '显示搜索'">
+          <AButton shape="circle" @click="OnClickOfShowForm">
+            <template #icon>
+              <Icon icon="ant-design:search-outlined" />
+            </template>
+          </AButton>
+        </ATooltip>
+        <ATooltip title="刷新">
+          <AButton shape="circle" @click="onPageRest">
+            <template #icon>
+              <Icon icon="ant-design:reload-outlined" />
+            </template>
+          </AButton>
+        </ATooltip>
+      </div>
+    </div>
 
-      <el-table-column property="corporate_name" label="公司名称" width="120" />
-      <el-table-column v-slot="scope" label="公司Logo" width="120">
-        <img :src="getImageURL(scope.row.logo_path)" class="imgOfTable" />
-      </el-table-column>
-      <el-table-column property="nick_name" label="昵称" width="120" />
-      <el-table-column property="platform_name" label="平台名称" width="120" />
-      <el-table-column property="abbreviation" label="简称" width="120" />
-      <el-table-column property="fixed_telephone" label="公司电话" width="120" />
+    <ATable row-key="id" :columns="columns" :data-source="tableData" :pagination="false" :row-selection="rowSelection" bordered>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'logo_path'">
+          <img v-if="record.logo_path" :src="getImageURL(record.logo_path)" class="table-image" />
+          <span v-else class="empty-text">暂无</span>
+        </template>
 
-      <el-table-column property="remarks" label="备注" width="120" />
-      <el-table-column label="操作" v-slot="scope" width="150">
-        <div class="buttonOfTables">
-          <el-link
-            type="success"
-            class="bt"
-            @click="handleDetail(scope.row)"
-            v-hasPermi="Permission.rev"
-            >编辑</el-link
-          >
-          <el-link
-            type="danger"
-            class="bt"
-            @click="handleRemove(scope.row)"
-            v-hasPermi="Permission.del"
-            >删除</el-link
-          >
-        </div>
-      </el-table-column>
-    </el-table>
-  </el-row>
-  <el-row>
-    <el-pagination
-      v-model:current-page="currentPage"
-      v-model:page-size="pageSize"
-      :page-sizes="[5, 10, 15, 20]"
-      :small="small"
-      :disabled="disabled"
-      :background="background"
-      layout="total, sizes, prev, pager, next, jumper"
-      :total="total"
-      @size-change="handleSizeChange"
-      @current-change="handleCurrentChange"
-    />
-  </el-row>
+        <template v-else-if="column.key === 'action'">
+          <ASpace>
+            <AButton type="link" class="table-action action-edit" @click="openEditDialog(record)" v-hasPermi="Permission.rev">
+              <template #icon>
+                <Icon icon="ant-design:edit-outlined" />
+              </template>
+              编辑
+            </AButton>
+            <AButton type="link" danger class="table-action" @click="handleRemove(record)" v-hasPermi="Permission.del">
+              <template #icon>
+                <Icon icon="ant-design:delete-outlined" />
+              </template>
+              删除
+            </AButton>
+          </ASpace>
+        </template>
+      </template>
+    </ATable>
 
-  <el-dialog title="添加运营商" width="60%" v-model="showDialog">
-    <el-form :model="updateForm" :rules="rules" :inline="true" label-width="auto">
-      <el-row>
-        <el-col :span="12">
-          <el-form-item label="昵称:" prop="nickName">
-            <el-input v-model="updateForm.nick_name" placeholder="请输入昵称" />
-          </el-form-item>
-        </el-col>
+    <div class="pagination-wrap">
+      <APagination
+        v-model:current="currentPage"
+        v-model:page-size="pageSize"
+        :page-size-options="['5', '10', '15', '20']"
+        :show-size-changer="true"
+        :disabled="disabled"
+        :total="total"
+        :show-total="(totalCount) => `共 ${totalCount} 条`"
+        show-quick-jumper
+        @change="handleCurrentChange"
+        @show-size-change="handleSizeChange"
+      />
+    </div>
 
-        <el-col :span="12">
-          <el-form-item label="简称:" prop="abbreviation">
-            <el-input v-model="updateForm.abbreviation" placeholder="请输入简称" />
-          </el-form-item>
-        </el-col>
-      </el-row>
+    <AModal v-model:open="showDialog" :title="dialogType === 1 ? '添加运营商' : '修改运营商'" width="60%" :destroy-on-close="true">
+      <AForm :model="updateForm" :rules="rules" layout="vertical">
+        <ARow :gutter="16">
+          <ACol :span="12">
+            <AFormItem label="昵称" name="nick_name">
+              <AInput v-model:value="updateForm.nick_name" placeholder="请输入昵称" />
+            </AFormItem>
+          </ACol>
 
-      <el-row>
-        <el-col :span="12">
-          <el-form-item label="联系人:">
-            <el-input v-model="updateForm.contacts" placeholder="请输入联系人" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="联系人号码：">
-            <el-input v-model="updateForm.phone" placeholder="请输入联系人号码" />
-          </el-form-item>
-        </el-col>
-      </el-row>
+          <ACol :span="12">
+            <AFormItem label="简称" name="abbreviation">
+              <AInput v-model:value="updateForm.abbreviation" placeholder="请输入简称" />
+            </AFormItem>
+          </ACol>
+        </ARow>
 
-      <el-row>
-        <el-col :span="12">
-          <el-form-item label="公司名称:" prop="corporateName">
-            <el-input v-model="updateForm.corporate_name" placeholder="请输入联系人" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="公司电话:">
-            <el-input v-model="updateForm.fixed_telephone" placeholder="请输入联系人号码" />
-          </el-form-item>
-        </el-col>
-      </el-row>
+        <ARow :gutter="16">
+          <ACol :span="12">
+            <AFormItem label="联系人">
+              <AInput v-model:value="updateForm.contacts" placeholder="请输入联系人" />
+            </AFormItem>
+          </ACol>
+          <ACol :span="12">
+            <AFormItem label="联系人号码">
+              <AInput v-model:value="updateForm.phone" placeholder="请输入联系人号码" />
+            </AFormItem>
+          </ACol>
+        </ARow>
 
-      <el-row>
-        <el-col :span="12">
-          <el-form-item label="公司Logo">
-            <el-upload
-              class="avatar-uploader"
-              :action="UpImageURL"
-              :show-file-list="false"
-              :on-success="handleUpdateSuccess"
-              :before-upload="beforeAvatarUpload"
-              :headers="headObject"
-            >
-              <img
-                v-if="updateForm.logo_path"
-                :src="getImageURL(updateForm.logo_path)"
-                class="avatar"
-              />
-              <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
-            </el-upload>
-          </el-form-item>
-        </el-col>
+        <ARow :gutter="16">
+          <ACol :span="12">
+            <AFormItem label="公司名称" name="corporate_name">
+              <AInput v-model:value="updateForm.corporate_name" placeholder="请输入公司名称" />
+            </AFormItem>
+          </ACol>
+          <ACol :span="12">
+            <AFormItem label="公司电话">
+              <AInput v-model:value="updateForm.fixed_telephone" placeholder="请输入公司电话" />
+            </AFormItem>
+          </ACol>
+        </ARow>
 
-        <el-col :span="12">
-          <el-form-item label="Icon">
-            <el-upload
-              class="avatar-uploader"
-              :action="UpImageURL"
-              :show-file-list="false"
-              :on-success="handleAvatarSuccess"
-              :before-upload="beforeAvatarUpload"
-              :headers="headObject"
-            >
-              <img
-                v-if="updateForm.ico_path"
-                :src="getImageURL(updateForm.ico_path)"
-                class="avatar"
-              />
-              <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
-            </el-upload>
-          </el-form-item>
-        </el-col>
-      </el-row>
+        <ARow :gutter="16">
+          <ACol :span="12">
+            <AFormItem label="公司 Logo">
+              <AUpload class="avatar-uploader" :action="UpImageURL" :show-upload-list="false" :before-upload="beforeAvatarUpload" :headers="headObject" @change="handleLogoUploadChange">
+                <img v-if="updateForm.logo_path" :src="getImageURL(updateForm.logo_path)" class="avatar" />
+                <div v-else class="upload-placeholder">
+                  <Icon icon="ant-design:plus-outlined" :size="24" />
+                </div>
+              </AUpload>
+            </AFormItem>
+          </ACol>
 
-      <el-row>
-        <el-col :span="12">
-          <el-form-item label="平台名称：" prop="platformName">
-            <el-input v-model="updateForm.platform_name" placeholder="请输入平台名称" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12" />
-      </el-row>
+          <ACol :span="12">
+            <AFormItem label="Icon">
+              <AUpload class="avatar-uploader" :action="UpImageURL" :show-upload-list="false" :before-upload="beforeAvatarUpload" :headers="headObject" @change="handleIconUploadChange">
+                <img v-if="updateForm.ico_path" :src="getImageURL(updateForm.ico_path)" class="avatar" />
+                <div v-else class="upload-placeholder">
+                  <Icon icon="ant-design:plus-outlined" :size="24" />
+                </div>
+              </AUpload>
+            </AFormItem>
+          </ACol>
+        </ARow>
 
-      <el-row>
-        <el-col :span="3" class="toRight">
-          <label> 备注：</label>
-        </el-col>
-        <el-col :span="18" class="test">
-          <el-input type="textarea" v-model="updateForm.remarks" placeholder="备注" :rows="4" />
-        </el-col>
-      </el-row>
+        <ARow :gutter="16">
+          <ACol :span="12">
+            <AFormItem label="平台名称" name="platform_name">
+              <AInput v-model:value="updateForm.platform_name" placeholder="请输入平台名称" />
+            </AFormItem>
+          </ACol>
+          <ACol :span="12" />
+        </ARow>
 
-      <el-row class="margeTop">
-        <el-col :span="24" class="toRight">
-          <button type="button" class="btnConfirm" @click="onClickConfirm">确认</button>
-
-          <button type="button" class="btnCancel" @click="showDialog = false"> 取消</button>
-        </el-col>
-      </el-row>
-    </el-form>
-  </el-dialog>
+        <AFormItem label="备注">
+          <ATextarea v-model:value="updateForm.remarks" placeholder="备注" :rows="4" />
+        </AFormItem>
+      </AForm>
+      <template #footer>
+        <ASpace>
+          <AButton @click="showDialog = false">取消</AButton>
+          <AButton type="primary" @click="onClickConfirm">确认</AButton>
+        </ASpace>
+      </template>
+    </AModal>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted, Ref, inject } from 'vue'
-import { ElMessage, FormRules, ElMessageBox } from 'element-plus'
-
+import { computed, inject, onMounted, reactive, ref } from 'vue'
+import {
+  Button as AButton,
+  Col as ACol,
+  Form as AForm,
+  FormItem as AFormItem,
+  Input as AInput,
+  Modal as AModal,
+  Pagination as APagination,
+  Row as ARow,
+  Space as ASpace,
+  Table as ATable,
+  Tooltip as ATooltip,
+  Upload as AUpload,
+  message
+} from 'ant-design-vue'
+import type { Rule } from 'ant-design-vue/es/form'
+import type { UploadChangeParam } from 'ant-design-vue'
+import type { AxiosRequestConfig } from 'axios'
 import { service, PATH_URL } from '@/config/axios/service'
-import { computed } from 'vue'
-import { AxiosRequestConfig } from 'axios'
+import { Icon } from '@/components/Icon'
 
-const reload: any = inject('reload')
+const ATextarea = AInput.TextArea
+
+const reload = inject<() => void>('reload')
 
 const onPageRest = () => {
-  reload()
+  if (reload) {
+    reload()
+    return
+  }
+  getDepartmentData()
 }
 
 //#region 分页相关
@@ -257,15 +251,17 @@ const Permission = ref({
 const currentPage = ref(1)
 const total = ref(0)
 const pageSize = ref(5)
-const small = ref(false)
-const background = ref(false)
 const disabled = ref(false)
 
-const handleSizeChange = () => {
-  handleCurrentChange()
+const handleSizeChange = (_current: number, size: number) => {
+  pageSize.value = size
+  currentPage.value = 1
+  getDepartmentData()
 }
 
-const handleCurrentChange = () => {
+const handleCurrentChange = (page = currentPage.value, size = pageSize.value) => {
+  currentPage.value = page
+  pageSize.value = size
   getDepartmentData()
 }
 
@@ -273,30 +269,33 @@ const handleCurrentChange = () => {
 
 //#region  表格中按钮处理
 
-const handleDetail = (data: DepartmentData) => {
+const openEditDialog = (record: Record<string, any>) => {
+  const data = record as DepartmentData
   dialogType.value = 2
   Object.keys(updateForm).forEach((key) => {
-    updateForm[key] = data[key]
+    updateForm[key] = data[key] ?? ''
   })
   showDialog.value = true
 }
 
-const handleRemove = (data: DepartmentData) => {
-  ElMessageBox.confirm('确定要删除这个运营商？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  })
-    .then(() => {
-      let temp: AxiosRequestConfig = {}
-      temp.params = { id: data.id }
+const handleRemove = (record: Record<string, any>) => {
+  const data = record as DepartmentData
 
-      service.get(PATH_URL + '/Permission/deletDepartment', temp).then(() => {
-        ElMessage('删除记录成功')
-        getDepartmentData()
-      })
-    })
-    .catch(() => {})
+  AModal.confirm({
+    title: '提示',
+    content: '确定要删除这个运营商？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      const temp: AxiosRequestConfig = {
+        params: { id: data.id }
+      }
+
+      await service.get(PATH_URL + '/Permission/deletDepartment', temp)
+      message.success('删除记录成功')
+      getDepartmentData()
+    }
+  })
 }
 
 //#endregion
@@ -307,116 +306,136 @@ const onReset = () => {
   form.contacts = ''
   form.fixed_telephone = ''
   form.nickName = ''
+  currentPage.value = 1
+  getDepartmentData()
 }
 
 const onSearch = () => {
+  currentPage.value = 1
   getDepartmentData()
 }
 
 //#endregion
 
-//是否显示form
+// 是否显示form
 const showForm = ref(true)
 
 const disableUpdate = ref(true)
-const disableRemove = ref(true)
+const disableRemove = computed(() => selectedRowKeys.value.length === 0)
 
 const showDialog = ref(false)
 
+const selectedRowKeys = ref<(string | number)[]>([])
+const selectedRows = ref<DepartmentData[]>([])
 let DeleteIdArray: number[] = []
 
-const handleSelectionChange = (val) => {
-  if (val.length > 0) {
-    disableRemove.value = false
-  } else {
-    disableRemove.value = true
+const rowSelection = computed(() => ({
+  selectedRowKeys: selectedRowKeys.value,
+  onChange: (keys: (string | number)[], rows: DepartmentData[]) => {
+    selectedRowKeys.value = keys
+    selectedRows.value = rows
+    disableUpdate.value = rows.length !== 1
+    DeleteIdArray = rows.map((row) => row.id)
   }
-
-  DeleteIdArray = []
-  val.forEach((row) => {
-    DeleteIdArray.push(row.id)
-  })
-}
+}))
 
 interface DepartmentData {
-  id: 0
-  nick_name: ''
-  abbreviation: ''
-  contacts: ''
-  phone: ''
-  corporate_name: ''
-  fixed_telephone: ''
-  logo_path: ''
-  ico_path: ''
-  platform_name: ''
-  remarks: ''
+  [key: string]: any
+  id: number
+  nick_name: string
+  abbreviation: string
+  contacts: string
+  phone: string
+  corporate_name: string
+  fixed_telephone: string
+  logo_path: string
+  ico_path: string
+  platform_name: string
+  remarks: string
 }
 
-//标记 dialog 是添加还是修改
+const columns = [
+  { title: '公司名称', dataIndex: 'corporate_name', key: 'corporate_name', width: 140 },
+  { title: '公司Logo', dataIndex: 'logo_path', key: 'logo_path', width: 120 },
+  { title: '昵称', dataIndex: 'nick_name', key: 'nick_name', width: 120 },
+  { title: '平台名称', dataIndex: 'platform_name', key: 'platform_name', width: 140 },
+  { title: '简称', dataIndex: 'abbreviation', key: 'abbreviation', width: 120 },
+  { title: '公司电话', dataIndex: 'fixed_telephone', key: 'fixed_telephone', width: 140 },
+  { title: '备注', dataIndex: 'remarks', key: 'remarks', width: 160 },
+  { title: '操作', key: 'action', width: 150 }
+]
+
+const handleSelectedUpdate = () => {
+  const selectedRow = selectedRows.value[0]
+  if (!selectedRow) return
+  openEditDialog(selectedRow)
+}
+
+// 标记 dialog 是添加还是修改
 const dialogType = ref(1)
 
 const OnClickAdd = () => {
   Object.keys(updateForm).forEach((key) => {
-    if (key == 'id') {
-      updateForm.id = 0
-    } else {
-      updateForm[key] = ''
-    }
+    updateForm[key] = key === 'id' ? 0 : ''
   })
 
-  dialogType.value = 1 //设置是添加
+  dialogType.value = 1 // 设置是添加
   showDialog.value = true
 }
 
 // 上传图片地址
-const UpImageURL = computed(() => {
-  return PATH_URL + '/Common/upLoadImage'
+const UpImageURL = computed(() => PATH_URL + '/Common/upLoadImage')
+
+// 获取图片的地址
+const getImageURL = computed(() => (imageURL?: string) => {
+  return imageURL ? PATH_URL + '/Common/downLoadPic/' + imageURL : ''
 })
 
-//获取图片的地址
-const getImageURL = computed(() => (imageURL) => {
-  return PATH_URL + '/Common/downLoadPic/' + imageURL
-})
+const headObject = computed(() => ({
+  Authorization: localStorage.getItem('token') || ''
+}))
 
-const headObject = {
-  Authorization: localStorage.getItem('token')
-}
-
-const rules = reactive<FormRules>({
+const rules = reactive<Record<string, Rule[]>>({
   nick_name: [{ required: true, message: '请输入昵称', trigger: 'blur' }],
   abbreviation: [{ required: true, message: '请输入简称', trigger: 'blur' }],
   corporate_name: [{ required: true, message: '请输入公司名称', trigger: 'blur' }],
-  platform_name: [{ required: true, message: '请输入公司名称', trigger: 'blur' }]
+  platform_name: [{ required: true, message: '请输入平台名称', trigger: 'blur' }]
 })
 
 const OnClickOfShowForm = () => {
   showForm.value = !showForm.value
 }
 
-const beforeAvatarUpload = () => {}
+const beforeAvatarUpload = () => true
 
-const handleAvatarSuccess = (respon) => {
-  if (respon.code == 200) {
-    updateForm.ico_path = respon.data
+const handleUploadResponse = (response: any, onSuccess: (path: string) => void) => {
+  if (response?.code == 200) {
+    onSuccess(response.data)
   } else {
-    ElMessage('上传图片出错了')
+    message.error('上传图片出错了')
   }
 }
 
-const handleUpdateSuccess = (respon) => {
-  if (respon.code == 200) {
-    updateForm.logo_path = respon.data
-  } else {
-    ElMessage('上传图片出错了')
+const handleIconUploadChange = (info: UploadChangeParam) => {
+  if (info.file.status === 'done') {
+    handleUploadResponse(info.file.response, (path) => {
+      updateForm.ico_path = path
+    })
   }
 }
 
-//const tableData: DepartmentData[] = reactive([])
-const tableData: Ref<any[]> = ref([])
+const handleLogoUploadChange = (info: UploadChangeParam) => {
+  if (info.file.status === 'done') {
+    handleUploadResponse(info.file.response, (path) => {
+      updateForm.logo_path = path
+    })
+  }
+}
+
+const tableData = ref<DepartmentData[]>([])
 
 const getDepartmentData = () => {
-  let config: AxiosRequestConfig = {}
-  let temp = {
+  const temp = {
     index: currentPage.value,
     size: pageSize.value,
     nickName: form.nickName,
@@ -424,15 +443,17 @@ const getDepartmentData = () => {
     phone: form.fixed_telephone
   }
 
-  config.params = temp
   service
     .post(PATH_URL + '/Permission/getDepartment', temp)
     .then((res: any) => {
       console.log('department', res)
       tableData.value = res.data.records
       total.value = res.data.total
+      selectedRowKeys.value = []
+      selectedRows.value = []
+      disableUpdate.value = true
+      DeleteIdArray = []
     })
-
     .catch(() => {})
 }
 
@@ -465,155 +486,208 @@ const updateForm: DepartmentData = reactive({
 
 //#region  批量删除
 const BatchDelete = () => {
-  ElMessageBox.confirm('确定要删除这些记录吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
+  AModal.confirm({
+    title: '提示',
+    content: '确定要删除这些记录吗？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: () => doBatchDelete()
   })
-    .then(() => {
-      doBatchDelete()
-    })
-    .catch(() => {})
 }
 
-const doBatchDelete = () => {
-  let id: number[] = []
-  DeleteIdArray.forEach((row) => {
-    id.push(row)
-  })
-  service
-    .post(PATH_URL + '/Permission/deleteDeparmentOfBatch', id)
-    .then(() => {
-      ElMessage('删除成功')
-    })
-    .finally(() => {
-      getDepartmentData()
-    })
+const doBatchDelete = async () => {
+  const id = [...DeleteIdArray]
+  await service.post(PATH_URL + '/Permission/deleteDeparmentOfBatch', id)
+  message.success('删除成功')
+  getDepartmentData()
 }
 
 //#endregion
 
-//提交新添加的  运营商
+// 提交新添加的运营商
 const onClickConfirm = () => {
   addDepartment()
 }
 
-//添加运营商
+// 添加运营商
 const addDepartment = () => {
   let messaget = '是否要添加这个运营商?'
   if (dialogType.value == 2) {
     messaget = '是否要修改这个运营商'
   }
 
-  ElMessageBox.confirm(messaget, '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
+  AModal.confirm({
+    title: '提示',
+    content: messaget,
+    okText: '确定',
+    cancelText: '取消',
+    onOk: () => doAddDepartment()
   })
-    .then(() => {
-      doAddDepartment()
-    })
-    .catch(() => {})
 }
 
-const doAddDepartment = () => {
-  service.post('/Permission/addDepartment', updateForm).then(() => {
-    if (dialogType.value == 1) {
-      ElMessage('添加记录成功！')
-    } else {
-      ElMessage('修改运营商信息成功')
-    }
-    showDialog.value = false
-    getDepartmentData()
-  })
+const doAddDepartment = async () => {
+  await service.post('/Permission/addDepartment', updateForm)
+  if (dialogType.value == 1) {
+    message.success('添加记录成功！')
+  } else {
+    message.success('修改运营商信息成功')
+  }
+  showDialog.value = false
+  getDepartmentData()
 }
 </script>
 
 <style lang="less" scoped>
-@borderColor: #7b9dc5;
-@backColor: #6c6af4;
-
-@import '../../styles/public.less';
-
-.buttonOfTables {
-  display: inline;
-  padding-right: 5px;
-  padding-left: 5px;
+.channel-manager {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.imgOfTable {
-  width: 100px;
-  height: 100px;
-}
-
-.margeTop {
-  margin-top: 15px;
-}
-
-.toRight {
-  padding-right: 10px;
-  text-align: right;
-}
-
-.test {
-  background-color: #6c6af4;
-  widows: 100%;
-}
-
-.test1 {
-  background-color: #7b9dc5;
-}
-
-.avatar-uploader .avatar {
-  display: block;
-  width: 100px;
-  height: 100px;
-}
-
-.right {
-  text-align: right;
-}
-
-#mb-4 {
-  border: 3em solid @borderColor;
-}
-
-.rr {
-  text-align: left;
-}
-
-.btn {
-  width: 7rem;
-  height: 2rem;
-}
-
-.eInput {
-  width: 12rem;
-}
-</style>
-<style>
-.avatar-uploader .el-upload {
-  position: relative;
-  overflow: hidden;
-  cursor: pointer;
-  border: 1px dashed var(--el-border-color);
+.search-form {
+  display: flex;
+  padding: 16px 16px 0;
+  background-color: #fff;
   border-radius: 6px;
-  transition: var(--el-transition-duration-fast);
+  flex-wrap: wrap;
+  column-gap: 16px;
+  row-gap: 12px;
+  align-items: flex-start;
+
+  :deep(.ant-form-item) {
+    margin-inline-end: 0;
+    margin-bottom: 16px;
+  }
 }
 
-.avatar-uploader .el-upload:hover {
-  border-color: var(--el-color-primary);
+.search-form-item {
+  flex: 0 1 280px;
+  min-width: 220px;
 }
 
-.bt {
-  margin-left: 20px;
+.search-form-action {
+  flex: 0 0 auto;
 }
 
-.el-icon.avatar-uploader-icon {
-  width: 178px;
-  height: 178px;
-  font-size: 28px;
-  color: #8c939d;
-  text-align: center;
+.search-input {
+  width: 192px;
+
+  @media (width <= 768px) {
+    width: 100%;
+  }
+}
+
+@media (width <= 768px) {
+  .search-form-item,
+  .search-form-action {
+    flex: 1 1 100%;
+  }
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.toolbar-left,
+.toolbar-right {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.icon-button {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+
+  :deep(.ant-btn-icon) {
+    display: inline-flex;
+    line-height: 1;
+    align-items: center;
+  }
+
+  :deep(.v-icon),
+  :deep(iconify-icon) {
+    display: inline-flex;
+    line-height: 1;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.table-image {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+}
+
+.empty-text {
+  color: #8c8c8c;
+}
+
+.action-edit {
+  color: #52c41a;
+}
+
+.table-action {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  padding-inline: 0;
+
+  :deep(.ant-btn-icon) {
+    display: inline-flex;
+    line-height: 1;
+    align-items: center;
+  }
+
+  :deep(.v-icon),
+  :deep(iconify-icon) {
+    display: inline-flex;
+    line-height: 1;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.pagination-wrap {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.avatar-uploader {
+  :deep(.ant-upload) {
+    width: 104px;
+    height: 104px;
+  }
+}
+
+.avatar {
+  display: block;
+  width: 104px;
+  height: 104px;
+  object-fit: contain;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+}
+
+.upload-placeholder {
+  display: inline-flex;
+  width: 104px;
+  height: 104px;
+  color: #8c8c8c;
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s cubic-bezier(0, 0, 1, 1);
+
+  &:hover {
+    border-color: #1677ff;
+  }
 }
 </style>

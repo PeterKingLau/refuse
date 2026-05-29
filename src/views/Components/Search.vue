@@ -4,7 +4,7 @@ import { useI18n } from '@/hooks/web/useI18n'
 import { Search } from '@/components/Search'
 import { reactive, ref, unref } from 'vue'
 import { useValidator } from '@/hooks/web/useValidator'
-import { ElButton } from 'element-plus'
+import { Button as AButton } from 'ant-design-vue'
 import { getDictOneApi } from '@/api/common'
 import { FormSchema } from '@/types/form'
 
@@ -191,37 +191,20 @@ const getDictOne = async () => {
 
 <template>
   <ContentWrap :title="`${t('searchDemo.search')} ${t('searchDemo.operate')}`">
-    <ElButton @click="changeGrid(true)">{{ t('searchDemo.grid') }}</ElButton>
-    <ElButton @click="changeGrid(false)">
-      {{ t('searchDemo.restore') }} {{ t('searchDemo.grid') }}
-    </ElButton>
+    <AButton @click="changeGrid(true)">{{ t('searchDemo.grid') }}</AButton>
+    <AButton @click="changeGrid(false)"> {{ t('searchDemo.restore') }} {{ t('searchDemo.grid') }} </AButton>
 
-    <ElButton @click="changeLayout">
-      {{ t('searchDemo.button') }} {{ t('searchDemo.position') }}
-    </ElButton>
+    <AButton @click="changeLayout"> {{ t('searchDemo.button') }} {{ t('searchDemo.position') }} </AButton>
 
-    <ElButton @click="changePosition('left')">
-      {{ t('searchDemo.bottom') }} {{ t('searchDemo.position') }}-{{ t('searchDemo.left') }}
-    </ElButton>
-    <ElButton @click="changePosition('center')">
-      {{ t('searchDemo.bottom') }} {{ t('searchDemo.position') }}-{{ t('searchDemo.center') }}
-    </ElButton>
-    <ElButton @click="changePosition('right')">
-      {{ t('searchDemo.bottom') }} {{ t('searchDemo.position') }}-{{ t('searchDemo.right') }}
-    </ElButton>
-    <ElButton @click="getDictOne">
+    <AButton @click="changePosition('left')"> {{ t('searchDemo.bottom') }} {{ t('searchDemo.position') }}-{{ t('searchDemo.left') }} </AButton>
+    <AButton @click="changePosition('center')"> {{ t('searchDemo.bottom') }} {{ t('searchDemo.position') }}-{{ t('searchDemo.center') }} </AButton>
+    <AButton @click="changePosition('right')"> {{ t('searchDemo.bottom') }} {{ t('searchDemo.position') }}-{{ t('searchDemo.right') }} </AButton>
+    <AButton @click="getDictOne">
       {{ t('searchDemo.dynamicOptions') }}
-    </ElButton>
+    </AButton>
   </ContentWrap>
 
   <ContentWrap :title="t('searchDemo.search')" :message="t('searchDemo.searchDes')">
-    <Search
-      :schema="schema"
-      :is-col="isGrid"
-      :layout="layout"
-      :buttom-position="buttomPosition"
-      expand
-      expand-field="field6"
-    />
+    <Search :schema="schema" :is-col="isGrid" :layout="layout" :buttom-position="buttomPosition" expand expand-field="field6" />
   </ContentWrap>
 </template>

@@ -1,7 +1,4 @@
-export interface Language {
-  el: Recordable
-  name: string
-}
+export type Language = Recordable
 
 export interface LocaleDropdownType {
   lang: LocaleType

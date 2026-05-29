@@ -2,7 +2,7 @@
 import { ContentWrap } from '@/components/ContentWrap'
 import { useI18n } from '@/hooks/web/useI18n'
 import { Infotip } from '@/components/Infotip'
-import { ElButton } from 'element-plus'
+import { Button as AButton } from 'ant-design-vue'
 import { useIcon } from '@/hooks/web/useIcon'
 
 const { t } = useI18n()
@@ -53,10 +53,10 @@ const alarmClock = useIcon({ icon: 'ep:alarm-clock' })
   </ContentWrap>
   <ContentWrap title="useIcon">
     <div class="flex justify-between">
-      <ElButton :icon="peoples">Button</ElButton>
-      <ElButton :icon="money">Button</ElButton>
-      <ElButton :icon="aim">Button</ElButton>
-      <ElButton :icon="alarmClock">Button</ElButton>
+      <AButton :icon="peoples">Button</AButton>
+      <AButton :icon="money">Button</AButton>
+      <AButton :icon="aim">Button</AButton>
+      <AButton :icon="alarmClock">Button</AButton>
     </div>
   </ContentWrap>
 </template>

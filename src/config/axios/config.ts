@@ -1,3 +1,5 @@
+type RequestContentType = 'application/json' | 'application/x-www-form-urlencoded' | 'multipart/form-data' | string
+
 const config: {
   base_url: {
     base: string
@@ -6,7 +8,7 @@ const config: {
     test: string
   }
   result_code: number | string
-  default_headers: AxiosHeaders
+  default_headers: RequestContentType
   request_timeout: number
 } = {
   /**
@@ -38,9 +40,9 @@ const config: {
 
   /**
    * 默认接口请求类型
-   * 可选值：application/x-www-form-urlencoded multipart/form-data
+   * 可选值：application/json application/x-www-form-urlencoded multipart/form-data
    */
-  default_headers: 'application/x-www-form-urlencoded'
+  default_headers: 'application/json'
 }
 
 export { config }

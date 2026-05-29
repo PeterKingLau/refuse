@@ -1,303 +1,268 @@
-el-form<template>
-  <el-row>
-    <el-form :model="SearchFormData" label-width="100px" :inline="true" v-if="showSearchForm">
-      <el-form-item label="用户编号：">
-        <el-input v-model="SearchFormData.id" class="eInput" placeholder="请输入用户编号" />
-      </el-form-item>
-      <el-form-item label="运营商：">
-        <el-input
-          v-model="SearchFormData.departmentName"
-          class="eInput"
-          placeholder="请输入运营商名称"
-        />
-      </el-form-item>
-      <el-form-item label="手机号码：">
-        <el-input v-model="SearchFormData.phone" class="eInput" placeholder="请输入用户手机" />
-      </el-form-item>
+<template>
+  <div class="member-page">
+    <AForm v-if="showSearchForm" :model="SearchFormData" layout="horizontal" class="search-form">
+      <AFormItem label="运营商" class="search-form-item">
+        <AInput v-model:value="SearchFormData.departmentName" placeholder="请输入运营商名称" />
+      </AFormItem>
 
-      <el-form-item label="卡号：">
-        <el-input v-model="SearchFormData.cardNo" class="eInput" placeholder="请输入卡号" />
-      </el-form-item>
-      <el-form-item label="昵称：">
-        <el-input v-model="SearchFormData.nickName" class="eInput" placeholder="请输入用户昵称" />
-      </el-form-item>
+      <AFormItem label="手机号码" class="search-form-item">
+        <AInput v-model:value="SearchFormData.phone" placeholder="请输入用户手机" />
+      </AFormItem>
 
-      <el-form-item label="创建时间：">
-        <el-date-picker
-          v-model="SearchFormData.sTime"
-          type="datetimerange"
-          range-separator="到"
-          start-placeholder="开始日期"
-          end-placeholder="截至日期"
-        />
-      </el-form-item>
+      <AFormItem label="卡号" class="search-form-item">
+        <AInput v-model:value="SearchFormData.cardNo" placeholder="请输入卡号" />
+      </AFormItem>
 
-      <el-form-item>
-        <el-button type="primary" class="btn" @click="getMemberData" v-hasPermi="Permission.sec">
-          <el-icon><Search /></el-icon>
-          搜索
-        </el-button>
-      </el-form-item>
+      <AFormItem label="昵称" class="search-form-item">
+        <AInput v-model:value="SearchFormData.nickName" placeholder="请输入用户昵称" />
+      </AFormItem>
 
-      <el-form-item>
-        <el-button class="btn" @click="onReset">
-          <el-icon class="el-icon--left"><RefreshRight /></el-icon>
-          重置
-        </el-button>
-      </el-form-item>
-    </el-form>
-  </el-row>
+      <AFormItem label="创建时间" class="search-form-item search-form-range">
+        <ARangePicker v-model:value="SearchFormData.sTime" show-time value-format="YYYY-MM-DD HH:mm:ss" class="w-full" start-placeholder="开始日期" end-placeholder="截至日期" />
+      </AFormItem>
 
-  <el-row>
-    <el-col :span="12">
-      <el-button type="primary" class="btn" @click="OnClickAdd" v-hasPermi="Permission.add">
-        <el-icon><Plus /> </el-icon>
-        新增</el-button
-      >
-
-      <el-button type="success" class="btn" :disabled="disableUpdate" v-if="false"
-        ><el-icon><EditPen /></el-icon>修改</el-button
-      >
-      <el-button
-        type="danger"
-        class="btn"
-        :disabled="disableRemove"
-        @click="deleteOfDetail"
-        v-if="false"
-        ><el-icon><Close /></el-icon>删除</el-button
-      >
-    </el-col>
-
-    <el-col :span="12" style="text-align: right">
-      <el-tooltip content="隐藏搜索" placement="top-start">
-        <el-button circle @click="OnClickOfShowForm">
-          <el-icon><Search /></el-icon
-        ></el-button>
-      </el-tooltip>
-      <el-tooltip content="刷新" placement="top-start">
-        <el-button circle @click="onPageRest">
-          <el-icon><RefreshRight /></el-icon>
-        </el-button>
-      </el-tooltip>
-    </el-col>
-  </el-row>
-
-  <el-divider />
-  <el-row>
-    <el-table ref="areaTableRef" :data="TableData" style="width: 100%">
-      <el-table-column label="用户ID" width="100" property="id" />
-
-      <el-table-column v-slot="scope" label="用户头像" width="200">
-        <img :src="getImageURL(scope.row.pic)" class="imgOfTable" />
-      </el-table-column>
-      <el-table-column label="运营商" width="260" property="department.platformName" />
-
-      <el-table-column label="用户昵称" width="180" property="nickName" />
-      <el-table-column label="手机号码" width="200" property="phone" />
-      <el-table-column label="积分" width="120" property="points" />
-      <el-table-column label="绑定卡号" width="200" property="cardNo" />
-      <el-table-column label="创建时间" width="250" property="createTime" />
-      <el-table-column label="操作" v-slot="scope">
-        <div class="buttonOfTables">
-          <el-link
-            class="bt"
-            type="success"
-            @click="addPoints(scope.row)"
-            v-hasPermi="Permission.pad"
-            >添加积分</el-link
-          >
-          <el-link
-            class="bt"
-            type="danger"
-            @click="reducePoints(scope.row)"
-            v-hasPermi="Permission.pas"
-            >扣除积分</el-link
-          >
-
-          <el-link
-            class="bt"
-            type="danger"
-            @click="handleDetail(scope.row)"
-            v-hasPermi="Permission.bak"
-            >拉黑</el-link
-          >
-          <el-link
-            class="bt"
-            type="success"
-            @click="handleRemove(scope.row)"
-            v-hasPermi="Permission.cad"
-            >绑定</el-link
-          >
-        </div>
-      </el-table-column>
-    </el-table>
-  </el-row>
-  <el-row>
-    <el-pagination
-      v-model:current-page="currentPage"
-      v-model:page-size="pageSize"
-      :page-sizes="[5, 10, 15, 20]"
-      :small="small"
-      :disabled="disabled"
-      :background="background"
-      layout="total, sizes, prev, pager, next, jumper"
-      :total="total"
-      @size-change="getMemberData"
-      @current-change="getMemberData"
-    />
-  </el-row>
-
-  <el-dialog v-model="AdddialogFormVisible" title="添加会员">
-    <el-form :model="addFormData" label-width="120">
-      <el-form-item label="用户昵称：">
-        <el-input v-model="addFormData.nickName" placeholder="请输入用户昵称" />
-      </el-form-item>
-      <el-form-item label="手机号码：">
-        <el-input v-model="addFormData.phone" placeholder="请输入用户手机号码 " />
-      </el-form-item>
-
-      <el-form-item label="邮箱：" v-if="false">
-        <el-input v-model="addFormData.email" placeholder="请输入用户邮箱 " />
-      </el-form-item>
-
-      <el-form-item label="密码：" v-if="false">
-        <el-input v-model="addFormData.pwd" placeholder="请输入用户密码 " type="password" />
-      </el-form-item>
-
-      <el-form-item label="状态：">
-        <el-radio-group v-model="addFormData.status" class="ml-4">
-          <el-radio label="1" size="large">正常</el-radio>
-          <el-radio label="2" size="large">停用</el-radio>
-        </el-radio-group>
-      </el-form-item>
-
-      <el-form-item label="LOGO" label-width="100">
-        <el-upload
-          class="avatar-uploader"
-          :action="UpImageURL"
-          :show-file-list="false"
-          :on-success="handleUpdateSuccess"
-          :before-upload="beforeAvatarUpload"
-          :headers="headObject"
-        >
-          <img v-if="addFormData.pic" :src="getImageURL(addFormData.pic)" class="avatar" />
-          <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
-        </el-upload>
-      </el-form-item>
-      <el-form-item label="备注：">
-        <el-input
-          v-model="addFormData.remark"
-          placeholder="请输入备注信息 "
-          type="textarea"
-          :row="3"
-        />
-      </el-form-item>
-    </el-form>
-    <template #footer>
-      <span class="dialog-footer">
-        <el-button @click="onCloseAddDialog">取消</el-button>
-        <el-button type="primary" @click="onConfirm"> 确定 </el-button>
-      </span>
-    </template>
-  </el-dialog>
-
-  <el-dialog v-model="dialogPointVisible" :title="OperationPointsTitle">
-    <el-form :model="operationPoints" label-width="120">
-      <el-form-item label="积分点数:">
-        <el-input v-model="operationPoints.points" placeholder="请输入积分数" />
-      </el-form-item>
-
-      <el-form-item label="备注:">
-        <el-input v-model="operationPoints.remarks" placeholder="备注" />
-      </el-form-item>
-    </el-form>
-    <template #footer>
-      <span class="dialog-footer">
-        <el-button @click="onClosePointsDialog">取消</el-button>
-        <el-button type="primary" @click="doOperationPoint"> 确认 </el-button>
-      </span>
-    </template>
-  </el-dialog>
-
-  <el-dialog v-model="bindCardDialogVisible" title="绑定卡号">
-    <el-row>
-      <el-form :model="SearchFormData" label-width="100px" :inline="true">
-        <el-form-item label="卡号">
-          <el-input v-model="getCardNo" placeholder="请输入卡号" />
-        </el-form-item>
-
-        <el-form-item>
-          <el-button type="primary" class="btn" @click="getCardData">
-            <el-icon><Search /></el-icon>
+      <AFormItem class="search-form-actions">
+        <ASpace>
+          <AButton type="primary" class="icon-button" @click="getMemberData" v-hasPermi="Permission.sec">
+            <template #icon>
+              <Icon icon="ant-design:search-outlined" />
+            </template>
             搜索
-          </el-button>
-        </el-form-item>
-
-        <el-form-item>
-          <el-button class="btn" @click="restCard">
-            <el-icon class="el-icon--left"><RefreshRight /></el-icon>
+          </AButton>
+          <AButton class="icon-button" @click="onReset">
+            <template #icon>
+              <Icon icon="ant-design:reload-outlined" />
+            </template>
             重置
-          </el-button>
-        </el-form-item>
-      </el-form>
-    </el-row>
-    <el-row>
-      <el-table :data="cardTableData" ref="cardTableRef" @selection-change="handleSelectionChange">
-        <el-table-column type="selection" width="55" />
-        <el-table-column property="cardNo" label="卡号" width="150" />
-        <el-table-column v-slot="scope" label="类型" width="200">
-          {{ Convertype(scope.row.type) }}
-        </el-table-column>
-        <el-table-column v-slot="scope" label="状态">
-          {{ ConvertStatus(scope.row.status) }}
-        </el-table-column>
-      </el-table>
-    </el-row>
-    <el-row style="margin-top: 5px">
-      <el-pagination
-        v-model:current-page="cardCurrent"
-        v-model:page-size="cardPageSize"
-        :page-sizes="[5, 10, 15, 20]"
-        :small="small"
+          </AButton>
+        </ASpace>
+      </AFormItem>
+    </AForm>
+
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <AButton type="primary" class="icon-button" @click="OnClickAdd" v-hasPermi="Permission.add">
+          <template #icon>
+            <Icon icon="ant-design:plus-outlined" />
+          </template>
+          新增
+        </AButton>
+      </div>
+
+      <div class="toolbar-right">
+        <ATooltip :title="showSearchForm ? '隐藏搜索' : '显示搜索'">
+          <AButton shape="circle" @click="OnClickOfShowForm">
+            <template #icon>
+              <Icon icon="ant-design:search-outlined" />
+            </template>
+          </AButton>
+        </ATooltip>
+        <ATooltip title="刷新">
+          <AButton shape="circle" @click="onPageRest">
+            <template #icon>
+              <Icon icon="ant-design:reload-outlined" />
+            </template>
+          </AButton>
+        </ATooltip>
+      </div>
+    </div>
+
+    <ATable row-key="id" :columns="columns" :data-source="TableData" :pagination="false" bordered>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'pic'">
+          <img v-if="record.pic" :src="getImageURL(record.pic)" class="table-avatar" />
+          <span v-else class="empty-text">暂无</span>
+        </template>
+
+        <template v-else-if="column.key === 'action'">
+          <ASpace wrap>
+            <AButton type="link" class="table-action action-add" @click="addPoints(record)" v-hasPermi="Permission.pad">
+              <template #icon>
+                <Icon icon="ant-design:plus-circle-outlined" />
+              </template>
+              添加积分
+            </AButton>
+            <AButton type="link" danger class="table-action" @click="reducePoints(record)" v-hasPermi="Permission.pas">
+              <template #icon>
+                <Icon icon="ant-design:minus-circle-outlined" />
+              </template>
+              扣除积分
+            </AButton>
+            <AButton type="link" danger class="table-action" @click="handleDetail(record)" v-hasPermi="Permission.bak">
+              <template #icon>
+                <Icon icon="ant-design:user-delete-outlined" />
+              </template>
+              拉黑
+            </AButton>
+            <AButton type="link" class="table-action" @click="handleRemove(record)" v-hasPermi="Permission.cad">
+              <template #icon>
+                <Icon icon="ant-design:credit-card-outlined" />
+              </template>
+              绑定
+            </AButton>
+          </ASpace>
+        </template>
+      </template>
+    </ATable>
+
+    <div class="pagination-wrap">
+      <APagination
+        v-model:current="currentPage"
+        v-model:page-size="pageSize"
+        :page-size-options="['5', '10', '15', '20']"
+        :show-size-changer="true"
         :disabled="disabled"
-        :background="background"
-        layout="total, sizes, prev, pager, next, jumper"
-        :total="CardTotal"
-        @size-change="getCardData"
-        @current-change="getCardData"
+        :total="total"
+        :show-total="(totalCount) => `共 ${totalCount} 条`"
+        show-quick-jumper
+        @change="handlePageChange"
+        @show-size-change="handlePageChange"
       />
-    </el-row>
-    <el-row style="width: 100%; margin-top: 5px; text-align: right">
-      <el-col :span="18" />
-      <el-col :span="6">
-        <el-button type="primary" @click="bindCard">确定</el-button>
-        <el-button type="info" @click="cancelBind">取消</el-button>
-      </el-col>
-    </el-row>
-  </el-dialog>
+    </div>
+
+    <AModal v-model:open="AdddialogFormVisible" title="添加会员" width="560px" :destroy-on-close="true" @cancel="onCloseAddDialog">
+      <AForm :model="addFormData" layout="vertical">
+        <AFormItem label="用户昵称">
+          <AInput v-model:value="addFormData.nickName" placeholder="请输入用户昵称" />
+        </AFormItem>
+
+        <AFormItem label="手机号码">
+          <AInput v-model:value="addFormData.phone" placeholder="请输入用户手机号码" />
+        </AFormItem>
+
+        <AFormItem label="状态">
+          <ARadioGroup v-model:value="addFormData.status" :options="memberStatusOptions" option-type="button" button-style="solid" class="status-radio-group" />
+        </AFormItem>
+
+        <AFormItem label="LOGO">
+          <AUpload class="avatar-uploader" :action="UpImageURL" :show-upload-list="false" :before-upload="beforeAvatarUpload" :headers="headObject" @change="handleUploadChange">
+            <img v-if="addFormData.pic" :src="getImageURL(addFormData.pic)" class="avatar" />
+            <div v-else class="upload-placeholder">
+              <Icon icon="ant-design:plus-outlined" :size="24" />
+            </div>
+          </AUpload>
+        </AFormItem>
+
+        <AFormItem label="备注">
+          <ATextarea v-model:value="addFormData.remark" placeholder="请输入备注信息" :rows="3" />
+        </AFormItem>
+      </AForm>
+
+      <template #footer>
+        <ASpace>
+          <AButton @click="onCloseAddDialog">取消</AButton>
+          <AButton type="primary" @click="onConfirm">确定</AButton>
+        </ASpace>
+      </template>
+    </AModal>
+
+    <AModal v-model:open="dialogPointVisible" :title="OperationPointsTitle" width="480px" @cancel="onClosePointsDialog">
+      <AForm :model="operationPoints" layout="vertical">
+        <AFormItem label="积分点数">
+          <AInputNumber v-model:value="operationPoints.points" :min="0" class="w-full" placeholder="请输入积分数" />
+        </AFormItem>
+
+        <AFormItem label="备注">
+          <AInput v-model:value="operationPoints.remarks" placeholder="备注" />
+        </AFormItem>
+      </AForm>
+
+      <template #footer>
+        <ASpace>
+          <AButton @click="onClosePointsDialog">取消</AButton>
+          <AButton type="primary" @click="doOperationPoint">确认</AButton>
+        </ASpace>
+      </template>
+    </AModal>
+
+    <AModal v-model:open="bindCardDialogVisible" title="绑定卡号" width="720px" :destroy-on-close="true" @cancel="cancelBind">
+      <AForm :model="cardSearchForm" layout="inline" class="card-search-form">
+        <AFormItem label="卡号">
+          <AInput v-model:value="getCardNo" placeholder="请输入卡号" />
+        </AFormItem>
+
+        <AFormItem>
+          <AButton type="primary" class="icon-button" @click="getCardData">
+            <template #icon>
+              <Icon icon="ant-design:search-outlined" />
+            </template>
+            搜索
+          </AButton>
+        </AFormItem>
+
+        <AFormItem>
+          <AButton class="icon-button" @click="restCard">
+            <template #icon>
+              <Icon icon="ant-design:reload-outlined" />
+            </template>
+            重置
+          </AButton>
+        </AFormItem>
+      </AForm>
+
+      <ATable row-key="id" :columns="cardColumns" :data-source="cardTableData" :pagination="false" :row-selection="cardRowSelection" bordered>
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'type'">
+            {{ ConvertType(record.type) }}
+          </template>
+          <template v-else-if="column.key === 'status'">
+            {{ ConvertStatus(record.status) }}
+          </template>
+        </template>
+      </ATable>
+
+      <div class="pagination-wrap card-pagination">
+        <APagination
+          v-model:current="cardCurrent"
+          v-model:page-size="cardPageSize"
+          :page-size-options="['5', '10', '15', '20']"
+          :show-size-changer="true"
+          :disabled="disabled"
+          :total="CardTotal"
+          :show-total="(totalCount) => `共 ${totalCount} 条`"
+          show-quick-jumper
+          @change="handleCardPageChange"
+          @show-size-change="handleCardPageChange"
+        />
+      </div>
+
+      <template #footer>
+        <ASpace>
+          <AButton @click="cancelBind">取消</AButton>
+          <AButton type="primary" @click="bindCard">确定</AButton>
+        </ASpace>
+      </template>
+    </AModal>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { Ref, ref, computed, onMounted, inject } from 'vue'
+import { computed, inject, onMounted, reactive, ref } from 'vue'
+import {
+  Button as AButton,
+  DatePicker as ADatePicker,
+  Form as AForm,
+  FormItem as AFormItem,
+  Input as AInput,
+  InputNumber as AInputNumber,
+  Modal as AModal,
+  Pagination as APagination,
+  RadioGroup as ARadioGroup,
+  Space as ASpace,
+  Table as ATable,
+  Tooltip as ATooltip,
+  Upload as AUpload,
+  message
+} from 'ant-design-vue'
+import type { TableColumnsType, UploadChangeParam } from 'ant-design-vue'
 import { PATH_URL, service } from '@/config/axios/service'
-import { ElMessage, ElMessageBox, ElTable } from 'element-plus'
+import { Icon } from '@/components/Icon'
 
-const reload: any = inject('reload')
+const ARangePicker = ADatePicker.RangePicker
+const ATextarea = AInput.TextArea
 
-const onPageRest = () => {
-  reload()
-}
-
-const Permission = ref({
-  add: 'mem_mem_add',
-  pad: 'mem_mem_pad',
-  pas: 'mem_mem_pas',
-  bak: 'mem_mem_bak',
-  cad: 'mem_mem_cad',
-  sec: 'mem_mem_sec'
-})
-
-//#region  数据结构
+type TableKey = string | number
+type DateRange = [string, string] | undefined
 
 interface BindCardStruct {
   memberId: number
@@ -305,15 +270,14 @@ interface BindCardStruct {
 }
 
 interface SearchStruct {
-  id: number | null
   departmentName: string
   phone: string
   cardNo: string
   nickName: string
-  sTime: string
+  sTime: DateRange
 }
 
-interface addFormDataStruct {
+interface AddFormDataStruct {
   nickName: string
   phone: string
   email: string
@@ -337,117 +301,63 @@ interface CardStruct {
   status: number
 }
 
-//#endregion
+interface MemberRecord {
+  [key: string]: any
+  id: number
+  pic?: string
+  nickName?: string
+  phone?: string
+  points?: number
+  cardNo?: string
+  createTime?: string
+}
 
-let cardTableData: Ref<CardStruct[]> = ref([])
+const reload = inject<() => void>('reload')
 
-let cardCurrent = ref(1)
-let cardPageSize = ref(10)
-let CardTotal = ref(0)
-
-const Convertype = (val) => {
-  let temp = '会员'
-  if (val == 2) {
-    temp = '清运'
+const onPageRest = () => {
+  if (reload) {
+    reload()
+    return
   }
-  return temp
+  getMemberData()
 }
 
-const ConvertStatus = (val) => {
-  let temp = '未使用'
-  if (val === 1) {
-    temp = '已使用'
-  }
-  return temp
-}
-
-let cardTableRef = ref(ElTable)
-
-const bindCard = () => {
-  ElMessageBox.confirm('您确定要为这个会员绑定会员卡吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    service.post(PATH_URL + '/memMember/bindCard', bindCardData.value).then(() => {
-      ElMessage('操作成功')
-      getMemberData()
-      bindCardDialogVisible.value = false
-    })
-  })
-}
-const cancelBind = () => {
-  bindCardDialogVisible.value = false
-  cardTableData.value = []
-  getCardNo.value = ''
-}
-
-const restCard = () => {
-  getCardNo.value = ''
-}
-
-let getCardNo = ref('')
-
-const getCardData = () => {
-  let parm = {
-    cardNo: getCardNo.value,
-    type: 1,
-    status: '0',
-    page: cardCurrent.value,
-    size: pageSize.value
-  }
-
-  service.post(PATH_URL + '/memMember/getCard', parm).then((res) => {
-    console.log(res)
-    CardTotal.value = res.data.total
-    cardTableData.value = res.data.records
-  })
-}
-
-let bindCardDialogVisible = ref(false)
-let bindCardData: Ref<BindCardStruct> = ref({
-  memberId: 0,
-  cardId: 0
-})
-const handleSelectionChange = (selection: any) => {
-  if (selection.length > 1) {
-    let del_row = selection.shift()
-    cardTableRef.value.toggleRowSelection(del_row, false)
-  } else {
-    bindCardData.value.cardId = selection[0].id
-  }
-}
-
-const onClosePointsDialog = () => {
-  dialogPointVisible.value = false
-}
-
-const doOperationPoint = () => {
-  ElMessageBox.confirm('您确定要进行这项积分操作吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    service.post(PATH_URL + '/memMember/OperationPoints', operationPoints.value).then(() => {
-      ElMessage('操作成功')
-      onClosePointsDialog()
-      getMemberData()
-    })
-  })
-}
-
-let OperationPointsTitle = ref('')
-
-let dialogPointVisible = ref(false)
-
-let operationPoints: Ref<OperationPointStruct> = ref({
-  MemberId: 0,
-  type: 0,
-  points: 0,
-  remarks: ''
+const Permission = ref({
+  add: 'mem_mem_add',
+  pad: 'mem_mem_pad',
+  pas: 'mem_mem_pas',
+  bak: 'mem_mem_bak',
+  cad: 'mem_mem_cad',
+  sec: 'mem_mem_sec'
 })
 
-let addFormData: Ref<addFormDataStruct> = ref({
+const currentPage = ref(1)
+const total = ref(0)
+const pageSize = ref(5)
+const disabled = ref(false)
+const TableData = ref<MemberRecord[]>([])
+const showSearchForm = ref(true)
+const AdddialogFormVisible = ref(false)
+const isUpdate = ref(false)
+const dialogPointVisible = ref(false)
+const OperationPointsTitle = ref('')
+const bindCardDialogVisible = ref(false)
+const cardTableData = ref<CardStruct[]>([])
+const cardCurrent = ref(1)
+const cardPageSize = ref(10)
+const CardTotal = ref(0)
+const getCardNo = ref('')
+const selectedCardRowKeys = ref<TableKey[]>([])
+
+const SearchFormData = reactive<SearchStruct>({
+  departmentName: '',
+  phone: '',
+  cardNo: '',
+  nickName: '',
+  sTime: undefined
+})
+
+const addFormData = reactive<AddFormDataStruct>({
   nickName: '',
   phone: '',
   email: '',
@@ -457,80 +367,191 @@ let addFormData: Ref<addFormDataStruct> = ref({
   status: '1'
 })
 
+const operationPoints = reactive<OperationPointStruct>({
+  MemberId: 0,
+  type: 0,
+  points: 0,
+  remarks: ''
+})
+
+const bindCardData = reactive<BindCardStruct>({
+  memberId: 0,
+  cardId: 0
+})
+
+const cardSearchForm = reactive({
+  cardNo: ''
+})
+
+const memberStatusOptions = [
+  { label: '正常', value: '1' },
+  { label: '停用', value: '2' }
+]
+
+const columns: TableColumnsType<MemberRecord> = [
+  { title: '用户头像', dataIndex: 'pic', key: 'pic', width: 120 },
+  { title: '运营商', dataIndex: ['department', 'platformName'], key: 'departmentName', width: 220 },
+  { title: '用户昵称', dataIndex: 'nickName', key: 'nickName', width: 160 },
+  { title: '手机号码', dataIndex: 'phone', key: 'phone', width: 160 },
+  { title: '积分', dataIndex: 'points', key: 'points', width: 100 },
+  { title: '绑定卡号', dataIndex: 'cardNo', key: 'cardNo', width: 160 },
+  { title: '创建时间', dataIndex: 'createTime', key: 'createTime', width: 200 },
+  { title: '操作', key: 'action', width: 300 }
+]
+
+const cardColumns: TableColumnsType<CardStruct> = [
+  { title: '卡号', dataIndex: 'cardNo', key: 'cardNo', width: 180 },
+  { title: '类型', dataIndex: 'type', key: 'type', width: 160 },
+  { title: '状态', dataIndex: 'status', key: 'status', width: 160 }
+]
+
+const cardRowSelection = computed(() => ({
+  selectedRowKeys: selectedCardRowKeys.value,
+  onChange: (keys: TableKey[], rows: CardStruct[]) => {
+    const lastKey = keys.slice(-1)
+    const lastRow = rows.slice(-1)[0]
+    selectedCardRowKeys.value = lastKey
+    bindCardData.cardId = lastRow?.id || 0
+  }
+}))
+
+const ConvertType = (val: number) => {
+  return val == 2 ? '清运' : '会员'
+}
+
+const ConvertStatus = (val: number) => {
+  return val === 1 ? '已使用' : '未使用'
+}
+
+const bindCard = () => {
+  if (!bindCardData.cardId) {
+    message.warning('请选择要绑定的会员卡')
+    return
+  }
+
+  AModal.confirm({
+    title: '提示',
+    content: '确定要为这个会员绑定会员卡吗？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      await service.post(PATH_URL + '/memMember/bindCard', bindCardData)
+      message.success('操作成功')
+      getMemberData()
+      bindCardDialogVisible.value = false
+    }
+  })
+}
+
+const cancelBind = () => {
+  bindCardDialogVisible.value = false
+  cardTableData.value = []
+  getCardNo.value = ''
+  selectedCardRowKeys.value = []
+  bindCardData.cardId = 0
+}
+
+const restCard = () => {
+  getCardNo.value = ''
+  cardCurrent.value = 1
+  getCardData()
+}
+
+const getCardData = () => {
+  service
+    .post(PATH_URL + '/memMember/getCard', {
+      cardNo: getCardNo.value,
+      type: 1,
+      status: '0',
+      page: cardCurrent.value,
+      size: cardPageSize.value
+    })
+    .then((res: any) => {
+      CardTotal.value = res.data?.total || 0
+      cardTableData.value = res.data?.records || []
+      selectedCardRowKeys.value = []
+      bindCardData.cardId = 0
+    })
+}
+
+const handleCardPageChange = (page: number, size: number) => {
+  cardCurrent.value = page
+  cardPageSize.value = size
+  getCardData()
+}
+
+const onClosePointsDialog = () => {
+  dialogPointVisible.value = false
+}
+
+const doOperationPoint = () => {
+  AModal.confirm({
+    title: '提示',
+    content: '确定要进行这项积分操作吗？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      await service.post(PATH_URL + '/memMember/OperationPoints', operationPoints)
+      message.success('操作成功')
+      onClosePointsDialog()
+      getMemberData()
+    }
+  })
+}
+
 onMounted(() => {
   getMemberData()
 })
 
-const currentPage = ref(1)
-const total = ref(0)
-const pageSize = ref(5)
-const small = ref(false)
-const background = ref(false)
-const disabled = ref(false)
+const UpImageURL = computed(() => PATH_URL + '/Common/upLoadImage')
 
-// 上传图片地址
-const UpImageURL = computed(() => {
-  return PATH_URL + '/Common/upLoadImage'
-})
-
-//获取图片的地址
-const getImageURL = computed(() => (imageURL) => {
-  return PATH_URL + '/Common/downLoadPic/' + imageURL
-})
+const getImageURL = (imageURL?: string) => {
+  return imageURL ? PATH_URL + '/Common/downLoadPic/' + imageURL : ''
+}
 
 const getMemberData = () => {
-  let parm = {
-    id: SearchFormData.value.id,
-    departmentName: SearchFormData.value.departmentName,
-    phone: SearchFormData.value.phone,
-    cardNo: SearchFormData.value.cardNo,
-    nickName: SearchFormData.value.nickName,
-    sTime: SearchFormData.value.sTime[0],
-    etime: SearchFormData.value.sTime[1],
-    current: currentPage.value,
-    size: pageSize.value
-  }
-  service.post(PATH_URL + '/memMember/getMember', parm).then((res) => {
-    console.log(res)
-    total.value = res.data.total
-    TableData.value = res.data.records
-  })
+  service
+    .post(PATH_URL + '/memMember/getMember', {
+      departmentName: SearchFormData.departmentName,
+      phone: SearchFormData.phone,
+      cardNo: SearchFormData.cardNo,
+      nickName: SearchFormData.nickName,
+      sTime: SearchFormData.sTime?.[0],
+      etime: SearchFormData.sTime?.[1],
+      current: currentPage.value,
+      size: pageSize.value
+    })
+    .then((res: any) => {
+      total.value = res.data?.total || 0
+      TableData.value = res.data?.records || []
+    })
 }
 
-const handleUpdateSuccess = (respon) => {
-  if (respon.code == 200) {
-    addFormData.value.pic = respon.data
+const handleUploadChange = (info: UploadChangeParam) => {
+  if (info.file.status !== 'done') return
+
+  const response = info.file.response
+  if (response?.code == 200) {
+    addFormData.pic = response.data
   } else {
-    ElMessage('上传图片出错了')
+    message.error('上传图片出错了')
   }
 }
 
-const headObject = {
-  Authorization: localStorage.getItem('token')
-}
+const headObject = computed(() => ({
+  Authorization: localStorage.getItem('token') || ''
+}))
 
-const beforeAvatarUpload = () => {}
-
-let SearchFormData: Ref<SearchStruct> = ref({
-  id: null,
-  departmentName: '',
-  phone: '',
-  cardNo: '',
-  nickName: '',
-  sTime: ''
-})
-
-let showSearchForm = ref(true)
+const beforeAvatarUpload = () => true
 
 const onReset = () => {
-  SearchFormData.value = {
-    id: null,
-    departmentName: '',
-    phone: '',
-    cardNo: '',
-    nickName: '',
-    sTime: ''
-  }
+  SearchFormData.departmentName = ''
+  SearchFormData.phone = ''
+  SearchFormData.cardNo = ''
+  SearchFormData.nickName = ''
+  SearchFormData.sTime = undefined
+  currentPage.value = 1
+  getMemberData()
 }
 
 const OnClickAdd = () => {
@@ -538,128 +559,262 @@ const OnClickAdd = () => {
   AdddialogFormVisible.value = true
 }
 
-let disableUpdate = ref(true)
-let disableRemove = ref(true)
-
-const deleteOfDetail = () => {}
-
 const OnClickOfShowForm = () => {
   showSearchForm.value = !showSearchForm.value
 }
-
-let AdddialogFormVisible = ref(false)
 
 const onCloseAddDialog = () => {
   AdddialogFormVisible.value = false
 }
 
-let isUpdate = ref(false)
 const onConfirm = () => {
   if (isUpdate.value) {
     doUpdate()
     return
   }
 
-  let title = '你确定要添加这个会员'
-  ElMessageBox.confirm(title, '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    service.post(PATH_URL + '/memMember/addMember', addFormData.value).then((res: any) => {
-      console.log('res', res)
+  AModal.confirm({
+    title: '提示',
+    content: '确定要添加这个会员吗？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      const res: any = await service.post(PATH_URL + '/memMember/addMember', addFormData)
       if (res.code == 200) {
-        ElMessage('操作成功')
+        message.success('操作成功')
         getMemberData()
         AdddialogFormVisible.value = false
       } else {
-        ElMessage(res.message)
+        message.warning(res.message)
       }
-    })
+    }
   })
 }
 
 const doUpdate = () => {}
 
-let TableData = ref([])
-
-const handleDetail = (val) => {
-  let title = '你确定要拉黑这个会员'
-  ElMessageBox.confirm(title, '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    service.post(PATH_URL + '/memMember/ToBlickList', { memberId: val.id }).then(() => {
-      ElMessage('操作成功')
+const handleDetail = (record: Record<string, any>) => {
+  AModal.confirm({
+    title: '提示',
+    content: '确定要拉黑这个会员吗？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      await service.post(PATH_URL + '/memMember/ToBlickList', { memberId: record.id })
+      message.success('操作成功')
       AdddialogFormVisible.value = false
       getMemberData()
-    })
+    }
   })
 }
-const handleRemove = (val) => {
+
+const handleRemove = (record: Record<string, any>) => {
   getCardData()
-  bindCardData.value.memberId = val.id
+  bindCardData.memberId = record.id
   bindCardDialogVisible.value = true
 }
 
-const addPoints = (val) => {
+const addPoints = (record: Record<string, any>) => {
   OperationPointsTitle.value = '添加积分'
-  operationPoints.value.MemberId = val.id
-  operationPoints.value.type = 1
-  operationPoints.value.remarks = ''
-  operationPoints.value.points = 0
+  operationPoints.MemberId = record.id
+  operationPoints.type = 1
+  operationPoints.remarks = ''
+  operationPoints.points = 0
   dialogPointVisible.value = true
 }
-const reducePoints = (val) => {
+
+const reducePoints = (record: Record<string, any>) => {
   OperationPointsTitle.value = '扣除积分'
-  operationPoints.value.MemberId = val.id
-  operationPoints.value.type = 0
-  operationPoints.value.remarks = ''
-  operationPoints.value.points = 0
+  operationPoints.MemberId = record.id
+  operationPoints.type = 0
+  operationPoints.remarks = ''
+  operationPoints.points = 0
   dialogPointVisible.value = true
+}
+
+const handlePageChange = (page: number, size: number) => {
+  currentPage.value = page
+  pageSize.value = size
+  getMemberData()
 }
 </script>
 
-<style scoped>
-.avatar-uploader .avatar {
-  display: block;
-  width: 120px;
-  height: 120px;
-}
-</style>
-
-<style>
-.avatar-uploader .el-upload {
-  position: relative;
-  overflow: hidden;
-  cursor: pointer;
-  border: 1px dashed var(--el-border-color);
-  border-radius: 6px;
-  transition: var(--el-transition-duration-fast);
-}
-
-.avatar-uploader .el-upload:hover {
-  border-color: var(--el-color-primary);
-}
-
-.el-icon.avatar-uploader-icon {
-  width: 120px;
-  height: 120px;
-  font-size: 28px;
-  color: #8c939d;
-  text-align: center;
-}
-
-.buttonOfTables {
+<style lang="less" scoped>
+.member-page {
   display: flex;
+  width: 100%;
   flex-direction: column;
-  justify-content: space-between;
-  align-content: center;
+  gap: 16px;
 }
 
-.bt {
-  width: 100px;
-  margin-top: 10px;
+.search-form {
+  display: grid;
+  padding: 16px;
+  background-color: #fff;
+  border-radius: 6px;
+  gap: 14px 16px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  align-items: end;
+
+  :deep(.ant-form-item) {
+    margin-bottom: 0;
+    align-items: center;
+  }
+
+  :deep(.ant-form-item-label) {
+    flex: 0 0 72px;
+    padding: 0 10px 0 0;
+    line-height: 1;
+    text-align: right;
+  }
+
+  :deep(.ant-form-item-label > label) {
+    height: 32px;
+    color: #262626;
+    font-weight: 500;
+  }
+
+  :deep(.ant-form-item-control) {
+    min-width: 0;
+    flex: 1;
+  }
+
+  :deep(.ant-picker),
+  :deep(.ant-input),
+  :deep(.ant-input-number),
+  :deep(.ant-select) {
+    width: 100%;
+  }
+}
+
+.search-form-item,
+.search-form-actions {
+  min-width: 0;
+}
+
+.search-form-range {
+  grid-column: span 2;
+}
+
+.search-form-actions {
+  :deep(.ant-form-item-control-input-content) {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.toolbar-left,
+.toolbar-right {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.icon-button,
+.table-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  :deep(.v-icon),
+  :deep(iconify-icon) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+}
+
+.table-action {
+  height: 24px;
+  padding: 0;
+  gap: 4px;
+}
+
+.action-add {
+  color: #52c41a;
+}
+
+.pagination-wrap {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.card-search-form {
+  margin-bottom: 16px;
+}
+
+.card-pagination {
+  margin-top: 12px;
+}
+
+.table-avatar {
+  display: block;
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.empty-text {
+  color: #8c8c8c;
+}
+
+.status-radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  :deep(.ant-radio-button-wrapper) {
+    height: 32px;
+    min-width: 72px;
+    padding: 0 14px;
+    line-height: 30px;
+    text-align: center;
+    border-inline-start-width: 1px;
+    border-radius: 6px;
+  }
+
+  :deep(.ant-radio-button-wrapper::before) {
+    display: none;
+  }
+}
+
+.avatar-uploader {
+  :deep(.ant-upload) {
+    width: 104px;
+    height: 104px;
+  }
+}
+
+.avatar {
+  display: block;
+  width: 104px;
+  height: 104px;
+  object-fit: cover;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+}
+
+.upload-placeholder {
+  display: inline-flex;
+  width: 104px;
+  height: 104px;
+  color: #8c8c8c;
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s cubic-bezier(0, 0, 1, 1);
+
+  &:hover {
+    border-color: #1677ff;
+  }
 }
 </style>

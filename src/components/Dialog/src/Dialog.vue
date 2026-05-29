@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ElDialog, ElScrollbar } from 'element-plus'
+import { Modal as AModal } from 'ant-design-vue'
 import { propTypes } from '@/utils/propTypes'
 import { computed, useAttrs, ref, unref, useSlots, watch, nextTick } from 'vue'
 import { isNumber } from '@/utils/is'
 
 const slots = useSlots()
+
+const emit = defineEmits(['update:modelValue'])
 
 const props = defineProps({
   modelValue: propTypes.bool.def(false),
@@ -14,7 +16,7 @@ const props = defineProps({
 })
 
 const getBindValue = computed(() => {
-  const delArr: string[] = ['fullscreen', 'title', 'maxHeight']
+  const delArr: string[] = ['fullscreen', 'title', 'maxHeight', 'modelValue']
   const attrs = useAttrs()
   const obj = { ...attrs, ...props }
   for (const key in obj) {
@@ -58,15 +60,8 @@ const dialogStyle = computed(() => {
 </script>
 
 <template>
-  <ElDialog
-    v-bind="getBindValue"
-    :fullscreen="isFullscreen"
-    destroy-on-close
-    lock-scroll
-    draggable
-    :close-on-click-modal="false"
-  >
-    <template #header>
+  <AModal v-bind="getBindValue" :open="modelValue" :width="isFullscreen ? '100vw' : undefined" destroy-on-close :mask-closable="false" @update:open="emit('update:modelValue', $event)">
+    <template #title>
       <div class="flex justify-between">
         <slot name="title">
           {{ title }}
@@ -75,45 +70,45 @@ const dialogStyle = computed(() => {
           v-if="fullscreen"
           class="mr-18px cursor-pointer is-hover mt-2px z-10"
           :icon="isFullscreen ? 'zmdi:fullscreen-exit' : 'zmdi:fullscreen'"
-          color="var(--el-color-info)"
+          color="var(--app-color-info)"
           @click="toggleFull"
         />
       </div>
     </template>
 
-    <ElScrollbar :style="dialogStyle">
+    <div :style="dialogStyle" class="overflow-auto">
       <slot></slot>
-    </ElScrollbar>
+    </div>
 
     <template v-if="slots.footer" #footer>
       <slot name="footer"></slot>
     </template>
-  </ElDialog>
+  </AModal>
 </template>
 
 <style lang="less">
-.@{elNamespace}-dialog__header {
+.ant-modal-header {
   margin-right: 0 !important;
   border-bottom: 1px solid var(--tags-view-border-color);
 }
 
-.@{elNamespace}-dialog__footer {
+.ant-modal-footer {
   border-top: 1px solid var(--tags-view-border-color);
 }
 
 .is-hover {
   &:hover {
-    color: var(--el-color-primary) !important;
+    color: var(--app-color-primary) !important;
   }
 }
 
 .dark {
-  .@{elNamespace}-dialog__header {
-    border-bottom: 1px solid var(--el-border-color);
+  .ant-modal-header {
+    border-bottom: 1px solid var(--app-border-color);
   }
 
-  .@{elNamespace}-dialog__footer {
-    border-top: 1px solid var(--el-border-color);
+  .ant-modal-footer {
+    border-top: 1px solid var(--app-border-color);
   }
 }
 </style>

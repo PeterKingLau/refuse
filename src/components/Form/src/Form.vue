@@ -1,59 +1,51 @@
 <script lang="tsx">
 import { PropType, defineComponent, ref, computed, unref, watch, onMounted } from 'vue'
-import { ElForm, ElFormItem, ElRow, ElCol, ElTooltip } from 'element-plus'
+import { Col as ACol, Form as AForm, FormItem as AFormItem, Row as ARow, Tooltip as ATooltip } from 'ant-design-vue'
+import type { FormInstance } from 'ant-design-vue/es/form'
+import type { CompatibleFormInstance, FormValidateCallback } from '@/components/Form'
 import { componentMap } from './componentMap'
 import { propTypes } from '@/utils/propTypes'
 import { getSlot } from '@/utils/tsxHelper'
-import {
-  setTextPlaceholder,
-  setGridProp,
-  setComponentProps,
-  setItemComponentSlots,
-  initModel,
-  setFormItemSlots
-} from './helper'
+import { setTextPlaceholder, setGridProp, setComponentProps, setItemComponentSlots, initModel, setFormItemSlots } from './helper'
 import { useRenderSelect } from './components/useRenderSelect'
 import { useRenderRadio } from './components/useRenderRadio'
 import { useRenderCheckbox } from './components/useRenderCheckbox'
 import { useDesign } from '@/hooks/web/useDesign'
 import { findIndex } from '@/utils'
 import { set } from 'lodash-es'
-import { FormProps } from './types'
+import type { FormProps } from './types'
 import { Icon } from '@/components/Icon'
-import { FormSchema, FormSetPropsType } from '@/types/form'
+import type { FormSchema, FormSetPropsType } from '@/types/form'
 
 const { getPrefixCls } = useDesign()
 
 const prefixCls = getPrefixCls('form')
 
+const toSizeUnit = (value?: string | number) => {
+  if (value === undefined || value === '' || value === 'auto') return undefined
+  return typeof value === 'number' ? `${value}px` : value
+}
+
 export default defineComponent({
   name: 'Form',
   props: {
-    // 生成Form的布局结构数组
     schema: {
       type: Array as PropType<FormSchema[]>,
       default: () => []
     },
-    // 是否需要栅格布局
     isCol: propTypes.bool.def(true),
-    // 表单数据对象
     model: {
       type: Object as PropType<Recordable>,
       default: () => ({})
     },
-    // 是否自动设置placeholder
     autoSetPlaceholder: propTypes.bool.def(true),
-    // 是否自定义内容
     isCustom: propTypes.bool.def(false),
-    // 表单label宽度
     labelWidth: propTypes.oneOfType([String, Number]).def('auto')
   },
   emits: ['register'],
   setup(props, { slots, expose, emit }) {
-    // element form 实例
-    const elFormRef = ref<ComponentRef<typeof ElForm>>()
+    const elFormRef = ref<FormInstance>()
 
-    // useForm传入的props
     const outsideProps = ref<FormProps>({})
 
     const mergeProps = ref<FormProps>({})
@@ -64,14 +56,38 @@ export default defineComponent({
       return propsObj
     })
 
-    // 表单数据
     const formModel = ref<Recordable>({})
 
+    const getCompatibleFormRef = (): CompatibleFormInstance => {
+      const form = unref(elFormRef) as FormInstance
+
+      return {
+        ...form,
+        validate: async (nameListOrCallback?: Parameters<FormInstance['validate']>[0] | FormValidateCallback, options?: Parameters<FormInstance['validate']>[1]) => {
+          if (typeof nameListOrCallback === 'function') {
+            try {
+              await form.validate()
+              nameListOrCallback(true)
+              return true
+            } catch (error) {
+              nameListOrCallback(false, error)
+              return false
+            }
+          }
+
+          return form.validate(nameListOrCallback, options)
+        },
+        resetFields: form.resetFields.bind(form),
+        clearValidate: form.clearValidate.bind(form),
+        validateFields: form.validateFields.bind(form),
+        scrollToField: form.scrollToField?.bind(form)
+      } as CompatibleFormInstance
+    }
+
     onMounted(() => {
-      emit('register', unref(elFormRef)?.$parent, unref(elFormRef))
+      emit('register', unref(elFormRef)?.$parent, getCompatibleFormRef())
     })
 
-    // 对表单赋值
     const setValues = (data: Recordable = {}) => {
       formModel.value = Object.assign(unref(formModel), data)
     }
@@ -110,8 +126,8 @@ export default defineComponent({
       }
     }
 
-    const getElFormRef = (): ComponentRef<typeof ElForm> => {
-      return unref(elFormRef) as ComponentRef<typeof ElForm>
+    const getElFormRef = (): CompatibleFormInstance => {
+      return getCompatibleFormRef()
     }
 
     expose({
@@ -124,7 +140,6 @@ export default defineComponent({
       getElFormRef
     })
 
-    // 监听表单结构化数组，重新生成formModel
     watch(
       () => unref(getProps).schema,
       (schema = []) => {
@@ -136,86 +151,110 @@ export default defineComponent({
       }
     )
 
-    // 渲染包裹标签，是否使用栅格布局
     const renderWrap = () => {
       const { isCol } = unref(getProps)
-      const content = isCol ? (
-        <ElRow gutter={20}>{renderFormItemWrap()}</ElRow>
-      ) : (
-        renderFormItemWrap()
-      )
-      return content
+      return isCol ? <ARow gutter={20}>{renderFormItemWrap()}</ARow> : renderFormItemWrap()
     }
 
-    // 是否要渲染el-col
     const renderFormItemWrap = () => {
-      // hidden属性表示隐藏，不做渲染
       const { schema = [], isCol } = unref(getProps)
 
       return schema
         .filter((v) => !v.hidden)
         .map((item) => {
-          // 如果是 Divider 组件，需要自己占用一行
           const isDivider = item.component === 'Divider'
           const Com = componentMap['Divider'] as ReturnType<typeof defineComponent>
+          const { contentPosition, ...dividerProps } = item.componentProps || {}
+
           return isDivider ? (
-            <Com {...{ contentPosition: 'left', ...item.componentProps }}>{item?.label}</Com>
+            <Com {...dividerProps} orientation={contentPosition || 'left'}>
+              {item?.label}
+            </Com>
           ) : isCol ? (
-            // 如果需要栅格，需要包裹 ElCol
-            <ElCol {...setGridProp(item.colProps)}>{renderFormItem(item)}</ElCol>
+            <ACol {...setGridProp(item.colProps)}>{renderFormItem(item)}</ACol>
           ) : (
             renderFormItem(item)
           )
         })
     }
 
-    // 渲染formItem
+    const getModelBind = (item: FormSchema) => {
+      const value = formModel.value[item.field]
+      const updateValue = (val: unknown) => {
+        formModel.value[item.field] = val
+      }
+
+      if (item.component === 'Switch') {
+        return {
+          checked: value,
+          'onUpdate:checked': updateValue
+        }
+      }
+
+      if (item.component === 'InputPassword' || item.component === 'Editor') {
+        return {
+          modelValue: value,
+          'onUpdate:modelValue': updateValue
+        }
+      }
+
+      if (item.component === 'Transfer') {
+        return {
+          targetKeys: value,
+          'onUpdate:targetKeys': updateValue
+        }
+      }
+
+      return {
+        value,
+        'onUpdate:value': updateValue
+      }
+    }
+
+    const getFormItemProps = (item: FormSchema) => {
+      const { labelWidth, ...formItemProps } = item.formItemProps || {}
+      const width = toSizeUnit(labelWidth)
+
+      return {
+        ...formItemProps,
+        ...(width ? { labelCol: { style: { width } } } : {}),
+        name: item.field,
+        label: item.label || ''
+      }
+    }
+
     const renderFormItem = (item: FormSchema) => {
-      // 单独给只有options属性的组件做判断
       const notRenderOptions = ['SelectV2', 'Cascader', 'Transfer']
       const slotsMap: Recordable = {
         ...setItemComponentSlots(slots, item?.componentProps?.slots, item.field)
       }
-      if (
-        item?.component !== 'SelectV2' &&
-        item?.component !== 'Cascader' &&
-        item?.componentProps?.options
-      ) {
+      if (item?.component !== 'SelectV2' && item?.component !== 'Cascader' && item?.componentProps?.options) {
         slotsMap.default = () => renderOptions(item)
       }
 
       const formItemSlots: Recordable = setFormItemSlots(slots, item.field)
-      // 如果有 labelMessage，自动使用插槽渲染
       if (item?.labelMessage) {
         formItemSlots.label = () => {
           return (
             <>
               <span>{item.label}</span>
-              <ElTooltip placement="right" raw-content>
+              <ATooltip placement="right">
                 {{
-                  content: () => <span v-html={item.labelMessage}></span>,
-                  default: () => (
-                    <Icon
-                      icon="ep:warning"
-                      size={16}
-                      color="var(--el-color-primary)"
-                      class="ml-2px relative top-1px"
-                    ></Icon>
-                  )
+                  title: () => <span innerHTML={item.labelMessage}></span>,
+                  default: () => <Icon icon="ant-design:question-circle-outlined" size={16} color="var(--app-color-primary)" class="ml-2px relative top-1px"></Icon>
                 }}
-              </ElTooltip>
+              </ATooltip>
             </>
           )
         }
       }
+
       return (
-        <ElFormItem {...(item.formItemProps || {})} prop={item.field} label={item.label || ''}>
+        <AFormItem {...getFormItemProps(item)}>
           {{
             ...formItemSlots,
             default: () => {
-              const Com = componentMap[item.component as string] as ReturnType<
-                typeof defineComponent
-              >
+              const Com = componentMap[item.component as string] as ReturnType<typeof defineComponent>
 
               const { autoSetPlaceholder } = unref(getProps)
 
@@ -223,25 +262,21 @@ export default defineComponent({
                 getSlot(slots, item.field, formModel.value)
               ) : (
                 <Com
-                  vModel={formModel.value[item.field]}
                   {...(autoSetPlaceholder && setTextPlaceholder(item))}
                   {...setComponentProps(item)}
                   style={item.componentProps?.style}
-                  {...(notRenderOptions.includes(item?.component as string) &&
-                  item?.componentProps?.options
-                    ? { options: item?.componentProps?.options || [] }
-                    : {})}
+                  {...(notRenderOptions.includes(item?.component as string) && item?.componentProps?.options ? { options: item?.componentProps?.options || [] } : {})}
+                  {...getModelBind(item)}
                 >
                   {{ ...slotsMap }}
                 </Com>
               )
             }
           }}
-        </ElFormItem>
+        </AFormItem>
       )
     }
 
-    // 渲染options
     const renderOptions = (item: FormSchema) => {
       switch (item.component) {
         case 'Select':
@@ -260,42 +295,59 @@ export default defineComponent({
       }
     }
 
-    // 过滤传入Form组件的属性
     const getFormBindValue = () => {
-      // 避免在标签上出现多余的属性
-      const delKeys = ['schema', 'isCol', 'autoSetPlaceholder', 'isCustom', 'model']
+      const delKeys = ['schema', 'isCol', 'autoSetPlaceholder', 'isCustom', 'model', 'labelWidth']
       const props = { ...unref(getProps) }
       for (const key in props) {
         if (delKeys.indexOf(key) !== -1) {
           delete props[key]
         }
       }
-      return props
+
+      const width = toSizeUnit(unref(getProps).labelWidth)
+      return {
+        ...props,
+        ...(width ? { labelCol: { style: { width } } } : {})
+      }
     }
 
     return () => (
-      <ElForm
-        ref={elFormRef}
-        {...getFormBindValue()}
-        model={props.isCustom ? props.model : formModel}
-        class={prefixCls}
-      >
+      <AForm ref={elFormRef} {...getFormBindValue()} model={props.isCustom ? props.model : unref(formModel)} class={prefixCls}>
         {{
-          // 如果需要自定义，就什么都不渲染，而是提供默认插槽
           default: () => {
             const { isCustom } = unref(getProps)
             return isCustom ? getSlot(slots, 'default') : renderWrap()
           }
         }}
-      </ElForm>
+      </AForm>
     )
   }
 })
 </script>
 
 <style lang="less" scoped>
-.@{elNamespace}-form.@{namespace}-form .@{elNamespace}-row {
-  margin-right: 0 !important;
-  margin-left: 0 !important;
+.@{namespace}-form {
+  :deep(.ant-row) {
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+  }
+
+  :deep(.ant-form-item) {
+    width: 100%;
+  }
+
+  :deep(.ant-picker),
+  :deep(.ant-select),
+  :deep(.ant-input-number),
+  :deep(.ant-cascader-picker),
+  :deep(.ant-input),
+  :deep(.ant-input-affix-wrapper) {
+    width: 100%;
+  }
+
+  :deep(.ant-divider) {
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+  }
 }
 </style>

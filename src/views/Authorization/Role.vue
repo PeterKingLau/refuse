@@ -5,7 +5,7 @@ import { Table } from '@/components/Table'
 import { getUserListApi } from '@/api/login'
 import { UserType } from '@/api/login/types'
 import { ref, h } from 'vue'
-import { ElButton } from 'element-plus'
+import { Button as AButton } from 'ant-design-vue'
 import { TableColumn, TableSlotDefault } from '@/types/table'
 
 interface Params {
@@ -37,10 +37,7 @@ const columns: TableColumn[] = [
     field: 'remark',
     label: t('userDemo.remark'),
     formatter: (row: UserType) => {
-      return h(
-        'span',
-        row.username === 'admin' ? t('userDemo.remarkMessage1') : t('userDemo.remarkMessage2')
-      )
+      return h('span', row.username === 'admin' ? t('userDemo.remarkMessage1') : t('userDemo.remarkMessage2'))
     }
   },
   {
@@ -80,9 +77,9 @@ const actionFn = (data: TableSlotDefault) => {
   <ContentWrap :title="t('userDemo.title')" :message="t('userDemo.message')">
     <Table :columns="columns" :data="tableDataList" :loading="loading" :selection="false">
       <template #action="data">
-        <ElButton type="primary" @click="actionFn(data as TableSlotDefault)">
+        <AButton type="primary" @click="actionFn(data as TableSlotDefault)">
           {{ t('tableDemo.action') }}
-        </ElButton>
+        </AButton>
       </template>
     </Table>
   </ContentWrap>

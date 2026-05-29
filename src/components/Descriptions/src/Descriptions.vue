@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ElCollapseTransition, ElDescriptions, ElDescriptionsItem, ElTooltip } from 'element-plus'
+import { Descriptions as ADescriptions, DescriptionsItem as ADescriptionsItem, Tooltip as ATooltip } from 'ant-design-vue'
 import { useDesign } from '@/hooks/web/useDesign'
 import { propTypes } from '@/utils/propTypes'
 import { ref, unref, PropType, computed, useAttrs, useSlots } from 'vue'
@@ -32,26 +32,20 @@ const { getPrefixCls } = useDesign()
 
 const prefixCls = getPrefixCls('descriptions')
 
-const getBindValue = computed(() => {
-  const delArr: string[] = ['title', 'message', 'collapse', 'schema', 'data', 'class']
-  const obj = { ...attrs, ...props }
-  for (const key in obj) {
-    if (delArr.indexOf(key) !== -1) {
-      delete obj[key]
-    }
+const getDescriptionsProps = computed(() => {
+  const { class: _class, style: _style, ...descriptionProps } = attrs
+
+  return {
+    bordered: true,
+    column: unref(mobile) ? 1 : 3,
+    layout: (unref(mobile) ? 'vertical' : 'horizontal') as 'vertical' | 'horizontal',
+    ...descriptionProps
   }
-  return obj
 })
 
 const getBindItemValue = (item: DescriptionsSchema) => {
-  const delArr: string[] = ['field']
-  const obj = { ...item }
-  for (const key in obj) {
-    if (delArr.indexOf(key) !== -1) {
-      delete obj[key]
-    }
-  }
-  return obj
+  const { field, ...descriptionItemProps } = item
+  return descriptionItemProps
 }
 
 // 折叠
@@ -65,47 +59,33 @@ const toggleClick = () => {
 </script>
 
 <template>
-  <div
-    :class="[
-      prefixCls,
-      'bg-[var(--el-color-white)] dark:(bg-[var(--el-bg-color)] border-[var(--el-border-color)] border-1px)'
-    ]"
-  >
+  <div :class="[prefixCls, 'bg-white dark:(bg-[var(--ant-color-bg-container)] border-[var(--ant-color-border)] border-1px)']">
     <div
       v-if="title"
       :class="[
         `${prefixCls}-header`,
-        'h-50px flex justify-between items-center mb-10px border-bottom-1 border-solid border-[var(--tags-view-border-color)] px-10px cursor-pointer dark:border-[var(--el-border-color)]'
+        'h-50px flex justify-between items-center mb-10px border-bottom-1 border-solid border-[var(--tags-view-border-color)] px-10px cursor-pointer dark:border-[var(--ant-color-border)]'
       ]"
       @click="toggleClick"
     >
       <div :class="[`${prefixCls}-header__title`, 'relative font-18px font-bold ml-10px']">
         <div class="flex items-center">
           {{ title }}
-          <ElTooltip v-if="message" :content="message" placement="right">
-            <Icon icon="ep:warning" class="ml-5px" />
-          </ElTooltip>
+          <ATooltip v-if="message" :title="message" placement="right">
+            <Icon icon="ant-design:warning-outlined" class="ml-5px" />
+          </ATooltip>
         </div>
       </div>
-      <Icon v-if="collapse" :icon="show ? 'ep:arrow-down' : 'ep:arrow-up'" />
+      <Icon v-if="collapse" :icon="show ? 'ant-design:down-outlined' : 'ant-design:up-outlined'" />
     </div>
 
-    <ElCollapseTransition>
+    <Transition name="description-collapse">
       <div v-show="show" :class="[`${prefixCls}-content`, 'p-10px']">
-        <ElDescriptions
-          :column="2"
-          border
-          :direction="mobile ? 'vertical' : 'horizontal'"
-          v-bind="getBindValue"
-        >
+        <ADescriptions v-bind="getDescriptionsProps">
           <template v-if="slots['extra']" #extra>
             <slot name="extra"></slot>
           </template>
-          <ElDescriptionsItem
-            v-for="item in schema"
-            :key="item.field"
-            v-bind="getBindItemValue(item)"
-          >
+          <ADescriptionsItem v-for="item in schema" :key="item.field" v-bind="getBindItemValue(item)">
             <template #label>
               <slot :name="`${item.field}-label`" :label="item.label">{{ item.label }}</slot>
             </template>
@@ -113,10 +93,10 @@ const toggleClick = () => {
             <template #default>
               <slot :name="item.field" :row="data">{{ data[item.field] }}</slot>
             </template>
-          </ElDescriptionsItem>
-        </ElDescriptions>
+          </ADescriptionsItem>
+        </ADescriptions>
       </div>
-    </ElCollapseTransition>
+    </Transition>
   </div>
 </template>
 
@@ -131,15 +111,30 @@ const toggleClick = () => {
       left: -10px;
       width: 4px;
       height: 70%;
-      background: var(--el-color-primary);
+      background: #1677ff;
       content: '';
     }
   }
 }
 
 .@{prefix-cls}-content {
-  :deep(.@{elNamespace}-descriptions__cell) {
-    width: 0;
+  :deep(.ant-descriptions-item-content) {
+    min-width: 0;
+    word-break: break-all;
   }
+}
+
+.description-collapse-enter-active,
+.description-collapse-leave-active {
+  overflow: hidden;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+.description-collapse-enter-from,
+.description-collapse-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 </style>

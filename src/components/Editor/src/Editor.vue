@@ -4,7 +4,7 @@ import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import { IDomEditor, IEditorConfig, i18nChangeLanguage } from '@wangeditor/editor'
 import { propTypes } from '@/utils/propTypes'
 import { isNumber } from '@/utils/is'
-import { ElMessage } from 'element-plus'
+import { message } from 'ant-design-vue'
 import { useLocaleStore } from '@/store/modules/locale'
 
 const localeStore = useLocaleStore()
@@ -61,19 +61,19 @@ const editorConfig = computed((): IEditorConfig => {
       customAlert: (s: string, t: string) => {
         switch (t) {
           case 'success':
-            ElMessage.success(s)
+            message.success(s)
             break
           case 'info':
-            ElMessage.info(s)
+            message.info(s)
             break
           case 'warning':
-            ElMessage.warning(s)
+            message.warning(s)
             break
           case 'error':
-            ElMessage.error(s)
+            message.error(s)
             break
           default:
-            ElMessage.info(s)
+            message.info(s)
             break
         }
       },
@@ -118,20 +118,9 @@ defineExpose({
 <template>
   <div class="border-1 border-solid border-[var(--tags-view-border-color)] z-3000">
     <!-- 工具栏 -->
-    <Toolbar
-      :editor="editorRef"
-      :editorId="editorId"
-      class="border-bottom-1 border-solid border-[var(--tags-view-border-color)]"
-    />
+    <Toolbar :editor="editorRef" :editorId="editorId" class="border-bottom-1 border-solid border-[var(--tags-view-border-color)]" />
     <!-- 编辑器 -->
-    <Editor
-      v-model="valueHtml"
-      :editorId="editorId"
-      :defaultConfig="editorConfig"
-      :style="editorStyle"
-      @on-change="handleChange"
-      @on-created="handleCreated"
-    />
+    <Editor v-model="valueHtml" :editorId="editorId" :defaultConfig="editorConfig" :style="editorStyle" @on-change="handleChange" @on-created="handleCreated" />
   </div>
 </template>
 

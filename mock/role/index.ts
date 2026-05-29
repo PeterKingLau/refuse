@@ -44,7 +44,7 @@ const adminList = [
     name: 'ExternalLink',
     children: [
       {
-        path: 'https://element-plus-admin-doc.cn/',
+        path: 'https://antdv.com/components/overview-cn/',
         name: 'DocumentLink',
         meta: {
           title: 'router.document',
@@ -470,7 +470,7 @@ const testList: string[] = [
   '/dashboard/analysis',
   '/dashboard/workplace',
   'external-link',
-  'https://element-plus-admin-doc.cn/',
+  'https://antdv.com/components/overview-cn/',
   '/guide',
   '/guide/index',
   '/components',

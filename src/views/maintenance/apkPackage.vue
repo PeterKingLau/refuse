@@ -1,245 +1,260 @@
 <template>
-  <!-- 搜索框-->
-  <el-row>
-    <el-form :model="searchFormData" label-width="100px" :inline="true" v-if="showSearchForm">
-      <el-form-item label="设备类型：">
-        <el-select v-model="searchFormData.deviceTypeId" placeholder="请选择设备类型">
-          <el-option
-            v-for="item in deviceTypeArray"
-            :key="item.id"
-            :label="item.name"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
+  <div class="apk-package-page">
+    <AForm v-if="showSearchForm" :model="searchFormData" layout="horizontal" class="search-form">
+      <AFormItem label="设备类型" class="search-form-item">
+        <ASelect v-model:value="searchFormData.deviceTypeId" :options="deviceTypeOptions" allow-clear placeholder="请选择设备类型" />
+      </AFormItem>
 
-      <el-form-item label="软件类型：">
-        <el-select v-model="searchFormData.parts" placeholder="请选择设备类型">
-          <el-option :value="1" label="安卓升级包" />
-          <el-option :value="2" label="固件升级包" />
-        </el-select>
-      </el-form-item>
+      <AFormItem label="软件类型" class="search-form-item">
+        <ASelect v-model:value="searchFormData.parts" :options="packageSearchOptions" allow-clear placeholder="请选择软件类型" />
+      </AFormItem>
 
-      <el-form-item>
-        <el-button
-          type="primary"
-          class="btn"
-          @click="GetApkPackageData"
-          v-hasPermi="Permission.sec"
-        >
-          <el-icon><Search /></el-icon>
-          搜索
-        </el-button>
-      </el-form-item>
+      <AFormItem class="search-form-actions">
+        <ASpace>
+          <AButton type="primary" class="icon-button" @click="GetApkPackageData" v-hasPermi="Permission.sec">
+            <template #icon>
+              <Icon icon="ant-design:search-outlined" />
+            </template>
+            搜索
+          </AButton>
 
-      <el-form-item>
-        <el-button class="btn" @click="onReset">
-          <el-icon class="el-icon--left"><RefreshRight /></el-icon>
-          重置
-        </el-button>
-      </el-form-item>
-    </el-form>
-  </el-row>
+          <AButton class="icon-button" @click="onReset">
+            <template #icon>
+              <Icon icon="ant-design:reload-outlined" />
+            </template>
+            重置
+          </AButton>
+        </ASpace>
+      </AFormItem>
+    </AForm>
 
-  <!-- 操作按钮-->
-  <el-row>
-    <el-col :span="12">
-      <el-button type="primary" class="btn" v-hasPermi="Permission.add" @click="onClickAdd">
-        <el-icon><Plus /> </el-icon>
-        新增</el-button
-      >
-
-      <el-button type="success" class="btn" v-hasPermi="Permission.rev" v-if="false"
-        ><el-icon><EditPen /></el-icon>修改</el-button
-      >
-      <el-button
-        type="danger"
-        class="btn"
-        v-hasPermi="Permission.del"
-        :disabled="disableRemove"
-        @click="DeleteBatch"
-        ><el-icon><Close /></el-icon>删除</el-button
-      >
-    </el-col>
-
-    <el-col :span="12" style="text-align: right">
-      <el-tooltip content="隐藏搜索" placement="top-start">
-        <el-button circle @click="showSearchForm = !showSearchForm">
-          <el-icon><Search /></el-icon
-        ></el-button>
-      </el-tooltip>
-      <el-tooltip content="刷新" placement="top-start">
-        <el-button circle @click="onPageRest">
-          <el-icon><RefreshRight /></el-icon>
-        </el-button>
-      </el-tooltip>
-    </el-col>
-  </el-row>
-
-  <el-divider />
-
-  <el-row>
-    <el-table
-      ref="areaTableRef"
-      :data="HardwareLibrary"
-      style="width: 100%"
-      @selection-change="handleSelectionChange"
-    >
-      <el-table-column type="selection" width="55" />
-      <el-table-column label="记录编号" width="100" property="id" />
-      <el-table-column label="软件包类型" width="100" v-slot="scope">
-        {{ convertPackageType(scope.row.parts) }}
-      </el-table-column>
-      <el-table-column label="主版本号" width="100" property="A" />
-      <el-table-column label="次版本号" width="100" property="B" />
-      <el-table-column label="修改号" width="100" property="C" />
-      <el-table-column label="文件名" width="300" property="file_name" />
-      <el-table-column label="创建时间" width="300" v-slot="scope">
-        {{ FormatDate(scope.row.create_time) }}
-      </el-table-column>
-      <el-table-column label="操作" width="200" v-slot="scope">
-        <el-link type="primary" @click="doWork(scope.row)">推送</el-link>
-      </el-table-column>
-    </el-table>
-  </el-row>
-  <el-row>
-    <el-pagination
-      v-model:current-page="currentPage"
-      v-model:page-size="pageSize"
-      :page-sizes="[5, 10, 15, 20, 50, 100]"
-      :small="small"
-      :disabled="disabled"
-      :background="background"
-      layout="total, sizes, prev, pager, next, jumper"
-      :total="total"
-      @size-change="GetApkPackageData"
-      @current-change="GetApkPackageData"
-    />
-  </el-row>
-
-  <!-- 添加 dialog-->
-
-  <el-dialog v-model="AddDialogVisible" title="添加一个软件包" width="40%">
-    <el-form-item label="设备类型" label-width="120px">
-      <el-select v-model="AddPackageData.deviceTypeId" placeholder="请选择设备类型">
-        <el-option
-          v-for="item in deviceTypeArray"
-          :key="item.id"
-          :label="item.name"
-          :value="item.id"
-        />
-      </el-select>
-    </el-form-item>
-
-    <el-form :model="AddPackageData" label-width="120px">
-      <el-form-item label="主版本号">
-        <el-input v-model="AddPackageData.a" class="addInput" />
-      </el-form-item>
-      <el-form-item label="次版本号">
-        <el-input v-model="AddPackageData.b" class="addInput" />
-      </el-form-item>
-      <el-form-item label="修改号">
-        <el-input v-model="AddPackageData.c" class="addInput" />
-      </el-form-item>
-
-      <el-form-item label="软件包类型">
-        <el-select v-model="AddPackageData.parts" placeholder="请选择软件包类型">
-          <el-option :value="1" label="安卓软件包" />
-          <el-option :value="2" label="硬件固件包" />
-          <el-option :value="3" label="DTU软件包" />
-          <el-option :value="4" label="DTU固件包" />
-        </el-select>
-      </el-form-item>
-
-      <el-form-item label="上传文件">
-        <el-upload
-          ref="uploadRef"
-          class="upload-demo"
-          drag
-          :action="UpHarwarePackage"
-          :on-success="handleAvatarSuccess"
-          :headers="headObject"
-          :limit="1"
-          :on-remove="deleteFile"
-        >
-          <el-icon class="el-icon--upload"><upload-filled /></el-icon>
-          <div class="el-upload__text"
-            >文件拖入 或者 <em>点击选择文件</em><br />仅限APK和Bin ,hex文件
-          </div>
-          <template #tip>
-            <div class="el-upload__tip"> </div>
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <AButton type="primary" class="icon-button" v-hasPermi="Permission.add" @click="onClickAdd">
+          <template #icon>
+            <Icon icon="ant-design:plus-outlined" />
           </template>
-        </el-upload>
-      </el-form-item>
-      <el-form-item label="备注">
-        <el-input v-model="AddPackageData.note" class="addInput" type="textarea" :rows="3" />
-      </el-form-item>
-    </el-form>
-    <template #footer>
-      <span class="dialog-footer">
-        <el-button @click="AddDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="AddPackage()"> 确定 </el-button>
-      </span>
-    </template>
-  </el-dialog>
+          新增
+        </AButton>
 
-  <!-- 推送  -->
+        <AButton danger class="icon-button" v-hasPermi="Permission.del" :disabled="disableRemove" @click="DeleteBatch">
+          <template #icon>
+            <Icon icon="ant-design:delete-outlined" />
+          </template>
+          删除
+        </AButton>
+      </div>
 
-  <el-dialog v-model="PushdialogVisible" title="推送升级包" width="30%" :before-close="handleClose">
-    <el-form :model="PushData" label-width="120px">
-      <el-form-item label="下载时间">
-        <el-date-picker
-          v-model="PushData.currentData"
-          type="datetime"
-          placeholder="请选择推送时间"
-          value-format="YYYY-MM-DD HH:mm:ss"
-        />
-      </el-form-item>
-      <el-form-item label="推送类别">
-        <el-radio-group v-model="PushData.type" class="ml-4" @change="typeChange">
-          <el-radio :label="1" size="large">单一设备</el-radio>
-          <el-radio :label="2" size="large">全部适合的设备</el-radio>
-        </el-radio-group>
-      </el-form-item>
-      <el-form-item label="推送设备">
-        <el-input
-          v-model="PushData.serialNumber"
-          placeholder="请输入要推送的设备串号"
-          :disabled="signDisabled"
-        />
-      </el-form-item>
-    </el-form>
+      <div class="toolbar-right">
+        <ATooltip :title="showSearchForm ? '隐藏搜索' : '显示搜索'">
+          <AButton shape="circle" @click="showSearchForm = !showSearchForm">
+            <template #icon>
+              <Icon icon="ant-design:search-outlined" />
+            </template>
+          </AButton>
+        </ATooltip>
+        <ATooltip title="刷新">
+          <AButton shape="circle" @click="onPageRest">
+            <template #icon>
+              <Icon icon="ant-design:reload-outlined" />
+            </template>
+          </AButton>
+        </ATooltip>
+      </div>
+    </div>
 
-    <template #footer>
-      <span class="dialog-footer">
-        <el-button @click="PushdialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="doPush"> 确定 </el-button>
-      </span>
-    </template>
-  </el-dialog>
+    <ATable row-key="id" :columns="columns" :data-source="HardwareLibrary" :pagination="false" :row-selection="rowSelection" bordered>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'parts'">
+          {{ convertPackageType(record.parts) }}
+        </template>
+
+        <template v-else-if="column.key === 'create_time'">
+          {{ FormatDate(record.create_time) }}
+        </template>
+
+        <template v-else-if="column.key === 'action'">
+          <AButton type="link" class="table-action" @click="doWork(record)">推送</AButton>
+        </template>
+      </template>
+    </ATable>
+
+    <div class="pagination-wrap">
+      <APagination
+        v-model:current="currentPage"
+        v-model:page-size="pageSize"
+        :page-size-options="['5', '10', '15', '20', '50', '100']"
+        :show-size-changer="true"
+        :disabled="disabled"
+        :total="total"
+        :show-total="(totalCount) => `共 ${totalCount} 条`"
+        show-quick-jumper
+        @change="handlePageChange"
+        @show-size-change="handlePageChange"
+      />
+    </div>
+
+    <AModal v-model:open="AddDialogVisible" title="添加一个软件包" width="720px" :destroy-on-close="true">
+      <AForm :model="AddPackageData" layout="vertical">
+        <ARow :gutter="16">
+          <ACol :span="12">
+            <AFormItem label="设备类型">
+              <ASelect v-model:value="AddPackageData.deviceTypeId" :options="deviceTypeOptions" placeholder="请选择设备类型" />
+            </AFormItem>
+          </ACol>
+
+          <ACol :span="12">
+            <AFormItem label="软件包类型">
+              <ASelect v-model:value="AddPackageData.parts" :options="packageAddOptions" placeholder="请选择软件包类型" />
+            </AFormItem>
+          </ACol>
+
+          <ACol :span="8">
+            <AFormItem label="主版本号">
+              <AInput v-model:value="AddPackageData.a" />
+            </AFormItem>
+          </ACol>
+
+          <ACol :span="8">
+            <AFormItem label="次版本号">
+              <AInput v-model:value="AddPackageData.b" />
+            </AFormItem>
+          </ACol>
+
+          <ACol :span="8">
+            <AFormItem label="修改号">
+              <AInput v-model:value="AddPackageData.c" />
+            </AFormItem>
+          </ACol>
+
+          <ACol :span="24">
+            <AFormItem label="上传文件">
+              <AUploadDragger v-model:file-list="uploadFileList" :action="UpHarwarePackage" :headers="headObject" :max-count="1" @change="handleAvatarSuccess" @remove="deleteFile">
+                <p class="upload-icon">
+                  <Icon icon="ant-design:inbox-outlined" :size="36" />
+                </p>
+                <p>文件拖入，或者点击选择文件</p>
+                <p class="upload-tip">仅限 APK、Bin、hex 文件</p>
+              </AUploadDragger>
+            </AFormItem>
+          </ACol>
+
+          <ACol :span="24">
+            <AFormItem label="备注">
+              <ATextarea v-model:value="AddPackageData.note" :rows="3" />
+            </AFormItem>
+          </ACol>
+        </ARow>
+      </AForm>
+
+      <template #footer>
+        <ASpace>
+          <AButton @click="AddDialogVisible = false">取消</AButton>
+          <AButton type="primary" @click="AddPackage">确定</AButton>
+        </ASpace>
+      </template>
+    </AModal>
+
+    <AModal v-model:open="PushdialogVisible" title="推送升级包" width="520px" @cancel="handleClose">
+      <AForm :model="PushData" layout="vertical">
+        <AFormItem label="下载时间">
+          <ADatePicker v-model:value="PushData.currentData" show-time value-format="YYYY-MM-DD HH:mm:ss" class="w-full" placeholder="请选择推送时间" />
+        </AFormItem>
+
+        <AFormItem label="推送类别">
+          <ARadioGroup v-model:value="PushData.type" :options="pushTypeOptions" option-type="button" button-style="solid" @change="typeChange" />
+        </AFormItem>
+
+        <AFormItem label="推送设备">
+          <AInput v-model:value="PushData.serialNumber" placeholder="请输入要推送的设备串号" :disabled="signDisabled" />
+        </AFormItem>
+      </AForm>
+
+      <template #footer>
+        <ASpace>
+          <AButton @click="PushdialogVisible = false">取消</AButton>
+          <AButton type="primary" @click="doPush">确定</AButton>
+        </ASpace>
+      </template>
+    </AModal>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, Ref, onMounted, computed, inject } from 'vue'
-import { GetInterFaceURL, FormatDate } from '@/utils/tools'
-import { service, PATH_URL } from '@/config/axios/service'
-import { ElMessage, UploadInstance, ElMessageBox } from 'element-plus'
+import { computed, inject, onMounted, ref } from 'vue'
+import {
+  Button as AButton,
+  Col as ACol,
+  DatePicker as ADatePicker,
+  Form as AForm,
+  FormItem as AFormItem,
+  Input as AInput,
+  Modal as AModal,
+  Pagination as APagination,
+  RadioGroup as ARadioGroup,
+  Row as ARow,
+  Select as ASelect,
+  Space as ASpace,
+  Table as ATable,
+  Tooltip as ATooltip,
+  Upload as AUpload,
+  message
+} from 'ant-design-vue'
+import type { TableColumnsType, UploadChangeParam } from 'ant-design-vue'
 import qs from 'qs'
+import { FormatDate } from '@/utils/tools'
+import { PATH_URL, service } from '@/config/axios/service'
+import { Icon } from '@/components/Icon'
+
+const AUploadDragger = AUpload.Dragger
+const ATextarea = AInput.TextArea
+
+type TableKey = string | number
+
+interface SearchFormStruct {
+  deviceTypeId?: number
+  parts?: number
+  page?: number
+  size?: number
+}
+
+interface AddPackageStruct {
+  a?: string
+  b?: string
+  c?: string
+  deviceTypeId?: number
+  fileName?: string
+  parts?: number
+  note?: string
+}
+
+interface PushStruct {
+  currentData?: string
+  serialNumber?: string
+  type?: number
+  id?: number
+}
+
+interface HardwareRecord {
+  [key: string]: any
+  id: number
+}
 
 const currentPage = ref(1)
 const total = ref(0)
 const pageSize = ref(5)
-const small = ref(false)
-const background = ref(false)
 const disabled = ref(false)
 
-const reload: any = inject('reload')
+const reload = inject<() => void>('reload')
 
 const onPageRest = () => {
-  reload()
+  if (reload) {
+    reload()
+    return
+  }
+  GetApkPackageData()
 }
 
-//#region  页面加载
 onMounted(() => {
   GetDeviceType()
   GetProduct()
@@ -247,47 +262,53 @@ onMounted(() => {
 })
 
 const GetProduct = () => {
-  service.get(GetInterFaceURL('/Permission/getDepartmentForSelect')).then((res: any) => {
-    ProductArray.value = res.data
+  service.get(PATH_URL + '/Permission/getDepartmentForSelect').then((res: any) => {
+    ProductArray.value = res.data || []
   })
 }
 
 const GetDeviceType = () => {
-  service.post(GetInterFaceURL('/MachineMange/getDeviceType')).then((res: any) => {
-    deviceTypeArray.value = res.data
+  service.post(PATH_URL + '/MachineMange/getDeviceType').then((res: any) => {
+    deviceTypeArray.value = res.data || []
   })
 }
 
-//#endregion
+const packageSearchOptions = [
+  { value: 1, label: '安卓升级包' },
+  { value: 2, label: '固件升级包' }
+]
 
-//#region  搜索相关
+const packageAddOptions = [
+  { value: 1, label: '安卓软件包' },
+  { value: 2, label: '硬件固件包' },
+  { value: 3, label: 'DTU软件包' },
+  { value: 4, label: 'DTU固件包' }
+]
+
+const pushTypeOptions = [
+  { value: 1, label: '单一设备' },
+  { value: 2, label: '全部适合的设备' }
+]
+
 const initSearchData = () => {
   searchFormData.value.deviceTypeId = undefined
   searchFormData.value.parts = undefined
 }
 
 const convertPackageType = (type: number): string => {
-  let desc = '未知类型'
   switch (type) {
     case 1:
-      desc = '安卓升级包'
-      break
+      return '安卓升级包'
     case 2:
-      desc = '固件升级包'
-      break
+      return '固件升级包'
     case 3:
-      desc = 'DTU升级包'
-      break
+      return 'DTU升级包'
     case 4:
-      desc = 'DTU固件包'
-      break
+      return 'DTU固件包'
+    default:
+      return '未知类型'
   }
-  return desc
 }
-
-//#endregion
-
-//#region 按钮权限
 
 const Permission = ref({
   add: 'mac_apk_add',
@@ -297,180 +318,168 @@ const Permission = ref({
   sec: 'mac_apk_sec'
 })
 
-//#endregion
+const ProductArray = ref<any[]>([])
+const deviceTypeArray = ref<any[]>([])
+const searchFormData = ref<SearchFormStruct>({})
+const showSearchForm = ref(true)
+const HardwareLibrary = ref<HardwareRecord[]>([])
 
-//#region  搜索相关
+const deviceTypeOptions = computed(() => deviceTypeArray.value.map((item) => ({ label: item.name, value: item.id })))
 
-let ProductArray: Ref<any[]> = ref([])
-
-let deviceTypeArray: Ref<any[]> = ref([])
-
-let searchFormData: Ref<any> = ref({})
-
-let showSearchForm = ref(true)
+const columns: TableColumnsType<HardwareRecord> = [
+  { title: '记录编号', dataIndex: 'id', key: 'id', width: 100 },
+  { title: '软件包类型', dataIndex: 'parts', key: 'parts', width: 130 },
+  { title: '主版本号', dataIndex: 'A', key: 'A', width: 100 },
+  { title: '次版本号', dataIndex: 'B', key: 'B', width: 100 },
+  { title: '修改号', dataIndex: 'C', key: 'C', width: 100 },
+  { title: '文件名', dataIndex: 'file_name', key: 'file_name', width: 300 },
+  { title: '创建时间', dataIndex: 'create_time', key: 'create_time', width: 220 },
+  { title: '操作', key: 'action', width: 120 }
+]
 
 const onReset = () => {
   initSearchData()
+  currentPage.value = 1
+  GetApkPackageData()
+}
+
+const handlePageChange = (page: number, size: number) => {
+  currentPage.value = page
+  pageSize.value = size
+  GetApkPackageData()
 }
 
 const GetApkPackageData = () => {
   searchFormData.value.page = currentPage.value
   searchFormData.value.size = pageSize.value
-  service
-    .post(PATH_URL + '/HardwareLibrary/GetHardwareLib', searchFormData.value)
-    .then((res: any) => {
-      console.log('res', res)
-      HardwareLibrary.value = res.data.records
-      total.value = res.data.total
-    })
+  service.post(PATH_URL + '/HardwareLibrary/GetHardwareLib', searchFormData.value).then((res: any) => {
+    HardwareLibrary.value = res.data?.records || []
+    total.value = res.data?.total || 0
+    selectedRowKeys.value = []
+    DeleteIdArray = []
+  })
 }
 
-let HardwareLibrary: Ref<any[]> = ref([])
+const uploadFileList = ref<any[]>([])
+const AddPackageData = ref<AddPackageStruct>({})
+const AddDialogVisible = ref(false)
 
-//#endregion
-
-//#region  添加窗口
-
-const uploadRef = ref<UploadInstance>()
-
-let AddPackageData: Ref<any> = ref({})
 const onClickAdd = () => {
   InitAddPackageData()
   AddDialogVisible.value = true
 }
-// 上传图片地址
-const UpHarwarePackage = computed(() => {
-  return PATH_URL + '/Common/upLoadHardware'
-})
+
+const UpHarwarePackage = computed(() => PATH_URL + '/Common/upLoadHardware')
 
 const InitAddPackageData = () => {
-  AddPackageData.value.a = undefined
-  AddPackageData.value.b = undefined
-  AddPackageData.value.c = undefined
-  AddPackageData.value.deviceTypeId = undefined
-  AddPackageData.value.fileName = undefined
-  AddPackageData.value.parts = undefined
-  AddPackageData.value.note = undefined
+  AddPackageData.value = {
+    a: undefined,
+    b: undefined,
+    c: undefined,
+    deviceTypeId: undefined,
+    fileName: undefined,
+    parts: undefined,
+    note: undefined
+  }
+  uploadFileList.value = []
 }
 
-let AddDialogVisible = ref(false)
+const handleAvatarSuccess = (info: UploadChangeParam) => {
+  if (info.file.status !== 'done') return
 
-const handleAvatarSuccess = (res: any) => {
-  console.log('on-success', res.data)
-
-  if (res.data == undefined) {
-    ElMessage(res.message)
-    uploadRef.value!.clearFiles()
+  const res = info.file.response
+  if (res?.data == undefined) {
+    message.warning(res?.message || '上传失败')
+    uploadFileList.value = []
     AddPackageData.value.fileName = undefined
   } else {
     AddPackageData.value.fileName = res.data
   }
 }
 
-const deleteFile = (file) => {
-  service.get(PATH_URL + '/Common/deleteHardwarePackage?fileName=' + file.name).then((res: any) => {
-    console.log(res)
-  })
+const deleteFile = (file: any) => {
+  service.get(PATH_URL + '/Common/deleteHardwarePackage?fileName=' + file.name)
+  return true
 }
 
-const headObject = {
-  Authorization: localStorage.getItem('token')
-}
+const headObject = computed(() => ({
+  Authorization: localStorage.getItem('token') || ''
+}))
 
 const AddPackage = () => {
-  console.log('AddPackage', AddPackageData.value)
   if (AddPackageData.value.fileName == undefined) {
-    ElMessage('请选择上传文件或等待文件上传完成')
+    message.warning('请选择上传文件或等待文件上传完成')
     return
   }
 
   service.post(PATH_URL + '/HardwareLibrary/AddHardwareLib', AddPackageData.value).then(() => {
-    ElMessage('操作成功')
-    uploadRef.value!.clearFiles()
+    message.success('操作成功')
+    uploadFileList.value = []
     GetApkPackageData()
     AddDialogVisible.value = false
   })
 }
 
-//#endregion
-
-//#region 删除相关
-let disableRemove = ref(true)
-
+const selectedRowKeys = ref<TableKey[]>([])
 let DeleteIdArray: number[] = []
-const handleSelectionChange = (val) => {
-  if (val.length > 0) {
-    disableRemove.value = false
-  } else {
-    disableRemove.value = true
-  }
+const disableRemove = computed(() => selectedRowKeys.value.length === 0)
 
-  DeleteIdArray = []
-  val.forEach((row) => {
-    DeleteIdArray.push(row.id)
-  })
-}
+const rowSelection = computed(() => ({
+  selectedRowKeys: selectedRowKeys.value,
+  onChange: (keys: TableKey[], rows: HardwareRecord[]) => {
+    selectedRowKeys.value = keys
+    DeleteIdArray = rows.map((row) => row.id)
+  }
+}))
 
 const DeleteBatch = () => {
-  let title = '你确定要删除这些软件包信息?'
-  ElMessageBox.confirm(title, '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    console.log(DeleteIdArray)
-    service
-      .post(
-        PATH_URL + '/HardwareLibrary/DeleteHardwareLib',
-        qs.stringify(
-          {
-            ids: DeleteIdArray
-          },
-          { arrayFormat: 'brackets' }
-        )
-      )
-      .then(() => {
-        ElMessage('操作成功')
-        GetApkPackageData()
-      })
+  if (DeleteIdArray.length === 0) {
+    message.warning('请选择要删除的软件包')
+    return
+  }
+
+  AModal.confirm({
+    title: '提示',
+    content: '确定要删除这些软件包信息吗？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      await service.post(PATH_URL + '/HardwareLibrary/DeleteHardwareLib', qs.stringify({ ids: DeleteIdArray }, { arrayFormat: 'brackets' }))
+      message.success('操作成功')
+      GetApkPackageData()
+    }
   })
 }
 
-//#endregion
-
-//#region  推送相关
-
-let PushData: Ref<any> = ref({})
+const PushData = ref<PushStruct>({})
+let currentRowId: number | undefined
+const PushdialogVisible = ref(false)
+const signDisabled = ref(false)
 
 const initPushData = () => {
-  PushData.value.currentData = new Date()
-  PushData.value.serialNumber = undefined
-  PushData.value.type = 2
-  PushData.value.id = undefined
+  PushData.value = {
+    currentData: undefined,
+    serialNumber: undefined,
+    type: 2,
+    id: undefined
+  }
+  signDisabled.value = true
 }
 
-let currentRowId: number | undefined = undefined
-
-const doWork = (row: any) => {
+const doWork = (row: Record<string, any>) => {
   currentRowId = row.id
   initPushData()
   PushdialogVisible.value = true
 }
 
-let PushdialogVisible = ref(false)
-
 const handleClose = () => {
-  console.log('close')
   PushdialogVisible.value = false
 }
 
-let signDisabled = ref(false)
-
 const doPush = () => {
   PushData.value.id = currentRowId
-  console.log('doPush', PushData.value)
   service.post(PATH_URL + '/HardwareLibrary/SetPushRecords', PushData.value).then(() => {
-    ElMessage('设置完成')
+    message.success('设置完成')
     PushdialogVisible.value = false
   })
 }
@@ -483,12 +492,118 @@ const typeChange = () => {
     signDisabled.value = false
   }
 }
-
-//#endregion
 </script>
 
 <style lang="less" scoped>
-.addInput {
-  width: 380px;
+.apk-package-page {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.search-form {
+  display: grid;
+  padding: 16px;
+  background-color: #fff;
+  border-radius: 6px;
+  gap: 14px 16px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  align-items: end;
+
+  :deep(.ant-form-item) {
+    display: flex;
+    margin-bottom: 0;
+    align-items: center;
+    flex-wrap: nowrap;
+  }
+
+  :deep(.ant-form-item-label) {
+    flex: 0 0 80px;
+    padding: 0 10px 0 0;
+    line-height: 1;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  :deep(.ant-form-item-label > label) {
+    height: 32px;
+    color: #262626;
+    font-weight: 500;
+  }
+
+  :deep(.ant-form-item-control) {
+    min-width: 0;
+    flex: 1;
+  }
+
+  :deep(.ant-input),
+  :deep(.ant-select) {
+    width: 100%;
+  }
+}
+
+.search-form-item,
+.search-form-actions {
+  min-width: 0;
+}
+
+.search-form-actions {
+  :deep(.ant-form-item-control-input-content) {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.toolbar-left,
+.toolbar-right {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.icon-button,
+.table-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  :deep(.v-icon),
+  :deep(iconify-icon) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+}
+
+.table-action {
+  height: 24px;
+  padding: 0;
+  gap: 4px;
+}
+
+.pagination-wrap {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.upload-icon {
+  margin-bottom: 8px;
+  color: #8c8c8c;
+}
+
+.upload-tip {
+  color: #8c8c8c;
+}
+
+.w-full {
+  width: 100%;
 }
 </style>

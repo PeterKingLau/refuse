@@ -2,7 +2,7 @@
 import { ContentWrap } from '@/components/ContentWrap'
 import { Search } from '@/components/Search'
 import { useI18n } from '@/hooks/web/useI18n'
-import { ElButton, ElTag } from 'element-plus'
+import { Button as AButton, Tag as ATag } from 'ant-design-vue'
 import { Table } from '@/components/Table'
 import { getTableListApi, delTableListApi } from '@/api/table'
 import { useTable } from '@/hooks/web/useTable'
@@ -77,16 +77,11 @@ const crudSchemas = reactive<CrudSchema[]>([
     label: t('tableDemo.importance'),
     formatter: (_: Recordable, __: TableColumn, cellValue: number) => {
       return h(
-        ElTag,
+        ATag,
         {
-          type: cellValue === 1 ? 'success' : cellValue === 2 ? 'warning' : 'danger'
+          color: cellValue === 1 ? 'success' : cellValue === 2 ? 'warning' : 'error'
         },
-        () =>
-          cellValue === 1
-            ? t('tableDemo.important')
-            : cellValue === 2
-              ? t('tableDemo.good')
-              : t('tableDemo.commonly')
+        () => (cellValue === 1 ? t('tableDemo.important') : cellValue === 2 ? t('tableDemo.good') : t('tableDemo.commonly'))
       )
     },
     search: {
@@ -183,10 +178,7 @@ const delData = async (row: TableData | null, multiple: boolean) => {
   const { delList, getSelections } = methods
   const selections = await getSelections()
   delLoading.value = true
-  await delList(
-    multiple ? selections.map((v) => v.id) : [tableObject.currentRow?.id as string],
-    multiple
-  ).finally(() => {
+  await delList(multiple ? selections.map((v) => v.id) : [tableObject.currentRow?.id as string], multiple).finally(() => {
     delLoading.value = false
   })
 }
@@ -197,9 +189,9 @@ const delData = async (row: TableData | null, multiple: boolean) => {
     <Search :schema="allSchemas.searchSchema" @search="setSearchParams" @reset="setSearchParams" />
 
     <div class="mb-10px">
-      <ElButton :loading="delLoading" type="danger" @click="delData(null, true)">
+      <AButton :loading="delLoading" danger @click="delData(null, true)">
         {{ t('exampleDemo.del') }}
-      </ElButton>
+      </AButton>
     </div>
 
     <Table
@@ -214,9 +206,9 @@ const delData = async (row: TableData | null, multiple: boolean) => {
       @register="register"
     >
       <template #action="{ row }">
-        <ElButton type="danger" @click="delData(row, false)">
+        <AButton danger @click="delData(row, false)">
           {{ t('exampleDemo.del') }}
-        </ElButton>
+        </AButton>
       </template>
     </Table>
   </ContentWrap>

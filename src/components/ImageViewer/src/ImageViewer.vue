@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ElImageViewer } from 'element-plus'
-import { computed, ref, PropType } from 'vue'
+import { Image as AImage, ImagePreviewGroup as AImagePreviewGroup } from 'ant-design-vue'
+import { computed, ref, watch, PropType } from 'vue'
 import { propTypes } from '@/utils/propTypes'
 
 const props = defineProps({
@@ -16,19 +16,61 @@ const props = defineProps({
   show: propTypes.bool.def(false)
 })
 
-const getBindValue = computed(() => {
-  const propsData: Recordable = { ...props }
-  delete propsData.show
-  return propsData
-})
-
 const show = ref(props.show)
+const current = ref(props.initialIndex)
+
+const preview = computed(() => ({
+  visible: show.value,
+  current: current.value,
+  zIndex: props.zIndex,
+  maskClosable: props.hideOnClickModal,
+  getContainer: props.appendToBody ? undefined : false,
+  onVisibleChange: (visible: boolean) => {
+    show.value = visible
+  }
+}))
+
+watch(
+  () => props.show,
+  (visible) => {
+    show.value = visible
+    if (visible) {
+      current.value = props.initialIndex
+    }
+  }
+)
+
+watch(
+  () => props.initialIndex,
+  (index) => {
+    current.value = index
+  }
+)
 
 const close = () => {
   show.value = false
 }
+
+defineExpose({
+  close
+})
 </script>
 
 <template>
-  <ElImageViewer v-if="show" v-bind="getBindValue" @close="close" />
+  <AImagePreviewGroup :preview="preview">
+    <span class="image-viewer-source">
+      <AImage v-for="url in urlList" :key="url" :src="url" />
+    </span>
+  </AImagePreviewGroup>
 </template>
+
+<style lang="less" scoped>
+.image-viewer-source {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+}
+</style>

@@ -66,7 +66,7 @@ export default defineConfig({
         },
         '.dark .hover-trigger': {
           '&:hover': {
-            backgroundColor: 'var(--el-bg-color-overlay)'
+            backgroundColor: 'var(--ant-color-fill-tertiary)'
           }
         },
         ...obj

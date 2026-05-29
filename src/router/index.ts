@@ -105,7 +105,7 @@ export const constantRouterMap: AppRouteRecordRaw[] = [
 //     name: 'ExternalLink',
 //     children: [
 //       {
-//         path: 'https://element-plus-admin-doc.cn/',
+//         path: 'https://antdv.com/',
 //         name: 'DocumentLink',
 //         meta: {
 //           title: t('router.document'),
@@ -528,8 +528,8 @@ export const constantRouterMap: AppRouteRecordRaw[] = [
 //   {
 //     path: '/test',
 //     component: Layout,
-//     redirect: '/test',
-//     name: 'Test',
+//     redirect: '/dash',
+//     name: 'Dash',
 //     meta: {
 //       title: '测试',
 //       icon: 'eos-icons:role-binding',
@@ -537,9 +537,9 @@ export const constantRouterMap: AppRouteRecordRaw[] = [
 //     },
 //     children: [
 //       {
-//         path: 'test',
-//         component: () => import('@/views/test/test.vue'),
-//         name: 'Test',
+//         path: 'index',
+//         component: () => import('@/views/dash/index.vue'),
+//         name: 'Dash',
 //         meta: {
 //           title: '测试页面'
 //         }

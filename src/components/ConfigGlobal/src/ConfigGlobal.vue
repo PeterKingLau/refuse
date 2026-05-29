@@ -1,20 +1,17 @@
 <script setup lang="ts">
 import { provide, computed, watch, onMounted } from 'vue'
-import { propTypes } from '@/utils/propTypes'
-import { ElConfigProvider } from 'element-plus'
+import { ConfigProvider } from 'ant-design-vue'
+import type { Locale } from 'ant-design-vue/es/locale'
 import { useLocaleStore } from '@/store/modules/locale'
 import { useWindowSize } from '@vueuse/core'
 import { useAppStore } from '@/store/modules/app'
 import { setCssVar } from '@/utils'
-import { useDesign } from '@/hooks/web/useDesign'
-import { ElementPlusSize } from '@/types/elementPlus'
-
-const { variables } = useDesign()
+import type { AppSize } from '@/types/ui'
 
 const appStore = useAppStore()
 
-const props = defineProps({
-  size: propTypes.oneOf<ElementPlusSize[]>(['default', 'small', 'large']).def('default')
+const props = withDefaults(defineProps<{ size?: AppSize }>(), {
+  size: 'default'
 })
 
 provide('configGlobal', props)
@@ -55,15 +52,12 @@ watch(
 const localeStore = useLocaleStore()
 
 const currentLocale = computed(() => localeStore.currentLocale)
+
+const configLocale = computed(() => currentLocale.value.elLocale as Locale | undefined)
 </script>
 
 <template>
-  <ElConfigProvider
-    :namespace="variables.elNamespace"
-    :locale="currentLocale.elLocale"
-    :message="{ max: 1 }"
-    :size="size"
-  >
+  <ConfigProvider :locale="configLocale">
     <slot></slot>
-  </ElConfigProvider>
+  </ConfigProvider>
 </template>

@@ -2,7 +2,7 @@
 import { ContentWrap } from '@/components/ContentWrap'
 import { useI18n } from '@/hooks/web/useI18n'
 import { useIntro } from '@/hooks/web/useIntro'
-import { ElButton } from 'element-plus'
+import { Button as AButton } from 'ant-design-vue'
 
 const { t } = useI18n()
 
@@ -15,6 +15,6 @@ const guideStart = () => {
 
 <template>
   <ContentWrap :title="t('guideDemo.guide')" :message="t('guideDemo.message')">
-    <ElButton type="primary" @click="guideStart">{{ t('guideDemo.start') }}</ElButton>
+    <AButton type="primary" @click="guideStart">{{ t('guideDemo.start') }}</AButton>
   </ContentWrap>
 </template>

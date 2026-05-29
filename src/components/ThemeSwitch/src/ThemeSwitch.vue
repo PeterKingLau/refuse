@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useAppStore } from '@/store/modules/app'
-import { ElSwitch } from 'element-plus'
+import { Switch as ASwitch } from 'ant-design-vue'
 import { useIcon } from '@/hooks/web/useIcon'
 import { useDesign } from '@/hooks/web/useDesign'
 
@@ -19,23 +19,18 @@ const appStore = useAppStore()
 const isDark = ref(appStore.getIsDark)
 
 // 设置switch的背景颜色
-const blackColor = 'var(--el-color-black)'
-
 const themeChange = (val: boolean) => {
   appStore.setIsDark(val)
 }
 </script>
 
 <template>
-  <ElSwitch
-    :class="prefixCls"
-    v-model="isDark"
-    inline-prompt
-    :border-color="blackColor"
-    :inactive-color="blackColor"
-    :active-color="blackColor"
-    :active-icon="Sun"
-    :inactive-icon="CrescentMoon"
-    @change="themeChange"
-  />
+  <ASwitch :class="prefixCls" v-model:checked="isDark" @change="themeChange">
+    <template #checkedChildren>
+      <component :is="Sun" />
+    </template>
+    <template #unCheckedChildren>
+      <component :is="CrescentMoon" />
+    </template>
+  </ASwitch>
 </template>

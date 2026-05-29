@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ElInput } from 'element-plus'
+import { Input as AInput } from 'ant-design-vue'
 import { ContentWrap } from '@/components/ContentWrap'
 import { useI18n } from '@/hooks/web/useI18n'
 import { ref } from 'vue'
@@ -15,6 +15,6 @@ const text = ref('')
 
 <template>
   <ContentWrap :title="t('levelDemo.menu')">
-    <div class="flex items-center"> Menu12: <ElInput v-model="text" class="pl-20px" /> </div>
+    <div class="flex items-center"> Menu12: <AInput v-model:value="text" class="pl-20px" /> </div>
   </ContentWrap>
 </template>

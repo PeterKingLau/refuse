@@ -286,7 +286,7 @@ export default {
     inputPassword: '密码输入框',
     passwordStrength: '密码强度',
     defaultForm: '全部示例',
-    formDes: '基于 ElementPlus 的 Form 组件二次封装，实现数据驱动，支持所有 Form 参数',
+    formDes: '基于 Ant Design Vue 的 Form 组件二次封装，实现数据驱动，支持所有 Form 参数',
     example: '示例',
     operate: '操作',
     change: '更改',
@@ -305,22 +305,19 @@ export default {
   guideDemo: {
     guide: '引导页',
     start: '开始',
-    message:
-      '引导页对于一些第一次进入项目的人很有用，你可以简单介绍下项目的功能。引导页基于 intro.js'
+    message: '引导页对于一些第一次进入项目的人很有用，你可以简单介绍下项目的功能。引导页基于 intro.js'
   },
   iconDemo: {
     icon: '图标',
     localIcon: '本地图标',
     iconify: 'Iconify组件',
     recommendedUse: '推荐使用',
-    recommendeDes:
-      'Iconify组件基本包含所有的图标，你可以查询到你想要的任何图标。并且打包只会打包所用到的图标。',
+    recommendeDes: 'Iconify组件基本包含所有的图标，你可以查询到你想要的任何图标。并且打包只会打包所用到的图标。',
     accessAddress: '访问地址'
   },
   echartDemo: {
     echart: '图表',
-    echartDes:
-      '基于 echarts 二次封装组件，自适应宽度，只需传入 options 与 height 属性即可展示对应的图表。'
+    echartDes: '基于 echarts 二次封装组件，自适应宽度，只需传入 options 与 height 属性即可展示对应的图表。'
   },
   countToDemo: {
     countTo: '数字动画',
@@ -389,7 +386,7 @@ export default {
   },
   tableDemo: {
     table: '表格',
-    tableDes: '基于 ElementPlus 的 Table 组件二次封装',
+    tableDes: '基于 Ant Design Vue 的 Table 组件二次封装',
     index: '序号',
     title: '标题',
     author: '作者',
@@ -421,7 +418,7 @@ export default {
   },
   dialogDemo: {
     dialog: '弹窗',
-    dialogDes: '基于 ElementPlus 的 Dialog 组件二次封装',
+    dialogDes: '基于 Ant Design Vue 的 Dialog 组件二次封装',
     open: '打开',
     close: '关闭',
     combineWithForm: '与表单结合',
@@ -430,11 +427,11 @@ export default {
   imageViewerDemo: {
     open: '打开',
     imageViewer: '图片预览',
-    imageViewerDes: '基于 ElementPlus 的 ImageViewer 组件二次封装'
+    imageViewerDes: '基于 Ant Design Vue 的 ImageViewer 组件二次封装'
   },
   descriptionsDemo: {
     descriptions: '描述',
-    descriptionsDes: '基于 ElementPlus 的 Descriptions 组件二次封装',
+    descriptionsDes: '基于 Ant Design Vue 的 Descriptions 组件二次封装',
     username: '用户名',
     nickName: '昵称',
     phone: '联系电话',
@@ -470,6 +467,6 @@ export default {
   },
   inputPasswordDemo: {
     title: '密码输入框',
-    inputPasswordDes: '基于 ElementPlus 的 Input 组件二次封装'
+    inputPasswordDes: '基于 Ant Design Vue 的 Input 组件二次封装'
   }
 }
