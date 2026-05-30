@@ -116,7 +116,7 @@
       />
     </div>
 
-    <AModal v-model:open="dialogFormVisible" :title="addFormData.id ? '修改角色' : '添加角色'" width="860px" wrap-class-name="role-modal" :destroy-on-close="true" @cancel="onCloseDialog">
+    <AModal v-model:open="dialogFormVisible" :title="addFormData.id ? '修改角色' : '添加角色'" width="900px" wrap-class-name="role-modal" :destroy-on-close="true" centered @cancel="onCloseDialog">
       <AForm :model="addFormData" layout="vertical" class="role-form">
         <ARow :gutter="16">
           <ACol :span="12">
@@ -743,8 +743,38 @@ const dialogFormVisible = ref(false)
 }
 
 .role-form {
+  max-width: 100%;
+
   :deep(.ant-form-item) {
-    margin-bottom: 14px;
+    margin-bottom: 16px;
+  }
+
+  :deep(.ant-row) {
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+    row-gap: 2px;
+  }
+
+  :deep(.ant-col) {
+    padding-right: 8px !important;
+    padding-left: 8px !important;
+  }
+
+  :deep(.ant-form-item-label) {
+    padding-bottom: 6px;
+  }
+
+  :deep(.ant-form-item-label > label) {
+    height: 20px;
+    color: rgb(0 0 0 / 72%);
+    font-weight: 500;
+  }
+
+  :deep(.ant-input),
+  :deep(.ant-input-number),
+  :deep(.ant-select-selector),
+  :deep(.ant-input-affix-wrapper) {
+    min-height: 34px;
   }
 }
 
@@ -755,38 +785,63 @@ const dialogFormVisible = ref(false)
 }
 
 .role-permission {
-  margin-top: 2px;
+  margin-top: 4px;
+  padding: 14px 16px 16px;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  background-color: #fafafa;
 }
 
 .permission-header {
   display: flex;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   justify-content: space-between;
   align-items: center;
+  gap: 16px;
 }
 
 .permission-title {
   color: rgb(0 0 0 / 88%);
   font-size: 14px;
+  font-weight: 600;
 }
 
 .tree-actions {
   display: flex;
-  gap: 16px;
+  gap: 18px;
   align-items: center;
+  white-space: nowrap;
 }
 
 .tree-wrap {
-  height: 280px;
-  padding: 8px;
-  overflow: auto;
+  height: 300px;
+  padding: 10px 12px;
+  overflow-x: hidden;
+  overflow-y: auto;
   border: 1px solid #e5e6eb;
   border-radius: 6px;
   background-color: #fff;
+
+  :deep(.ant-tree) {
+    min-width: 0;
+    background: transparent;
+  }
+
+  :deep(.ant-tree-node-content-wrapper) {
+    min-width: 0;
+  }
+
+  :deep(.ant-tree-title) {
+    overflow-wrap: anywhere;
+  }
 }
 
 .role-remark {
-  margin-top: 14px;
+  margin-top: 16px;
+
+  :deep(.ant-input) {
+    resize: vertical;
+  }
 }
 
 .date-range {
@@ -802,15 +857,63 @@ const dialogFormVisible = ref(false)
   .search-form-action {
     flex: 1 1 100%;
   }
+
+  .role-form {
+    :deep(.ant-col) {
+      flex: 0 0 100%;
+      max-width: 100%;
+    }
+  }
+
+  .permission-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .tree-actions {
+    align-items: flex-start;
+  }
 }
 </style>
 
 <style lang="less">
 .role-modal {
+  .ant-modal {
+    max-width: calc(100vw - 32px);
+  }
+
+  .ant-modal-content {
+    overflow: hidden;
+    border-radius: 10px;
+  }
+
+  .ant-modal-header {
+    padding: 22px 24px 10px;
+    margin-bottom: 0;
+  }
+
+  .ant-modal-title {
+    color: rgb(0 0 0 / 88%);
+    font-size: 16px;
+    font-weight: 600;
+  }
+
   .ant-modal-body {
     max-height: calc(100vh - 220px);
-    padding-bottom: 12px;
-    overflow: auto;
+    padding: 12px 24px 16px;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .ant-modal-footer {
+    padding: 14px 24px 18px;
+    margin-top: 0;
+    border-top: 1px solid #f0f0f0;
+  }
+
+  .ant-modal-footer .ant-space {
+    justify-content: flex-end;
+    width: 100%;
   }
 }
 </style>

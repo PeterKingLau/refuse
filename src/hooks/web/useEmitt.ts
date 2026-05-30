@@ -1,19 +1,21 @@
-import mitt from 'mitt'
+import Emittery from 'emittery'
 import { onBeforeUnmount } from 'vue'
 
-interface Option {
-  name: string // 事件名称
-  callback: Fn // 回调
+type EventMap = Record<string, unknown>
+
+interface Option<T = unknown> {
+  name: string
+  callback: (eventData: T) => void | Promise<void>
 }
 
-const emitter = mitt()
+const emitter = new Emittery<EventMap>()
 
-export const useEmitt = (option?: Option) => {
+export const useEmitt = <T = unknown>(option?: Option<T>) => {
   if (option) {
-    emitter.on(option.name, option.callback)
+    const unsubscribe = emitter.on(option.name, option.callback as (eventData: unknown) => void | Promise<void>)
 
     onBeforeUnmount(() => {
-      emitter.off(option.name)
+      unsubscribe()
     })
   }
 

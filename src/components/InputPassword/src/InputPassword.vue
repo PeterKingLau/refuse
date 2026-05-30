@@ -3,8 +3,6 @@ import { ref, unref, computed, watch } from 'vue'
 import { Input as AInput } from 'ant-design-vue'
 import { propTypes } from '@/utils/propTypes'
 import { useConfigGlobal } from '@/hooks/web/useConfigGlobal'
-import { zxcvbn } from '@zxcvbn-ts/core'
-import type { ZxcvbnResult } from '@zxcvbn-ts/core'
 import { useDesign } from '@/hooks/web/useDesign'
 
 const { getPrefixCls } = useDesign()
@@ -38,6 +36,19 @@ const changeTextType = () => {
 
 // 输入框的值
 const valueRef = ref(props.modelValue)
+const passwordStrength = ref(-1)
+
+type ZxcvbnModule = typeof import('@zxcvbn-ts/core')
+
+let zxcvbnLoader: Promise<ZxcvbnModule> | undefined
+
+const loadZxcvbn = () => {
+  if (!zxcvbnLoader) {
+    zxcvbnLoader = import('@zxcvbn-ts/core')
+  }
+
+  return zxcvbnLoader
+}
 
 // 监听输入值变化
 watch(
@@ -48,11 +59,25 @@ watch(
 )
 
 // 获取密码强度
-const getPasswordStrength = computed(() => {
-  const value = unref(valueRef)
-  const zxcvbnRef = zxcvbn(unref(valueRef)) as ZxcvbnResult
-  return value ? zxcvbnRef.score : -1
-})
+watch(
+  [() => valueRef.value, () => props.strength],
+  async ([value, strength]) => {
+    if (!strength || !value) {
+      passwordStrength.value = -1
+      return
+    }
+
+    const currentValue = value
+    const { zxcvbn } = await loadZxcvbn()
+
+    if (currentValue !== valueRef.value) return
+
+    passwordStrength.value = zxcvbn(currentValue).score
+  },
+  {
+    immediate: true
+  }
+)
 
 const getIconName = computed(() => (unref(textType) === 'password' ? 'ant-design:eye-invisible-outlined' : 'ant-design:eye-outlined'))
 </script>
@@ -65,7 +90,7 @@ const getIconName = computed(() => (unref(textType) === 'password' ? 'ant-design
       </template>
     </AInput>
     <div v-if="strength" :class="`${prefixCls}__bar`" class="relative h-6px mt-10px mb-6px mr-auto ml-auto">
-      <div :class="`${prefixCls}__bar--fill`" :data-score="getPasswordStrength"></div>
+      <div :class="`${prefixCls}__bar--fill`" :data-score="passwordStrength"></div>
     </div>
   </div>
 </template>

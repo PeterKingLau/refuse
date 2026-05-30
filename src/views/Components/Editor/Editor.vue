@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { ContentWrap } from '@/components/ContentWrap'
-import { Editor, EditorExpose } from '@/components/Editor'
+import { Editor, type EditorExpose, type RichTextEditor } from '@/components/Editor'
 import { useI18n } from '@/hooks/web/useI18n'
-import { IDomEditor } from '@wangeditor/editor'
 import { ref, onMounted, unref } from 'vue'
 
 const { t } = useI18n()
 
-const change = (editor: IDomEditor) => {
+const change = (editor: RichTextEditor) => {
   console.log(editor.getHtml())
 }
 

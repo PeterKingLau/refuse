@@ -1,6 +1,11 @@
 import request from '@/config/axios'
 import type { UserType } from './types'
 
+interface SimpleLoginParams {
+  userName: string
+  password: string
+}
+
 interface RoleParams {
   roleName: string
 }
@@ -11,6 +16,17 @@ export const loginApi = (data: UserType): Promise<IResponse<UserType>> => {
 
 export const loginOutApi = (): Promise<IResponse> => {
   return request.get({ url: '/user/loginOut' })
+}
+
+export const simpleLoginApi = (data: SimpleLoginParams) => {
+  return request.post({
+    url: '/admin/simpleLogin',
+    data,
+    showErrorMessage: false,
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
 }
 
 export const getUserListApi = ({ params }: AxiosConfig) => {

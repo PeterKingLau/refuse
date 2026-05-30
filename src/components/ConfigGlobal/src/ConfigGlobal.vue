@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { provide, computed, watch, onMounted } from 'vue'
 import { ConfigProvider } from 'ant-design-vue'
+import type { SizeType } from 'ant-design-vue/es/config-provider'
 import type { Locale } from 'ant-design-vue/es/locale'
 import { useLocaleStore } from '@/store/modules/locale'
 import { useWindowSize } from '@vueuse/core'
@@ -54,10 +55,16 @@ const localeStore = useLocaleStore()
 const currentLocale = computed(() => localeStore.currentLocale)
 
 const configLocale = computed(() => currentLocale.value.elLocale as Locale | undefined)
+
+const antComponentSize = computed<SizeType>(() => {
+  if (props.size === 'default') return 'middle'
+
+  return props.size
+})
 </script>
 
 <template>
-  <ConfigProvider :locale="configLocale">
+  <ConfigProvider :locale="configLocale" :component-size="antComponentSize">
     <slot></slot>
   </ConfigProvider>
 </template>

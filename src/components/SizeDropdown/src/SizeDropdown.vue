@@ -46,7 +46,7 @@ const triggerAttrs = computed(() => {
       <Icon :size="18" icon="mdi:format-size" :color="color || 'currentColor'" />
     </div>
     <template #overlay>
-      <AMenu @click="handleMenuClick">
+      <AMenu :selected-keys="[appStore.getCurrentSize]" @click="handleMenuClick">
         <AMenuItem v-for="item in sizeMap" :key="item">
           {{ t(`size.${item}`) }}
         </AMenuItem>

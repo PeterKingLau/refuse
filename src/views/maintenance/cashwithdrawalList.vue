@@ -59,8 +59,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { Button as AButton, Divider as ADivider, Form as AForm, FormItem as AFormItem, Modal as AModal, Select as ASelect, Space as ASpace, Table as ATable, message } from 'ant-design-vue'
 import type { TableColumnsType } from 'ant-design-vue'
-import qs from 'qs'
-import { PATH_URL, service } from '@/config/axios/service'
+import { approveCashWithdrawalApi, getCashWithdrawalListApi } from '@/api/maintenance/cashWithdrawal'
 import { Icon } from '@/components/Icon'
 
 interface QueryStruct {
@@ -122,7 +121,7 @@ const Approved = (id: number) => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      const res: any = await service.get(PATH_URL + '/mem/memCashWithdrawal/Approved?id=' + id)
+      const res: any = await approveCashWithdrawalApi(id)
       if (res.code == 200 || res.data?.code == 200) {
         message.success('操作成功')
         getRecord()
@@ -181,19 +180,11 @@ const onReset = () => {
 }
 
 const getRecord = () => {
-  service
-    .post(
-      PATH_URL + '/mem/memCashWithdrawal/GetCashWithdrawalList',
-      qs.stringify(
-        {
-          status: QueryParm.status
-        },
-        { arrayFormat: 'brackets' }
-      )
-    )
-    .then((res: any) => {
-      auditData.value = res.data || []
-    })
+  getCashWithdrawalListApi({
+    status: QueryParm.status
+  }).then((res: any) => {
+    auditData.value = res.data || []
+  })
 }
 </script>
 

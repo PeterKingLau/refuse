@@ -274,11 +274,11 @@ export const constantRouterMap: AppRouteRecordRaw[] = [
 //         }
 //       },
 //       {
-//         path: 'echart',
-//         component: () => import('@/views/Components/Echart.vue'),
-//         name: 'Echart',
+//         path: 'g2-chart',
+//         component: () => import('@/views/Components/G2Chart.vue'),
+//         name: 'G2Chart',
 //         meta: {
-//           title: t('router.echart')
+//           title: t('router.g2Chart')
 //         }
 //       },
 //       {

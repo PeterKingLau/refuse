@@ -116,7 +116,7 @@ export default {
     guide: '引导',
     component: '组件',
     icon: '图标',
-    echart: '图表',
+    g2Chart: 'G2 图表',
     countTo: '数字动画',
     watermark: '水印',
     qrcode: '二维码',
@@ -315,9 +315,9 @@ export default {
     recommendeDes: 'Iconify组件基本包含所有的图标，你可以查询到你想要的任何图标。并且打包只会打包所用到的图标。',
     accessAddress: '访问地址'
   },
-  echartDemo: {
-    echart: '图表',
-    echartDes: '基于 echarts 二次封装组件，自适应宽度，只需传入 options 与 height 属性即可展示对应的图表。'
+  g2ChartDemo: {
+    g2Chart: 'G2 图表',
+    g2ChartDes: '基于 G2 二次封装组件，自适应宽度，只需传入 options 与 height 属性即可展示对应的图表。'
   },
   countToDemo: {
     countTo: '数字动画',
@@ -414,7 +414,7 @@ export default {
   },
   richText: {
     richText: '富文本',
-    richTextDes: '基于 wangeditor 二次封装'
+    richTextDes: '基于 Tiptap 二次封装'
   },
   dialogDemo: {
     dialog: '弹窗',

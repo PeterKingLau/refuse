@@ -1,11 +1,25 @@
-import axios, { AxiosError, AxiosHeaders, AxiosInstance, AxiosRequestHeaders, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
+import axios, { AxiosError, AxiosHeaders } from 'axios'
+import type { AxiosInstance, AxiosRequestConfig, AxiosRequestHeaders, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 import qs from 'qs'
 import { message } from 'ant-design-vue'
 import { config } from './config'
 
+declare module 'axios' {
+  export interface AxiosRequestConfig {
+    showErrorMessage?: boolean
+  }
+}
+
 const { result_code, base_url } = config
 
-const requestBaseUrl = base_url[import.meta.env.VITE_API_BASEPATH]
+type ResponseData<T = unknown> = {
+  code?: number | string
+  message?: string
+  data?: T
+  [key: string]: unknown
+}
+
+const requestBaseUrl = base_url[import.meta.env.VITE_API_BASEPATH] || base_url.base
 
 export const PATH_URL = requestBaseUrl
 
@@ -39,6 +53,41 @@ const setAuthorization = (headers: InternalAxiosRequestConfig['headers'], token:
   ;(headers as AxiosRequestHeaders).Authorization = token
 }
 
+const shouldShowErrorMessage = (requestConfig?: AxiosRequestConfig) => {
+  return requestConfig?.showErrorMessage !== false
+}
+
+const getToken = () => {
+  if (typeof window === 'undefined') return ''
+  return window.localStorage.getItem('token') || ''
+}
+
+const isSuccessCode = (code?: number | string) => {
+  return String(code) === String(result_code)
+}
+
+const isFormData = (data: unknown) => {
+  return typeof FormData !== 'undefined' && data instanceof FormData
+}
+
+const isUrlencodedRequest = (requestConfig: InternalAxiosRequestConfig) => {
+  const contentType = String(getContentType(requestConfig.headers)).toLowerCase()
+  return requestConfig.method === 'post' && contentType.includes('application/x-www-form-urlencoded')
+}
+
+const showErrorMessage = (content: string, requestConfig?: AxiosRequestConfig) => {
+  if (!shouldShowErrorMessage(requestConfig)) return
+  message.error(content)
+}
+
+const getResponseErrorMessage = (responseData?: ResponseData) => {
+  return responseData?.message || '请求失败'
+}
+
+const getAxiosErrorMessage = (error: AxiosError<ResponseData>) => {
+  return error.response?.data?.message || error.message || '请求失败'
+}
+
 const service: AxiosInstance = axios.create({
   baseURL: requestBaseUrl,
   timeout: config.request_timeout,
@@ -52,13 +101,11 @@ service.interceptors.request.use(
   (requestConfig: InternalAxiosRequestConfig) => {
     requestConfig.url = removeBaseUrlPrefix(requestConfig.url || '', requestConfig.baseURL)
 
-    const contentType = String(getContentType(requestConfig.headers))
-
-    if (requestConfig.method === 'post' && contentType.includes('application/x-www-form-urlencoded') && requestConfig.data && !(requestConfig.data instanceof FormData)) {
+    if (isUrlencodedRequest(requestConfig) && requestConfig.data && !isFormData(requestConfig.data)) {
       requestConfig.data = qs.stringify(requestConfig.data)
     }
 
-    const token = localStorage.getItem('token')
+    const token = getToken()
     if (token) {
       setAuthorization(requestConfig.headers, token)
     }
@@ -69,23 +116,22 @@ service.interceptors.request.use(
 )
 
 service.interceptors.response.use(
-  (response: AxiosResponse<any>) => {
+  (response: AxiosResponse<any>): any => {
     if (response.config.responseType === 'blob') {
       return response
     }
 
-    const responseData = response.data
+    const responseData = response.data as ResponseData
 
-    if (responseData?.code === result_code) {
+    if (isSuccessCode(responseData?.code)) {
       return responseData
     }
 
-    message.error(responseData?.message || '请求失败')
+    showErrorMessage(getResponseErrorMessage(responseData), response.config)
     return Promise.reject(responseData)
   },
-  (error: AxiosError<any>) => {
-    const errorMessage = error.response?.data?.message || error.message || '请求失败'
-    message.error(errorMessage)
+  (error: AxiosError<ResponseData>) => {
+    showErrorMessage(getAxiosErrorMessage(error), error.config)
     return Promise.reject(error)
   }
 )

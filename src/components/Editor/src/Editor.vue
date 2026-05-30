@@ -1,113 +1,136 @@
 <script setup lang="ts">
-import { onBeforeUnmount, computed, PropType, unref, nextTick, ref, watch, shallowRef } from 'vue'
-import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
-import { IDomEditor, IEditorConfig, i18nChangeLanguage } from '@wangeditor/editor'
+import { Button as AButton, Space as ASpace } from 'ant-design-vue'
+import { computed, nextTick, onBeforeUnmount, PropType, unref, watch } from 'vue'
+import Image from '@tiptap/extension-image'
+import Link from '@tiptap/extension-link'
+import Placeholder from '@tiptap/extension-placeholder'
+import StarterKit from '@tiptap/starter-kit'
+import { EditorContent, useEditor, type EditorOptions } from '@tiptap/vue-3'
 import { propTypes } from '@/utils/propTypes'
 import { isNumber } from '@/utils/is'
-import { message } from 'ant-design-vue'
-import { useLocaleStore } from '@/store/modules/locale'
 
-const localeStore = useLocaleStore()
+type EditorUpdatePayload = Parameters<NonNullable<EditorOptions['onUpdate']>>[0]
+type TiptapEditor = EditorUpdatePayload['editor']
 
-const currentLocale = computed(() => localeStore.getCurrentLocale)
+export type RichTextEditor = TiptapEditor & {
+  getHtml: () => string
+}
 
-i18nChangeLanguage(unref(currentLocale).lang)
+type EditorConfig = Partial<EditorOptions> & {
+  placeholder?: string
+  readOnly?: boolean
+}
 
 const props = defineProps({
-  editorId: propTypes.string.def('wangeEditor-1'),
+  editorId: propTypes.string.def('tiptap-editor-1'),
   height: propTypes.oneOfType([Number, String]).def('500px'),
   editorConfig: {
-    type: Object as PropType<IEditorConfig>,
+    type: Object as PropType<EditorConfig>,
     default: () => undefined
   },
   modelValue: propTypes.string.def('')
 })
 
-const emit = defineEmits(['change', 'update:modelValue'])
+const emit = defineEmits<{
+  (event: 'change', editor: RichTextEditor): void
+  (event: 'update:modelValue', value: string): void
+}>()
 
-// 编辑器实例，必须用 shallowRef
-const editorRef = shallowRef<IDomEditor>()
+const createEditorExpose = (editor: TiptapEditor): RichTextEditor => {
+  const richTextEditor = editor as RichTextEditor
+  richTextEditor.getHtml = () => richTextEditor.getHTML()
+  return richTextEditor
+}
 
-const valueHtml = ref('')
+const editor = useEditor({
+  content: props.modelValue,
+  editable: !props.editorConfig?.readOnly,
+  extensions: [
+    StarterKit,
+    Link.configure({
+      openOnClick: false
+    }),
+    Image,
+    Placeholder.configure({
+      placeholder: props.editorConfig?.placeholder || ''
+    })
+  ],
+  editorProps: {
+    attributes: {
+      class: 'tiptap-editor-content'
+    }
+  },
+  onUpdate: ({ editor }) => {
+    const nextHtml = editor.getHTML()
+    emit('update:modelValue', nextHtml)
+    emit('change', createEditorExpose(editor))
+  },
+  ...(props.editorConfig || {})
+})
 
 watch(
   () => props.modelValue,
-  (val: string) => {
-    if (val === unref(valueHtml)) return
-    valueHtml.value = val
-  },
-  {
-    immediate: true
+  (value) => {
+    const instance = unref(editor)
+    if (!instance || value === instance.getHTML()) return
+    ;(instance.commands.setContent as any)(value || '', false)
   }
 )
 
-// 监听
 watch(
-  () => valueHtml.value,
-  (val: string) => {
-    emit('update:modelValue', val)
+  () => props.editorConfig?.readOnly,
+  (readOnly) => {
+    unref(editor)?.setEditable(!readOnly)
   }
 )
-
-const handleCreated = (editor: IDomEditor) => {
-  editorRef.value = editor
-}
-
-// 编辑器配置
-const editorConfig = computed((): IEditorConfig => {
-  return Object.assign(
-    {
-      readOnly: false,
-      customAlert: (s: string, t: string) => {
-        switch (t) {
-          case 'success':
-            message.success(s)
-            break
-          case 'info':
-            message.info(s)
-            break
-          case 'warning':
-            message.warning(s)
-            break
-          case 'error':
-            message.error(s)
-            break
-          default:
-            message.info(s)
-            break
-        }
-      },
-      autoFocus: false,
-      scroll: true,
-      uploadImgShowBase64: true
-    },
-    props.editorConfig || {}
-  )
-})
 
 const editorStyle = computed(() => {
   return {
-    height: isNumber(props.height) ? `${props.height}px` : props.height
+    minHeight: isNumber(props.height) ? `${props.height}px` : props.height
   }
 })
 
-// 回调函数
-const handleChange = (editor: IDomEditor) => {
-  emit('change', editor)
+const isActive = (name: string, attrs?: Record<string, any>) => {
+  return !!unref(editor)?.isActive(name, attrs)
 }
 
-// 组件销毁时，及时销毁编辑器
-onBeforeUnmount(() => {
-  const editor = unref(editorRef.value)
-  if (editor === null) return
+const runCommand = (command: (editor: TiptapEditor) => void) => {
+  const instance = unref(editor)
+  if (!instance) return
+  command(instance)
+}
 
-  // 销毁，并移除 editor
-  editor?.destroy()
+const setLink = () => {
+  runCommand((instance) => {
+    const previousUrl = instance.getAttributes('link').href
+    const url = window.prompt('URL', previousUrl || '')
+
+    if (url === null) return
+
+    if (!url) {
+      instance.chain().focus().extendMarkRange('link').unsetLink().run()
+      return
+    }
+
+    instance.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+  })
+}
+
+const setImage = () => {
+  runCommand((instance) => {
+    const url = window.prompt('Image URL')
+    if (!url) return
+    instance.chain().focus().setImage({ src: url }).run()
+  })
+}
+
+onBeforeUnmount(() => {
+  unref(editor)?.destroy()
 })
 
-const getEditorRef = async (): Promise<IDomEditor> => {
+const getEditorRef = async (): Promise<RichTextEditor> => {
   await nextTick()
-  return unref(editorRef.value) as IDomEditor
+  return createEditorExpose(unref(editor) as TiptapEditor)
 }
 
 defineExpose({
@@ -116,12 +139,72 @@ defineExpose({
 </script>
 
 <template>
-  <div class="border-1 border-solid border-[var(--tags-view-border-color)] z-3000">
-    <!-- 工具栏 -->
-    <Toolbar :editor="editorRef" :editorId="editorId" class="border-bottom-1 border-solid border-[var(--tags-view-border-color)]" />
-    <!-- 编辑器 -->
-    <Editor v-model="valueHtml" :editorId="editorId" :defaultConfig="editorConfig" :style="editorStyle" @on-change="handleChange" @on-created="handleCreated" />
+  <div :id="editorId" class="tiptap-editor">
+    <div class="tiptap-toolbar">
+      <ASpace :size="4" wrap>
+        <AButton size="small" :class="{ 'is-active': isActive('bold') }" @click="runCommand((item) => item.chain().focus().toggleBold().run())">B</AButton>
+        <AButton size="small" :class="{ 'is-active': isActive('italic') }" @click="runCommand((item) => item.chain().focus().toggleItalic().run())">I</AButton>
+        <AButton size="small" :class="{ 'is-active': isActive('heading', { level: 1 }) }" @click="runCommand((item) => item.chain().focus().toggleHeading({ level: 1 }).run())"> H1 </AButton>
+        <AButton size="small" :class="{ 'is-active': isActive('heading', { level: 2 }) }" @click="runCommand((item) => item.chain().focus().toggleHeading({ level: 2 }).run())"> H2 </AButton>
+        <AButton size="small" :class="{ 'is-active': isActive('bulletList') }" @click="runCommand((item) => item.chain().focus().toggleBulletList().run())">UL</AButton>
+        <AButton size="small" :class="{ 'is-active': isActive('orderedList') }" @click="runCommand((item) => item.chain().focus().toggleOrderedList().run())">OL</AButton>
+        <AButton size="small" :class="{ 'is-active': isActive('blockquote') }" @click="runCommand((item) => item.chain().focus().toggleBlockquote().run())">“”</AButton>
+        <AButton size="small" :class="{ 'is-active': isActive('link') }" @click="setLink">Link</AButton>
+        <AButton size="small" @click="setImage">Image</AButton>
+        <AButton size="small" @click="runCommand((item) => item.chain().focus().undo().run())">Undo</AButton>
+        <AButton size="small" @click="runCommand((item) => item.chain().focus().redo().run())">Redo</AButton>
+      </ASpace>
+    </div>
+    <EditorContent :editor="editor" class="tiptap-editor-body" :style="editorStyle" />
   </div>
 </template>
 
-<style src="@wangeditor/editor/dist/css/style.css"></style>
+<style lang="less" scoped>
+.tiptap-editor {
+  overflow: hidden;
+  border: 1px solid var(--tags-view-border-color);
+  border-radius: 4px;
+  background: var(--app-content-bg-color);
+}
+
+.tiptap-toolbar {
+  padding: 8px;
+  border-bottom: 1px solid var(--tags-view-border-color);
+  background: var(--app-content-bg-color);
+
+  .is-active {
+    color: var(--app-color-primary);
+    border-color: var(--app-color-primary);
+  }
+}
+
+.tiptap-editor-body {
+  overflow: auto;
+}
+
+:deep(.tiptap-editor-content) {
+  min-height: inherit;
+  padding: 12px;
+  outline: none;
+
+  > *:first-child {
+    margin-top: 0;
+  }
+
+  > *:last-child {
+    margin-bottom: 0;
+  }
+
+  p.is-editor-empty:first-child::before {
+    height: 0;
+    color: var(--app-text-color-disabled);
+    content: attr(data-placeholder);
+    float: left;
+    pointer-events: none;
+  }
+
+  img {
+    max-width: 100%;
+  }
+}
+</style>

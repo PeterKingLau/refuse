@@ -5,7 +5,7 @@ import { PropType, reactive, watch } from 'vue'
 import { TableData } from '@/api/table/types'
 import { useI18n } from '@/hooks/web/useI18n'
 import { useValidator } from '@/hooks/web/useValidator'
-import { IDomEditor } from '@wangeditor/editor'
+import type { RichTextEditor } from '@/components/Editor'
 import { FormSchema } from '@/types/form'
 
 const { required } = useValidator()
@@ -92,7 +92,7 @@ const schema = reactive<FormSchema[]>([
     },
     componentProps: {
       defaultHtml: '',
-      onChange: (edit: IDomEditor) => {
+      onChange: (edit: RichTextEditor) => {
         const { setValues } = methods
         setValues({
           content: edit.getHtml()

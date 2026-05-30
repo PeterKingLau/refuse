@@ -71,7 +71,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { Button as AButton, Divider as ADivider, Form as AForm, FormItem as AFormItem, Pagination as APagination, Select as ASelect, Space as ASpace, Table as ATable } from 'ant-design-vue'
 import type { TableColumnsType } from 'ant-design-vue'
-import { PATH_URL, service } from '@/config/axios/service'
+import { getWithdrawalRecordListApi } from '@/api/maintenance/cashWithdrawal'
 import { Icon } from '@/components/Icon'
 
 interface QueryStruct {
@@ -188,24 +188,22 @@ const handlePageChange = (page: number, size: number) => {
 }
 
 const getWithdrawalRecordList = () => {
-  service
-    .post(PATH_URL + '/mem/memCashWithdrawal/getWithdrawalRecordList', {
-      reviewStatus: queryForm.reviewStatus,
-      orderStatus: queryForm.orderStatus,
-      page: currentPage.value,
-      size: pageSize.value
-    })
-    .then((res: any) => {
-      const data = res.data
-      if (Array.isArray(data)) {
-        recordData.value = data
-        total.value = data.length
-        return
-      }
+  getWithdrawalRecordListApi({
+    reviewStatus: queryForm.reviewStatus,
+    orderStatus: queryForm.orderStatus,
+    page: currentPage.value,
+    size: pageSize.value
+  }).then((res: any) => {
+    const data = res.data
+    if (Array.isArray(data)) {
+      recordData.value = data
+      total.value = data.length
+      return
+    }
 
-      recordData.value = data?.records || data?.list || []
-      total.value = data?.total || data?.count || recordData.value.length
-    })
+    recordData.value = data?.records || data?.list || []
+    total.value = data?.total || data?.count || recordData.value.length
+  })
 }
 </script>
 

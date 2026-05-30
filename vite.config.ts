@@ -25,6 +25,11 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
   } else {
     env = loadEnv(mode, root)
   }
+
+  const isProductionBuild = isBuild && mode === 'pro'
+  const shouldUseTerser = isProductionBuild || env.VITE_BUILD_OBFUSCATE === 'true'
+  const shouldDropConsole = env.VITE_DROP_CONSOLE === 'true'
+
   return {
     base: env.VITE_BASE_PATH,
     plugins: [
@@ -37,10 +42,14 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
       }),
       VueJsx(),
       WindiCSS(),
-      EslintPlugin({
-        cache: false,
-        include: ['src/**/*.vue', 'src/**/*.ts', 'src/**/*.tsx'] // 检查的文件
-      }),
+      ...(!isBuild
+        ? [
+            EslintPlugin({
+              cache: false,
+              include: ['src/**/*.vue', 'src/**/*.ts', 'src/**/*.tsx'] // 检查的文件
+            })
+          ]
+        : []),
       VueI18n({
         runtimeOnly: true,
         compositionOnly: true,
@@ -51,7 +60,11 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
         symbolId: 'icon-[dir]-[name]',
         svgoOptions: true
       }),
-      VueMarcos(),
+      VueMarcos({
+        betterDefine: {
+          exclude: /src\/views\/video\/components\/Cvideo\.vue/
+        }
+      }),
       createHtmlPlugin({
         inject: {
           data: {
@@ -84,14 +97,46 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
       ]
     },
     build: {
-      minify: 'terser',
+      target: 'es2018',
+      minify: shouldUseTerser ? 'terser' : 'esbuild',
       outDir: env.VITE_OUT_DIR || 'dist',
+      cssCodeSplit: true,
+      reportCompressedSize: false,
+      chunkSizeWarningLimit: 1500,
       sourcemap: env.VITE_SOURCEMAP === 'true' ? 'inline' : false,
       // brotliSize: false,
+      rollupOptions: {
+        onwarn(warning, warn) {
+          if (warning.code === 'INVALID_ANNOTATION' && warning.message.includes('@vueuse/core') && warning.message.includes('#__PURE__')) {
+            return
+          }
+
+          warn(warning)
+        },
+        output: {
+          manualChunks: {
+            vue: ['vue', 'vue-router', 'pinia', 'vue-i18n'],
+            antd: ['ant-design-vue'],
+            charts: ['@antv/g2'],
+            editor: ['@tiptap/vue-3', '@tiptap/starter-kit', '@tiptap/extension-link', '@tiptap/extension-image', '@tiptap/extension-placeholder'],
+            media: ['video.js', '@videojs/http-streaming', 'qrcode']
+          }
+        }
+      },
       terserOptions: {
+        mangle: {
+          safari10: true,
+          toplevel: true
+        },
         compress: {
+          passes: 1,
+          dead_code: true,
+          unused: true,
           drop_debugger: env.VITE_DROP_DEBUGGER === 'true',
-          drop_console: env.VITE_DROP_CONSOLE === 'true'
+          drop_console: shouldDropConsole
+        },
+        format: {
+          comments: false
         }
       }
     },
@@ -121,12 +166,13 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
         '@vueuse/core',
         'axios',
         'qs',
-        'echarts',
-        'echarts-wordcloud',
         'intro.js',
         'qrcode',
-        '@wangeditor/editor',
-        '@wangeditor/editor-for-vue'
+        '@tiptap/vue-3',
+        '@tiptap/starter-kit',
+        '@tiptap/extension-link',
+        '@tiptap/extension-image',
+        '@tiptap/extension-placeholder'
       ]
     }
   }

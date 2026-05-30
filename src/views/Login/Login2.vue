@@ -42,7 +42,7 @@ import { useCache } from '@/hooks/web/useCache'
 import { useAppStore } from '@/store/modules/app'
 import { useRouter } from 'vue-router'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
-import { service } from '@/config/axios/service'
+import { simpleLoginApi } from '@/api/login'
 import { refreshMenuRoutes } from '@/utils/permissionRoutes'
 
 const loginForm = reactive({
@@ -136,11 +136,7 @@ const signIn = async () => {
       password: loginForm.password
     }
 
-    const res: any = await service.post('/admin/simpleLogin', params, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
+    const res: any = await simpleLoginApi(params)
 
     if (res.code !== 200) {
       message.error(res.message || '登录失败')
