@@ -162,34 +162,53 @@ onMounted(() => {
 
 <style lang="less" scoped>
 .main {
+  --login-content-offset-y: clamp(0px, 1vh, 12px);
+
   display: flex;
   width: 100%;
   height: 100vh;
+  position: relative;
+  overflow: hidden;
   font-size: large;
   color: #ffff;
-  background-attachment: fixed;
-  background-image: url('../../assets/imgs/bg@2x.png');
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
+  background-color: #071328;
   flex-direction: column;
   justify-content: center;
   align-items: center;
 
+  &::before {
+    position: absolute;
+    inset: -8px -18px;
+    z-index: 0;
+    background-image: url('../../assets/imgs/bg@2x.png');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+    content: '';
+  }
+
+  .title,
+  .longWindow {
+    position: relative;
+    z-index: 1;
+    transform: translateY(var(--login-content-offset-y));
+  }
+
   .longWindow {
     display: flex;
-    width: 560px;
-    height: 470px;
+    width: 504px;
+    height: 422px;
     margin-top: 20px;
+    padding-top: 102px;
     background-image: url('../../assets/imgs/login-panel@2x.png');
     background-repeat: no-repeat;
+    background-size: 100% 100%;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
   }
 
   .b {
     display: flex;
-    margin-top: 20px;
     line-height: 40px;
     background-color: #1c5ea2;
     border: 2px solid #1e8de6;
@@ -247,6 +266,7 @@ onMounted(() => {
 
   .btn {
     display: flex;
+    margin-top: 2px;
     line-height: 1;
     text-align: center;
     background-color: #219cfc;
@@ -261,11 +281,11 @@ onMounted(() => {
   }
 
   :deep(.login-form-item) {
-    margin-bottom: 12px;
+    margin-bottom: 16px;
   }
 
   :deep(.login-remember-item) {
-    margin-bottom: 8px;
+    margin-bottom: 14px;
   }
 
   :deep(.ant-form-item-has-error .b) {

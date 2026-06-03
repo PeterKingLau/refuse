@@ -65,27 +65,11 @@ const vueRules = {
 
 module.exports = [
   {
-    ignores: [
-      'build/**',
-      'config/**',
-      'dist/**',
-      'test/unit/coverage/**',
-      'node_modules/**',
-      'dist*/**',
-      'src/main.ts'
-    ]
+    ignores: ['build/**', 'config/**', 'dist/**', 'test/unit/coverage/**', 'node_modules/**', 'dist*/**', 'src/main.ts']
   },
   js.configs.recommended,
   {
-    files: [
-      '*.config.{js,ts}',
-      'eslint.config.js',
-      '.husky/**/*.js',
-      'commitlint.config.js',
-      'postcss.config.js',
-      'prettier.config.js',
-      'stylelint.config.js'
-    ],
+    files: ['*.config.{js,ts}', 'eslint.config.js', '.husky/**/*.js', 'commitlint.config.js', 'postcss.config.js', 'prettier.config.js', 'stylelint.config.js'],
     languageOptions: {
       ecmaVersion: 2020,
       sourceType: 'commonjs',
@@ -101,7 +85,7 @@ module.exports = [
   },
   ...vue.configs['flat/recommended'],
   {
-    files: ['src/**/*.{js,jsx,ts,tsx,vue}', 'types/**/*.d.ts', 'mock/**/*.ts'],
+    files: ['src/**/*.{js,jsx,ts,tsx,vue}', 'types/**/*.d.ts'],
     languageOptions: {
       ecmaVersion: 2020,
       sourceType: 'module',
@@ -126,7 +110,7 @@ module.exports = [
     }
   },
   {
-    files: ['src/**/*.{ts,tsx}', 'types/**/*.d.ts', 'mock/**/*.ts', 'vite.config.ts'],
+    files: ['src/**/*.{ts,tsx}', 'types/**/*.d.ts', 'vite.config.ts'],
     languageOptions: {
       parser: tsParser,
       parserOptions: {

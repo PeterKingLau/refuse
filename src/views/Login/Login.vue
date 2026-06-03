@@ -36,7 +36,7 @@ const toLogin = () => {
           <span class="text-20px font-bold">{{ underlineToHump(appStore.getTitle) }}</span>
         </div>
         <div class="flex justify-center items-center h-[calc(100%-60px)]">
-          <TransitionGroup appear tag="div" enter-active-class="animate__animated animate__bounceInLeft">
+          <TransitionGroup appear tag="div" enter-active-class="login-animate-left">
             <img src="@/assets/svgs/login-box-bg.svg" key="1" alt="" class="w-350px" />
             <div class="text-3xl text-white" key="2">{{ t('login.welcome') }}</div>
             <div id="123" class="mt-5 font-normal text-white text-14px" key="3">
@@ -57,7 +57,7 @@ const toLogin = () => {
             <LocaleDropdown class="<xl:text-white dark:text-white" />
           </div>
         </div>
-        <Transition appear enter-active-class="animate__animated animate__bounceInRight">
+        <Transition appear enter-active-class="login-animate-right">
           <div class="h-full flex items-center m-auto w-[100%] @2xl:max-w-500px @xl:max-w-500px @md:max-w-500px @lg:max-w-500px">
             <LoginForm v-if="isLogin" class="p-20px h-auto m-auto <xl:(rounded-3xl light:bg-white)" @to-register="toRegister" />
             <RegisterForm v-else class="p-20px h-auto m-auto <xl:(rounded-3xl light:bg-white)" @to-login="toLogin" />
@@ -85,6 +85,60 @@ const toLogin = () => {
       background-repeat: no-repeat;
       content: '';
     }
+  }
+}
+
+.login-animate-left,
+.login-animate-right {
+  animation-duration: 0.75s;
+  animation-fill-mode: both;
+}
+
+.login-animate-left {
+  animation-name: login-bounce-in-left;
+}
+
+.login-animate-right {
+  animation-name: login-bounce-in-right;
+}
+
+@keyframes login-bounce-in-left {
+  0% {
+    opacity: 0;
+    transform: translate3d(-120px, 0, 0) scaleX(0.95);
+  }
+
+  60% {
+    opacity: 1;
+    transform: translate3d(14px, 0, 0) scaleX(1);
+  }
+
+  80% {
+    transform: translate3d(-6px, 0, 0);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes login-bounce-in-right {
+  0% {
+    opacity: 0;
+    transform: translate3d(120px, 0, 0) scaleX(0.95);
+  }
+
+  60% {
+    opacity: 1;
+    transform: translate3d(-14px, 0, 0) scaleX(1);
+  }
+
+  80% {
+    transform: translate3d(6px, 0, 0);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0);
   }
 }
 </style>

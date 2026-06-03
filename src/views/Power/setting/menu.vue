@@ -70,6 +70,7 @@
         :loading="loading"
         :pagination="false"
         :scroll="{ x: 1410 }"
+        :custom-row="getTableCustomRow"
         class="menu-table"
         @expand="handleTableExpand"
       >
@@ -335,6 +336,8 @@ const parentMenuTree = ref<UmsMenuDynamic[]>([])
 const expandedRowKeys = ref<TableKey[]>([])
 const statusUpdatingIds = ref<number[]>([])
 const sortChangeMap = ref<Record<number, number>>({})
+const draggingMenuId = ref<number>()
+const dragOverMenuId = ref<number>()
 const formMode = ref<'create' | 'update'>('create')
 const searchForm = reactive({
   parentId: 0,
@@ -715,6 +718,166 @@ const updateMenuSoftById = (nodes: UmsMenuDynamic[], id: number, soft: number): 
       children: updateMenuSoftById(node.children, id, soft)
     }
   })
+}
+
+const reorderSiblingMenus = (siblings: UmsMenuDynamic[], sourceId: number, targetId: number) => {
+  const sourceIndex = siblings.findIndex((item) => Number(item.id) === sourceId)
+  const targetIndex = siblings.findIndex((item) => Number(item.id) === targetId)
+
+  if (sourceIndex < 0 || targetIndex < 0) {
+    return undefined
+  }
+
+  const nextSiblings = [...siblings]
+  const [sourceMenu] = nextSiblings.splice(sourceIndex, 1)
+  nextSiblings.splice(targetIndex, 0, sourceMenu)
+
+  const changes: Record<number, number> = {}
+  const nodes = nextSiblings.map((node, index) => {
+    const nextSoft = index + 1
+
+    if (Number(node.soft ?? 0) !== nextSoft) {
+      changes[node.id] = nextSoft
+    }
+
+    return {
+      ...node,
+      soft: nextSoft
+    }
+  })
+
+  return {
+    nodes,
+    changes
+  }
+}
+
+const reorderMenuTreeByDrag = (
+  nodes: UmsMenuDynamic[],
+  sourceId: number,
+  targetId: number
+): {
+  nodes: UmsMenuDynamic[]
+  changes: Record<number, number>
+  moved: boolean
+} => {
+  const siblingResult = reorderSiblingMenus(nodes, sourceId, targetId)
+
+  if (siblingResult) {
+    return {
+      ...siblingResult,
+      moved: true
+    }
+  }
+
+  let moved = false
+  let changes: Record<number, number> = {}
+
+  const nextNodes = nodes.map((node) => {
+    if (moved || !node.children?.length) {
+      return node
+    }
+
+    const childResult = reorderMenuTreeByDrag(node.children, sourceId, targetId)
+
+    if (!childResult.moved) {
+      return node
+    }
+
+    moved = true
+    changes = childResult.changes
+
+    return {
+      ...node,
+      children: childResult.nodes
+    }
+  })
+
+  return {
+    nodes: nextNodes,
+    changes,
+    moved
+  }
+}
+
+const resetMenuDragState = () => {
+  draggingMenuId.value = undefined
+  dragOverMenuId.value = undefined
+}
+
+const handleMenuDragStart = (record: UmsMenuDynamic, event: DragEvent) => {
+  const id = Number(record.id)
+
+  draggingMenuId.value = id
+  event.dataTransfer?.setData('text/plain', String(id))
+
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move'
+  }
+}
+
+const handleMenuDragOver = (record: UmsMenuDynamic, event: DragEvent) => {
+  if (!draggingMenuId.value || draggingMenuId.value === Number(record.id)) {
+    return
+  }
+
+  event.preventDefault()
+  dragOverMenuId.value = Number(record.id)
+
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = 'move'
+  }
+}
+
+const handleMenuDragLeave = (record: UmsMenuDynamic) => {
+  if (dragOverMenuId.value === Number(record.id)) {
+    dragOverMenuId.value = undefined
+  }
+}
+
+const handleMenuDrop = (record: UmsMenuDynamic, event: DragEvent) => {
+  event.preventDefault()
+
+  const sourceId = draggingMenuId.value || Number(event.dataTransfer?.getData('text/plain'))
+  const targetId = Number(record.id)
+
+  if (!sourceId || sourceId === targetId) {
+    resetMenuDragState()
+    return
+  }
+
+  const result = reorderMenuTreeByDrag(menuTree.value, sourceId, targetId)
+
+  if (!result.moved) {
+    message.warning('只能在同一父级菜单下拖拽排序')
+    resetMenuDragState()
+    return
+  }
+
+  menuTree.value = result.nodes
+  sortChangeMap.value = {
+    ...sortChangeMap.value,
+    ...result.changes
+  }
+  message.info('排序已调整，请点击“保存排序”提交更改')
+  resetMenuDragState()
+}
+
+const getTableCustomRow = (record: UmsMenuDynamic) => {
+  const id = Number(record.id)
+
+  return {
+    draggable: !loading.value && !sortSaving.value,
+    class: {
+      'is-dragging-row': draggingMenuId.value === id,
+      'is-drag-over-row': dragOverMenuId.value === id
+    },
+    onDragstart: (event: DragEvent) => handleMenuDragStart(record, event),
+    onDragover: (event: DragEvent) => handleMenuDragOver(record, event),
+    onDragleave: () => handleMenuDragLeave(record),
+    onDrop: (event: DragEvent) => handleMenuDrop(record, event),
+    onDragend: resetMenuDragState
+  }
 }
 
 const handleStatusChange = async (record: Record<string, any>, checked: string | number | boolean) => {
@@ -1142,6 +1305,22 @@ onBeforeUnmount(() => {
 
   :deep(.ant-table-tbody > tr:hover > td.ant-table-cell-fix-right) {
     background-color: var(--color-fill-1, #f5faff);
+  }
+
+  :deep(.ant-table-tbody > tr[draggable='true']) {
+    cursor: grab;
+  }
+
+  :deep(.ant-table-tbody > tr.is-dragging-row > td) {
+    opacity: 0.55;
+  }
+
+  :deep(.ant-table-tbody > tr.is-drag-over-row > td) {
+    background-color: #e6f4ff !important;
+  }
+
+  :deep(.ant-table-tbody > tr.is-drag-over-row > td.ant-table-cell-fix-right) {
+    background-color: #e6f4ff !important;
   }
 
   :deep(.ant-table-cell-fix-right-first::after) {

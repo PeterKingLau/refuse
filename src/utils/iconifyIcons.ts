@@ -23,6 +23,12 @@ interface PublicIconSetFile {
   path: string
 }
 
+interface LocalCachePayload<T> {
+  version: number
+  expire: number
+  value: T
+}
+
 const iconAliasMap: Record<string, string> = {
   'ant-design:line-chart-outlined': 'mdi:chart-line'
 }
@@ -34,24 +40,94 @@ const fallbackPublicIconSetFiles: PublicIconSetFile[] = [
   { name: 'Simple Icons', prefix: 'simple-icons', path: 'simple-icons-icons.json' }
 ]
 
+const ICON_CACHE_VERSION = 1
+const ICON_CACHE_PREFIX = 'refuse-iconify:'
+const ICON_SET_CACHE_TTL = 7 * 24 * 60 * 60 * 1000
+const REMOTE_SEARCH_CACHE_TTL = 24 * 60 * 60 * 1000
+
 const iconCollectionMap = new Map<string, IconifyCollection>()
+const iconCollectionLoadingMap = new Map<string, Promise<LocalIconSet | undefined>>()
+const remoteIconSearchLoadingMap = new Map<string, Promise<string[]>>()
 let cachedIconSets: LocalIconSet[] | undefined
+let iconSetsLoading: Promise<LocalIconSet[]> | undefined
+let cachedPublicIconSetFiles: PublicIconSetFile[] | undefined
+let publicIconSetFilesLoading: Promise<PublicIconSetFile[]> | undefined
+
+const isClient = () => typeof window !== 'undefined'
 
 const getPublicIconUrl = (fileName: string) => {
   const baseUrl = import.meta.env.BASE_URL || '/'
   return `${baseUrl.replace(/\/?$/, '/')}iconify/${fileName}`
 }
 
-const loadPublicIconSetFiles = async () => {
-  try {
-    const response = await fetch(getPublicIconUrl('icon-sets.json'))
-    if (!response.ok) return fallbackPublicIconSetFiles
+const getCacheKey = (key: string) => `${ICON_CACHE_PREFIX}${key}`
 
-    const files = (await response.json()) as PublicIconSetFile[]
-    return files.filter((file) => file.name && file.path)
+const getLocalCache = <T>(key: string): T | undefined => {
+  if (!isClient()) return undefined
+
+  try {
+    const cached = window.localStorage.getItem(getCacheKey(key))
+    if (!cached) return undefined
+
+    const payload = JSON.parse(cached) as LocalCachePayload<T>
+
+    if (payload.version !== ICON_CACHE_VERSION || payload.expire <= Date.now()) {
+      window.localStorage.removeItem(getCacheKey(key))
+      return undefined
+    }
+
+    return payload.value
   } catch {
-    return fallbackPublicIconSetFiles
+    window.localStorage.removeItem(getCacheKey(key))
+    return undefined
   }
+}
+
+const setLocalCache = <T>(key: string, value: T, ttl = ICON_SET_CACHE_TTL) => {
+  if (!isClient()) return
+
+  try {
+    const payload: LocalCachePayload<T> = {
+      version: ICON_CACHE_VERSION,
+      expire: Date.now() + ttl,
+      value
+    }
+
+    window.localStorage.setItem(getCacheKey(key), JSON.stringify(payload))
+  } catch {
+    // Storage can be unavailable or full. Memory cache still prevents repeated requests.
+  }
+}
+
+const loadPublicIconSetFiles = async () => {
+  if (cachedPublicIconSetFiles) return cachedPublicIconSetFiles
+  if (publicIconSetFilesLoading) return publicIconSetFilesLoading
+
+  const cachedFiles = getLocalCache<PublicIconSetFile[]>('icon-set-files')
+  if (cachedFiles?.length) {
+    cachedPublicIconSetFiles = cachedFiles
+    return cachedFiles
+  }
+
+  publicIconSetFilesLoading = fetch(getPublicIconUrl('icon-sets.json'))
+    .then(async (response) => {
+      if (!response.ok) return fallbackPublicIconSetFiles
+
+      const files = (await response.json()) as PublicIconSetFile[]
+      const validFiles = files.filter((file) => file.name && file.path)
+      return validFiles.length ? validFiles : fallbackPublicIconSetFiles
+    })
+    .then((files) => {
+      cachedPublicIconSetFiles = files
+      setLocalCache('icon-set-files', files)
+      return files
+    })
+    .catch(() => fallbackPublicIconSetFiles)
+    .finally(() => {
+      publicIconSetFilesLoading = undefined
+    })
+
+  return publicIconSetFilesLoading
 }
 
 export const normalizeIconName = (icon?: string) => {
@@ -60,29 +136,59 @@ export const normalizeIconName = (icon?: string) => {
 }
 
 const loadPublicIconSet = async (file: PublicIconSetFile): Promise<LocalIconSet | undefined> => {
-  try {
-    const response = await fetch(getPublicIconUrl(file.path))
-    if (!response.ok) return undefined
+  const cachedCollection = getLocalCache<IconifyCollection>(`collection:${file.path}`)
 
-    const collection = (await response.json()) as IconifyCollection
-    iconCollectionMap.set(collection.prefix, collection)
-
+  if (cachedCollection?.prefix && cachedCollection.icons) {
+    iconCollectionMap.set(cachedCollection.prefix, cachedCollection)
     return {
       name: file.name,
-      prefix: collection.prefix,
-      icons: Object.keys(collection.icons)
+      prefix: cachedCollection.prefix,
+      icons: Object.keys(cachedCollection.icons)
     }
-  } catch {
-    return undefined
   }
+
+  const loadingCollection = iconCollectionLoadingMap.get(file.path)
+  if (loadingCollection) return loadingCollection
+
+  const promise = fetch(getPublicIconUrl(file.path))
+    .then(async (response) => {
+      if (!response.ok) return undefined
+
+      const collection = (await response.json()) as IconifyCollection
+      if (!collection.prefix || !collection.icons) return undefined
+
+      iconCollectionMap.set(collection.prefix, collection)
+      setLocalCache(`collection:${file.path}`, collection)
+
+      return {
+        name: file.name,
+        prefix: collection.prefix,
+        icons: Object.keys(collection.icons)
+      }
+    })
+    .catch(() => undefined)
+    .finally(() => {
+      iconCollectionLoadingMap.delete(file.path)
+    })
+
+  iconCollectionLoadingMap.set(file.path, promise)
+  return promise
 }
 
 export const loadLocalIconSets = async () => {
   if (cachedIconSets) return cachedIconSets
+  if (iconSetsLoading) return iconSetsLoading
 
-  const publicIconSetFiles = await loadPublicIconSetFiles()
-  cachedIconSets = (await Promise.all(publicIconSetFiles.map(loadPublicIconSet))).filter(Boolean) as LocalIconSet[]
-  return cachedIconSets
+  iconSetsLoading = loadPublicIconSetFiles()
+    .then(async (publicIconSetFiles) => {
+      cachedIconSets = (await Promise.all(publicIconSetFiles.map(loadPublicIconSet))).filter(Boolean) as LocalIconSet[]
+      return cachedIconSets
+    })
+    .finally(() => {
+      iconSetsLoading = undefined
+    })
+
+  return iconSetsLoading
 }
 
 export const registerIconNames = (iconNames: string[]) => {
@@ -107,9 +213,27 @@ export const searchRemoteIconNames = async (keyword: string, limit = 120) => {
   const query = keyword.trim()
   if (!query) return []
 
-  const response = await fetch(`https://api.iconify.design/search?query=${encodeURIComponent(query)}&limit=${limit}`)
-  if (!response.ok) return []
+  const cacheKey = `remote-search:${limit}:${query.toLowerCase()}`
+  const cachedResult = getLocalCache<string[]>(cacheKey)
+  if (cachedResult) return cachedResult
 
-  const data = (await response.json()) as IconifySearchResponse
-  return (data.icons || []).map(normalizeIconName)
+  const loadingSearch = remoteIconSearchLoadingMap.get(cacheKey)
+  if (loadingSearch) return loadingSearch
+
+  const promise = fetch(`https://api.iconify.design/search?query=${encodeURIComponent(query)}&limit=${limit}`)
+    .then(async (response) => {
+      if (!response.ok) return []
+
+      const data = (await response.json()) as IconifySearchResponse
+      const icons = (data.icons || []).map(normalizeIconName)
+      setLocalCache(cacheKey, icons, REMOTE_SEARCH_CACHE_TTL)
+      return icons
+    })
+    .catch(() => [])
+    .finally(() => {
+      remoteIconSearchLoadingMap.delete(cacheKey)
+    })
+
+  remoteIconSearchLoadingMap.set(cacheKey, promise)
+  return promise
 }

@@ -26,9 +26,10 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
     env = loadEnv(mode, root)
   }
 
-  const isProductionBuild = isBuild && mode === 'pro'
+  const isProductionBuild = isBuild && mode.startsWith('pro')
   const shouldUseTerser = isProductionBuild || env.VITE_BUILD_OBFUSCATE === 'true'
   const shouldDropConsole = env.VITE_DROP_CONSOLE === 'true'
+  const devProxyTarget = env.VITE_DEV_PROXY_TARGET || 'https://www.hxdqb.com'
 
   return {
     base: env.VITE_BASE_PATH,
@@ -145,7 +146,7 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
       proxy: {
         // 选项写法
         '/api': {
-          target: 'http://192.168.100.26:9527',
+          target: devProxyTarget,
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, '')
         }

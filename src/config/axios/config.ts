@@ -5,6 +5,8 @@ const config: {
     base: string
     dev: string
     pro: string
+    ip: string
+    hxd: string
     test: string
   }
   result_code: number | string
@@ -23,7 +25,8 @@ const config: {
 
     // 打包生产环境接口前缀
     pro: 'https://www.hxdqb.com/api',
-    //pro: 'http://8.222.139.237:8080',
+    ip: 'http://47.108.212.205:9527/',
+    hxd: 'https://www.hxdqb.com/api',
     // 打包测试环境接口前缀
     test: 'http://47.109.32.193:8080'
   },

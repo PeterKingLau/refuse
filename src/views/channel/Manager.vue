@@ -77,7 +77,7 @@
     <ATable row-key="id" :columns="columns" :data-source="tableData" :pagination="false" :row-selection="rowSelection" bordered>
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'logo_path'">
-          <img v-if="record.logo_path" :src="getImageURL(record.logo_path)" class="table-image" />
+          <AImage v-if="record.logo_path" :src="getImageURL(record.logo_path)" :width="64" :height="64" class="table-image" />
           <span v-else class="empty-text">暂无</span>
         </template>
 
@@ -211,6 +211,7 @@ import {
   Col as ACol,
   Form as AForm,
   FormItem as AFormItem,
+  Image as AImage,
   Input as AInput,
   Modal as AModal,
   Pagination as APagination,
@@ -622,7 +623,12 @@ const doAddDepartment = async () => {
 .table-image {
   width: 64px;
   height: 64px;
-  object-fit: contain;
+
+  :deep(.ant-image-img) {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+  }
 }
 
 .empty-text {
