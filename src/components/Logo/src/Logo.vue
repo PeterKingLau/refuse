@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed, onMounted, unref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, unref, watch } from 'vue'
 import { useAppStore } from '@/store/modules/app'
 import { useDesign } from '@/hooks/web/useDesign'
 
@@ -16,6 +16,7 @@ const title = computed(() => appStore.getTitle)
 const layout = computed(() => appStore.getLayout)
 
 const collapse = computed(() => appStore.getCollapse)
+let showTimer: ReturnType<typeof setTimeout> | undefined
 
 onMounted(() => {
   if (unref(collapse)) show.value = false
@@ -24,12 +25,16 @@ onMounted(() => {
 watch(
   () => collapse.value,
   (collapse: boolean) => {
+    if (showTimer) {
+      clearTimeout(showTimer)
+    }
+
     if (unref(layout) === 'topLeft' || unref(layout) === 'cutMenu') {
       show.value = true
       return
     }
     if (!collapse) {
-      setTimeout(() => {
+      showTimer = setTimeout(() => {
         show.value = !collapse
       }, 400)
     } else {
@@ -52,6 +57,12 @@ watch(
     }
   }
 )
+
+onBeforeUnmount(() => {
+  if (showTimer) {
+    clearTimeout(showTimer)
+  }
+})
 </script>
 
 <template>

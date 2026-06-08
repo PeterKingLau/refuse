@@ -15,9 +15,11 @@
 </template>
 
 <script lang="ts" setup>
+import { memberIncrementApi } from '@/api/machine'
+
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { Card as ACard, Select as ASelect, SelectOption as ASelectOption } from 'ant-design-vue'
-import { PATH_URL, service } from '@/config/axios/service'
+import * as requestApi from '@/api/request'
 import { createDashboardChart, renderDashboardChart, timeOptions, toDashboardChartData } from '@/utils/g2Chart'
 
 const day = ref(3)
@@ -40,7 +42,7 @@ const selcltChange = () => {
 }
 
 const getMember = () => {
-  service.get(PATH_URL + '/MachineMange/memberIncrement?item=' + day.value).then((res: any) => {
+  memberIncrementApi(day.value).then((res: any) => {
     const categories = res.data.title || []
     const data = toDashboardChartData(categories, [
       {

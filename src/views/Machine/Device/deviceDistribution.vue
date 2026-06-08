@@ -133,7 +133,7 @@
       </div>
     </div>
 
-    <ATable row-key="id" :columns="deviceColumns" :data-source="TableData" :pagination="false" :row-selection="rowSelection" :scroll="{ x: 2300 }" bordered>
+    <ATable row-key="id" :columns="deviceColumns" :data-source="TableData" :pagination="false" :row-selection="rowSelection" :scroll="{ x: 'max-content' }" bordered>
       <template #bodyCell="{ column: deviceColumn, record: deviceRecord }">
         <template v-if="deviceColumn.key === 'onlineTime'">
           {{ FormatDate(deviceRecord.onlineTime) }}
@@ -249,7 +249,15 @@
 
           <ACol :span="12">
             <AFormItem label="LOGO">
-              <AUpload class="avatar-uploader" :action="UpImageURL" :show-upload-list="false" :before-upload="beforeAvatarUpload" :headers="headObject" @change="handleDeviceUploadChange">
+              <AUpload
+                class="avatar-uploader"
+                :action="UpImageURL"
+                :show-upload-list="false"
+                :before-upload="beforeAvatarUpload"
+                :headers="headObject"
+                :custom-request="uppyUploadRequest"
+                @change="handleDeviceUploadChange"
+              >
                 <img v-if="AddDataForm.pic" :src="getImageURL(AddDataForm.pic)" class="avatar" />
                 <div v-else class="upload-placeholder">
                   <Icon icon="ant-design:plus-outlined" :size="24" />
@@ -360,7 +368,15 @@
 
     <ADrawer v-model:open="showDrawer" title="批量导入" placement="right" width="420px" @close="DrawerhandleClose">
       <div class="drawer-content">
-        <AUploadDragger v-model:file-list="batchUploadFileList" :action="GetUpLoadExcelURL()" :max-count="1" :headers="headObject" @remove="deleteFile" @change="handleAvatarSuccess">
+        <AUploadDragger
+          v-model:file-list="batchUploadFileList"
+          :action="GetUpLoadExcelURL()"
+          :max-count="1"
+          :headers="headObject"
+          :custom-request="uppyUploadRequest"
+          @remove="deleteFile"
+          @change="handleAvatarSuccess"
+        >
           <p class="upload-icon">
             <Icon icon="ant-design:inbox-outlined" :size="36" />
           </p>
@@ -411,7 +427,15 @@
         </AFormItem>
 
         <AFormItem label="LOGO">
-          <AUpload class="avatar-uploader" :action="UpImageURL" :show-upload-list="false" :before-upload="beforeAvatarUpload" :headers="headObject" @change="BatchHandleUploadChange">
+          <AUpload
+            class="avatar-uploader"
+            :action="UpImageURL"
+            :show-upload-list="false"
+            :before-upload="beforeAvatarUpload"
+            :headers="headObject"
+            :custom-request="uppyUploadRequest"
+            @change="BatchHandleUploadChange"
+          >
             <img v-if="BatchStatusData.pic" :src="getImageURL(BatchStatusData.pic)" class="avatar" />
             <div v-else class="upload-placeholder">
               <Icon icon="ant-design:plus-outlined" :size="24" />
@@ -441,6 +465,34 @@
 </template>
 
 <script setup lang="tsx">
+import { deleteHardwarePackageApi } from '@/api/hardware'
+
+import {
+  addDeviceApi,
+  addDeviceBatchApi,
+  addDeviceLedContentApi,
+  calibrationAddressOfDeviceApi,
+  deleteDeviceApi,
+  deleteDeviceLedContentApi,
+  deleteMediumApi,
+  getDeviceApi,
+  getDeviceStatusApi,
+  getDeviceTypeApi,
+  getLedContentApi,
+  getMediumApi,
+  getRulesForDepartmentApi,
+  getWorkableDeviceRuleApi,
+  setBatchRulesApi,
+  setDeviceNoWorkApi,
+  setLedContentApi,
+  setNotActiveBatchApi,
+  setRuleApi,
+  setStatusWithBatchApi,
+  updateDeviceApi
+} from '@/api/machine'
+
+import { getDepartmentForSelectApi, getDeviceAreaApi, getUsableStaffApi } from '@/api/permission'
+
 import { computed, defineComponent, inject, nextTick, onMounted, reactive, ref, shallowRef } from 'vue'
 import {
   Button as AButton,
@@ -467,7 +519,8 @@ import type { TableColumnsType, UploadChangeParam } from 'ant-design-vue'
 import AMapLoader from '@amap/amap-jsapi-loader'
 import axios from 'axios'
 import qs from 'qs'
-import { PATH_URL, service } from '@/config/axios/service'
+import * as requestApi from '@/api/request'
+import { uppyUploadRequest } from '@/utils/uppyUpload'
 import { FormatDate, GetImageURL, GetVideoURL, GetUpLoadExcelURL } from '@/utils/tools'
 import { Cvideo } from '@/views/video/components'
 import { MacDetail } from './Components'
@@ -564,7 +617,7 @@ const ConvertMediumType = (type: number): string => {
 }
 
 const deleteMedium = (row: any) => {
-  service.post(PATH_URL + '/MachineMange/deleteMedium', { id: row.md_id }).then((res: any) => {
+  deleteMediumApi({ id: row.md_id }).then((res: any) => {
     message.success(res.message || '操作成功')
     GetMediumOfHomePage()
     GetMediumOfAwait()
@@ -655,40 +708,36 @@ const handleMediumTabChange = (pageSign: string | number) => {
 }
 
 const GetMediumOfHomePage = () => {
-  service
-    .post(PATH_URL + '/MachineMange/GetMedium', {
-      deviceId: currentDeviceId,
-      location: 1,
-      page: hp_page.value,
-      size: hp_size.value
-    })
-    .then((res: any) => {
-      HomePageTableData.value = res.data?.records || []
-    })
+  getMediumApi({
+    deviceId: currentDeviceId,
+    location: 1,
+    page: hp_page.value,
+    size: hp_size.value
+  }).then((res: any) => {
+    HomePageTableData.value = res.data?.records || []
+  })
 }
 
 const GetMediumOfAwait = () => {
-  service
-    .post(PATH_URL + '/MachineMange/GetMedium', {
-      deviceId: currentDeviceId,
-      location: 2,
-      page: hp_page.value,
-      size: hp_size.value
-    })
-    .then((res: any) => {
-      awaitTableData.value = res.data?.records || []
-    })
+  getMediumApi({
+    deviceId: currentDeviceId,
+    location: 2,
+    page: hp_page.value,
+    size: hp_size.value
+  }).then((res: any) => {
+    awaitTableData.value = res.data?.records || []
+  })
 }
 
 const delItem = (row: any) => {
-  service.post(PATH_URL + '/MachineMange/DeleteDeviceLedContent', { id: row.id }).then(() => {
+  deleteDeviceLedContentApi({ id: row.id }).then(() => {
     message.success('操作成功')
     GetLedContent()
   })
 }
 
 const GetLedContent = () => {
-  service.post(PATH_URL + '/MachineMange/getLedContent', { deviceId: currentDeviceId }).then((res: any) => {
+  getLedContentApi({ deviceId: currentDeviceId }).then((res: any) => {
     const temp = res.data
 
     if (!temp || temp.length === 0) {
@@ -727,15 +776,13 @@ const pushOne = (row: any) => {
     return
   }
 
-  service
-    .post(PATH_URL + '/MachineMange/AddDeviceLedContent', {
-      deviceId: currentDeviceId,
-      content,
-      id: row.id
-    })
-    .then(() => {
-      message.success('推送成功')
-    })
+  addDeviceLedContentApi({
+    deviceId: currentDeviceId,
+    content,
+    id: row.id
+  }).then(() => {
+    message.success('推送成功')
+  })
 }
 
 const getAddr = 'https://restapi.amap.com/v3/geocode/regeo'
@@ -918,7 +965,7 @@ const getDeviceData = () => {
     imei: SearchFormData.IMEI
   }
 
-  service.post(PATH_URL + '/MachineMange/getDevice', parm).then((res: any) => {
+  getDeviceApi(parm).then((res: any) => {
     TableData.value = res.data?.records || []
     total.value = res.data?.total || 0
     selectedRowKeys.value = []
@@ -946,31 +993,31 @@ const onReset = () => {
 }
 
 const getStaff = () => {
-  service.get(PATH_URL + '/Permission/getUsableStaff').then((res: any) => {
+  getUsableStaffApi().then((res: any) => {
     staffArray.value = res.data || []
   })
 }
 
 const getDevcieType = () => {
-  service.post(PATH_URL + '/MachineMange/getDeviceType').then((res: any) => {
+  getDeviceTypeApi().then((res: any) => {
     deviceTypeArray.value = res.data || []
   })
 }
 
 const getDeviceStatus = () => {
-  service.get(PATH_URL + '/MachineMange/getDeviceStatus').then((res: any) => {
+  getDeviceStatusApi().then((res: any) => {
     deviceStatusArray.value = res.data || []
   })
 }
 
 const getDepartment = () => {
-  service.get(PATH_URL + '/Permission/getDepartmentForSelect').then((res: any) => {
+  getDepartmentForSelectApi().then((res: any) => {
     departmentArray.value = res.data || []
   })
 }
 
 const getDeviceArea = () => {
-  service.post(PATH_URL + '/Permission/getDeviceArea').then((res: any) => {
+  getDeviceAreaApi().then((res: any) => {
     deviceAreaArray.value = res.data || []
   })
 }
@@ -1083,7 +1130,7 @@ const deleteDevice = (ids: number[], content: string) => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      await service.post(PATH_URL + '/MachineMange/deleteDevice', qs.stringify({ ids }, { arrayFormat: 'brackets' }))
+      await deleteDeviceApi(qs.stringify({ ids }, { arrayFormat: 'brackets' }))
       message.success('操作成功')
       getDeviceData()
     }
@@ -1116,10 +1163,10 @@ const onCloseDialog = () => {
   dialogTableVisible.value = false
 }
 
-const UpImageURL = computed(() => PATH_URL + '/Common/upLoadImage')
+const UpImageURL = computed(() => requestApi.getUploadImageUrl())
 
 const getImageURL = (imageURL?: string) => {
-  return imageURL ? PATH_URL + '/Common/downLoadPic/' + imageURL : ''
+  return imageURL ? requestApi.getDownloadPicUrl(imageURL) : ''
 }
 
 const handleDeviceUploadChange = (info: UploadChangeParam) => {
@@ -1147,7 +1194,7 @@ const onAddConfirm = () => {
     cancelText: '取消',
     onOk: async () => {
       AddDataForm.sNumber = AddDataForm.SerialNumber
-      const res: any = await service.post(PATH_URL + '/MachineMange/addDevice', AddDataForm)
+      const res: any = await addDeviceApi(AddDataForm)
       message.success(res.message || '操作成功')
       getDeviceData()
       onCloseDialog()
@@ -1163,7 +1210,7 @@ const updateDevice = () => {
     cancelText: '取消',
     onOk: async () => {
       AddDataForm.sNumber = AddDataForm.SerialNumber
-      await service.post(PATH_URL + '/MachineMange/updateDevice', AddDataForm)
+      await updateDeviceApi(AddDataForm)
       message.success('操作成功')
       getDeviceData()
       onCloseDialog()
@@ -1190,7 +1237,7 @@ const DoCorrect = () => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      await service.post(PATH_URL + '/MachineMange/CalibrationAddressOfDevice', {
+      await calibrationAddressOfDeviceApi({
         id: idOfCorrent,
         lat: marker.getPosition().lat,
         lng: marker.getPosition().lng,
@@ -1207,7 +1254,7 @@ const ruleOptions = computed(() => RuleArray.value.map((item) => ({ label: item.
 
 const setRule = (val: any) => {
   ruleData.value.DeviceId = val.id
-  service.post(PATH_URL + '/MachineMange/getWorkableDeviceRule', { deviceTypeId: val.deviceType.id }).then((res: any) => {
+  getWorkableDeviceRuleApi({ deviceTypeId: val.deviceType.id }).then((res: any) => {
     RuleArray.value = res.data || []
     if (RuleArray.value.length > 0) {
       ruleData.value.ruleId = val.ruleId || (RuleArray.value[0] as any).id
@@ -1233,7 +1280,7 @@ const onRuleDialogConfirm = () => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      await service.post(PATH_URL + '/MachineMange/setRule', {
+      await setRuleApi({
         deviceId: ruleData.value.DeviceId,
         ruleId: ruleData.value.ruleId
       })
@@ -1251,7 +1298,7 @@ const setNoWork = (val: any) => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      await service.post(PATH_URL + '/MachineMange/setDeviceNoWork', { deviceId: val.id })
+      await setDeviceNoWorkApi({ deviceId: val.id })
       message.success('操作成功')
       getDeviceData()
     }
@@ -1283,7 +1330,7 @@ const batchUploadFileList = ref<any[]>([])
 let fileName: string | undefined = ''
 
 const doAddBatch = () => {
-  service.get(PATH_URL + '/MachineMange/addDeviceBatch?fileName=' + fileName).then(() => {
+  addDeviceBatchApi(fileName).then(() => {
     getDeviceData()
     showDrawer.value = false
     batchUploadFileList.value = []
@@ -1296,7 +1343,7 @@ const headObject = computed(() => ({
 }))
 
 const deleteFile = (file: any) => {
-  service.get(PATH_URL + '/Common/deleteHardwarePackage?fileName=' + file.name)
+  deleteHardwarePackageApi(file.name)
   return true
 }
 
@@ -1335,16 +1382,14 @@ const statusDrawerHandleClose = () => {
 }
 
 const doBatchSetStatus = () => {
-  service
-    .post(PATH_URL + '/MachineMange/SetStatusWithBatch', {
-      ids: DeleteIdArray,
-      param: BatchStatusData.value
-    })
-    .then(() => {
-      message.success('操作成功')
-      getDeviceData()
-      setBatchStatusVisiable.value = false
-    })
+  setStatusWithBatchApi({
+    ids: DeleteIdArray,
+    param: BatchStatusData.value
+  }).then(() => {
+    message.success('操作成功')
+    getDeviceData()
+    setBatchStatusVisiable.value = false
+  })
 }
 
 const BatchHandleUploadChange = (info: UploadChangeParam) => {
@@ -1364,15 +1409,13 @@ const setBatchAuth = (field: string, event: any) => {
 
 const BatcLedContent = ref<Record<string, any>>({})
 const onBatchLed = () => {
-  service
-    .post(PATH_URL + '/MachineMange/setLedContent', {
-      ids: DeleteIdArray,
-      content: BatcLedContent.value.content
-    })
-    .then(() => {
-      message.success('操作成功')
-      showLedDrawer.value = false
-    })
+  setLedContentApi({
+    ids: DeleteIdArray,
+    content: BatcLedContent.value.content
+  }).then(() => {
+    message.success('操作成功')
+    showLedDrawer.value = false
+  })
 }
 
 const onClickExport = () => {
@@ -1389,7 +1432,7 @@ const onClickExport = () => {
 
   axios({
     method: 'post',
-    url: PATH_URL + '/MachineMange/exportExcelForMacDevice',
+    url: requestApi.getApiUrl('/MachineMange/exportExcelForMacDevice'),
     responseType: 'blob',
     headers: {
       'Content-Type': 'application/json',
@@ -1420,26 +1463,24 @@ const rules = ref<any[]>([])
 const batchRuleOptions = computed(() => rules.value.map((item) => ({ label: item.label, value: item.id })))
 
 const getRules = () => {
-  service.get(PATH_URL + '/MachineMange/getRulesForDepartment').then((res: any) => {
+  getRulesForDepartmentApi().then((res: any) => {
     rules.value = res.data || []
   })
 }
 
 const doSetBatchRules = () => {
-  service
-    .post(PATH_URL + '/MachineMange/setBatchRules', {
-      ids: DeleteIdArray,
-      rules: batchRuleSelect.value
-    })
-    .then(() => {
-      message.success('操作成功')
-      BatchRulesdialogVisible.value = false
-      getDeviceData()
-    })
+  setBatchRulesApi({
+    ids: DeleteIdArray,
+    rules: batchRuleSelect.value
+  }).then(() => {
+    message.success('操作成功')
+    BatchRulesdialogVisible.value = false
+    getDeviceData()
+  })
 }
 
 const doSetNotActive = () => {
-  service.post(PATH_URL + '/MachineMange/setNotActiveBatch', qs.stringify({ ids: DeleteIdArray }, { arrayFormat: 'brackets' })).then(() => {
+  setNotActiveBatchApi(qs.stringify({ ids: DeleteIdArray }, { arrayFormat: 'brackets' })).then(() => {
     message.success('操作成功')
     getDeviceData()
   })

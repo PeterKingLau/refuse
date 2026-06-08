@@ -1,4 +1,6 @@
 ﻿<script setup lang="ts">
+import { loginApi } from '@/api/permission'
+
 import { reactive, ref, unref, watch } from 'vue'
 import { Form } from '@/components/Form'
 import { useI18n } from '@/hooks/web/useI18n'
@@ -14,7 +16,7 @@ import { UserType } from '@/api/login/types'
 import { useValidator } from '@/hooks/web/useValidator'
 import { FormSchema } from '@/types/form'
 
-import { service } from '@/config/axios/service'
+import * as requestApi from '@/api/request'
 import { refreshMenuRoutes } from '@/utils/permissionRoutes'
 
 const { required } = useValidator()
@@ -132,8 +134,7 @@ const signIn = async () => {
       console.log(formData)
 
       try {
-        service
-          .post('/admin/login', formData)
+        loginApi(formData)
           .then((res) => {
             //  AxiosStore.setToken(res.data?.tokenHead + ' ' + res.data?.token)
             localStorage.setItem('token', res.data.tokenHead + ' ' + res.data.token)

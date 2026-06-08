@@ -1,5 +1,10 @@
 [
   {
+    "name": "Ant Design Outlined",
+    "prefix": "ant-design",
+    "path": "ant-design-icons.json"
+  },
+  {
     "name": "Element Plus",
     "prefix": "ep",
     "path": "ep-icons.json"

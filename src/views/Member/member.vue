@@ -135,7 +135,15 @@
         </AFormItem>
 
         <AFormItem label="LOGO">
-          <AUpload class="avatar-uploader" :action="UpImageURL" :show-upload-list="false" :before-upload="beforeAvatarUpload" :headers="headObject" @change="handleUploadChange">
+          <AUpload
+            class="avatar-uploader"
+            :action="UpImageURL"
+            :show-upload-list="false"
+            :before-upload="beforeAvatarUpload"
+            :headers="headObject"
+            :custom-request="uppyUploadRequest"
+            @change="handleUploadChange"
+          >
             <img v-if="addFormData.pic" :src="getImageURL(addFormData.pic)" class="avatar" />
             <div v-else class="upload-placeholder">
               <Icon icon="ant-design:plus-outlined" :size="24" />
@@ -237,6 +245,8 @@
 </template>
 
 <script setup lang="ts">
+import { addMemberApi, bindCardApi, getCardApi, getMemberApi, moveMemberToBlackListApi, operationPointsApi } from '@/api/member'
+
 import { computed, inject, onMounted, reactive, ref } from 'vue'
 import {
   Button as AButton,
@@ -255,7 +265,8 @@ import {
   message
 } from 'ant-design-vue'
 import type { TableColumnsType, UploadChangeParam } from 'ant-design-vue'
-import { PATH_URL, service } from '@/config/axios/service'
+import * as requestApi from '@/api/request'
+import { uppyUploadRequest } from '@/utils/uppyUpload'
 import { Icon } from '@/components/Icon'
 
 const ARangePicker = ADatePicker.RangePicker
@@ -435,7 +446,7 @@ const bindCard = () => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      await service.post(PATH_URL + '/memMember/bindCard', bindCardData)
+      await bindCardApi(bindCardData)
       message.success('操作成功')
       getMemberData()
       bindCardDialogVisible.value = false
@@ -458,20 +469,18 @@ const restCard = () => {
 }
 
 const getCardData = () => {
-  service
-    .post(PATH_URL + '/memMember/getCard', {
-      cardNo: getCardNo.value,
-      type: 1,
-      status: '0',
-      page: cardCurrent.value,
-      size: cardPageSize.value
-    })
-    .then((res: any) => {
-      CardTotal.value = res.data?.total || 0
-      cardTableData.value = res.data?.records || []
-      selectedCardRowKeys.value = []
-      bindCardData.cardId = 0
-    })
+  getCardApi({
+    cardNo: getCardNo.value,
+    type: 1,
+    status: '0',
+    page: cardCurrent.value,
+    size: cardPageSize.value
+  }).then((res: any) => {
+    CardTotal.value = res.data?.total || 0
+    cardTableData.value = res.data?.records || []
+    selectedCardRowKeys.value = []
+    bindCardData.cardId = 0
+  })
 }
 
 const handleCardPageChange = (page: number, size: number) => {
@@ -491,7 +500,7 @@ const doOperationPoint = () => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      await service.post(PATH_URL + '/memMember/OperationPoints', operationPoints)
+      await operationPointsApi(operationPoints)
       message.success('操作成功')
       onClosePointsDialog()
       getMemberData()
@@ -503,28 +512,26 @@ onMounted(() => {
   getMemberData()
 })
 
-const UpImageURL = computed(() => PATH_URL + '/Common/upLoadImage')
+const UpImageURL = computed(() => requestApi.getUploadImageUrl())
 
 const getImageURL = (imageURL?: string) => {
-  return imageURL ? PATH_URL + '/Common/downLoadPic/' + imageURL : ''
+  return imageURL ? requestApi.getDownloadPicUrl(imageURL) : ''
 }
 
 const getMemberData = () => {
-  service
-    .post(PATH_URL + '/memMember/getMember', {
-      departmentName: SearchFormData.departmentName,
-      phone: SearchFormData.phone,
-      cardNo: SearchFormData.cardNo,
-      nickName: SearchFormData.nickName,
-      sTime: SearchFormData.sTime?.[0],
-      etime: SearchFormData.sTime?.[1],
-      current: currentPage.value,
-      size: pageSize.value
-    })
-    .then((res: any) => {
-      total.value = res.data?.total || 0
-      TableData.value = res.data?.records || []
-    })
+  getMemberApi({
+    departmentName: SearchFormData.departmentName,
+    phone: SearchFormData.phone,
+    cardNo: SearchFormData.cardNo,
+    nickName: SearchFormData.nickName,
+    sTime: SearchFormData.sTime?.[0],
+    etime: SearchFormData.sTime?.[1],
+    current: currentPage.value,
+    size: pageSize.value
+  }).then((res: any) => {
+    total.value = res.data?.total || 0
+    TableData.value = res.data?.records || []
+  })
 }
 
 const handleUploadChange = (info: UploadChangeParam) => {
@@ -579,7 +586,7 @@ const onConfirm = () => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      const res: any = await service.post(PATH_URL + '/memMember/addMember', addFormData)
+      const res: any = await addMemberApi(addFormData)
       if (res.code == 200) {
         message.success('操作成功')
         getMemberData()
@@ -600,7 +607,7 @@ const handleDetail = (record: Record<string, any>) => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      await service.post(PATH_URL + '/memMember/ToBlickList', { memberId: record.id })
+      await moveMemberToBlackListApi({ memberId: record.id })
       message.success('操作成功')
       AdddialogFormVisible.value = false
       getMemberData()

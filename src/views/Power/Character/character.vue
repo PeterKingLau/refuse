@@ -195,7 +195,18 @@
 </template>
 
 <script setup lang="ts">
-import { PATH_URL, service } from '@/config/axios/service'
+import {
+  addCharacterApi,
+  deleteCharacterApi,
+  getDataModelApi,
+  getDepartmentForSelectApi,
+  getMenuIdOfCharacterApi,
+  getPowCharacterOfLevelApi,
+  getTreeDataApi,
+  updateDataModeApi
+} from '@/api/permission'
+
+import * as requestApi from '@/api/request'
 import { computed, inject, onMounted, reactive, ref, unref } from 'vue'
 import {
   Button as AButton,
@@ -276,7 +287,7 @@ const onClickUpdateDialog = () => {
         id: dataModelFormData.id,
         dataPower: dataModelFormData.code
       }
-      await service.post(PATH_URL + '/Permission/updateDataMode', pars)
+      await updateDataModeApi(pars)
       message.success('操作成功')
       onclickUpdateDataModeClose()
       getCharacter()
@@ -335,7 +346,7 @@ const dataModeOptions = computed(() =>
 )
 
 const getDataMode = () => {
-  service.get(PATH_URL + '/Permission/getDataModel').then((res: any) => {
+  getDataModelApi().then((res: any) => {
     dataMode.value = res.data || []
   })
 }
@@ -387,7 +398,7 @@ const DeleteBatch = () => {
       const pars = {
         ids: DeleteIdArray
       }
-      await service.post(PATH_URL + '/Permission/deleteCharacter', pars)
+      await deleteCharacterApi(pars)
       message.success('操作成功')
       getCharacter()
     }
@@ -404,7 +415,7 @@ const departmentOptions = computed(() =>
 )
 
 const getDepartmnet = () => {
-  service.get(PATH_URL + '/Permission/getDepartmentForSelect').then((res: any) => {
+  getDepartmentForSelectApi().then((res: any) => {
     DepartmentArray.value = res.data || []
   })
 }
@@ -421,7 +432,7 @@ const getCharacter = () => {
   const [startTime = '', endTime = ''] = dateSelect.value || []
   searchFormData.sTime = startTime || ''
   searchFormData.eTime = endTime || ''
-  service.post(PATH_URL + '/Permission/getPowCharacterOfLevel', searchFormData).then((res: any) => {
+  getPowCharacterOfLevelApi(searchFormData).then((res: any) => {
     tableData.value = res.data.records
     searchFormData.total = res.data.total
     selectedRowKeys.value = []
@@ -443,7 +454,7 @@ const handleEdit = (record: Record<string, any>) => {
     params: { CharacterId: _data.id }
   }
 
-  service.get(PATH_URL + '/Permission/getMenuIdOfCharacter', temp).then((res: any) => {
+  getMenuIdOfCharacterApi(temp).then((res: any) => {
     checkedMenuKeys.value = res.data || []
     halfCheckedMenuKeys.value = []
     dialogFormVisible.value = true
@@ -462,7 +473,7 @@ const handleRemove = (record: Record<string, any>) => {
         ids: [value.id]
       }
 
-      await service.post(PATH_URL + '/Permission/deleteCharacter', ids)
+      await deleteCharacterApi(ids)
       message.success('操作成功')
       getCharacter()
     }
@@ -535,7 +546,7 @@ const onClickConfirm = () => {
     cancelText: '取消',
     onOk: async () => {
       addFormData.menus = [...checkedMenuKeys.value, ...halfCheckedMenuKeys.value]
-      await service.post(PATH_URL + '/Permission/addCharacter', addFormData)
+      await addCharacterApi(addFormData)
       message.success(addFormData.id ? '修改记录成功' : '添加记录成功')
       getCharacter()
       onCloseDialog()
@@ -559,7 +570,7 @@ onMounted(() => {
 })
 
 const getTreeData = () => {
-  service.get(PATH_URL + '/Permission/getTreeData').then((res: any) => {
+  getTreeDataApi().then((res: any) => {
     data.value = normalizeTreeData(res.data || [])
   })
 }

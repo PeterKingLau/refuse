@@ -7,15 +7,7 @@ let instance: Nullable<VNode> = null
 
 export function createImageViewer(options: ImageViewerProps) {
   if (!isClient) return
-  const {
-    urlList,
-    initialIndex = 0,
-    infinite = true,
-    hideOnClickModal = false,
-    appendToBody = false,
-    zIndex = 2000,
-    show = true
-  } = options
+  const { urlList, initialIndex = 0, infinite = true, hideOnClickModal = false, appendToBody = true, zIndex = 2000, show = true } = options
 
   const propsData: Partial<ImageViewerProps> = {}
   const container = document.createElement('div')

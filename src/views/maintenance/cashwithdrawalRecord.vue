@@ -30,7 +30,7 @@
 
     <ADivider />
 
-    <ATable row-key="id" :columns="columns" :data-source="recordData" :pagination="false" :scroll="{ x: 1920 }" bordered>
+    <ATable row-key="id" :columns="columns" :data-source="recordData" :pagination="false" :scroll="{ x: 'max-content' }" bordered>
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'how'">
           {{ getPayWay(record.how) }}

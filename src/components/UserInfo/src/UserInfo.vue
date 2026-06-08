@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { getSelfApi, updatePasswordApi } from '@/api/permission'
+
 import {
   Button as AButton,
   Dropdown as ADropdown,
@@ -17,7 +19,7 @@ import { useRouter } from 'vue-router'
 import { useDesign } from '@/hooks/web/useDesign'
 import { useTagsViewStore } from '@/store/modules/tagsView'
 import { ref, Ref, onMounted } from 'vue'
-import { PATH_URL, service } from '@/config/axios/service'
+import * as requestApi from '@/api/request'
 import { Icon } from '@/components/Icon'
 
 defineOptions({
@@ -43,7 +45,7 @@ onMounted(() => {
 })
 
 const getSelf = () => {
-  service.get(PATH_URL + '/Permission/getSelf').then((res: any) => {
+  getSelfApi().then((res: any) => {
     admin.value = res.data
   })
 }
@@ -93,7 +95,7 @@ const doChange = () => {
     newPassword: changeData.value.newpwd1
   }
   console.log('updatePassword', param)
-  service.post(PATH_URL + '/admin/updatePassword', param).then((res: any) => {
+  updatePasswordApi(param).then((res: any) => {
     if (res.code == 200) {
       message.success('操作成功')
       dialogVisible.value = false

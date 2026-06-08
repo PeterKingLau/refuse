@@ -26,7 +26,7 @@
 
     <ADivider />
 
-    <ATable row-key="id" :columns="auditColumns" :data-source="auditData" :pagination="false" :scroll="{ x: 2100 }" bordered>
+    <ATable row-key="id" :columns="auditColumns" :data-source="auditData" :pagination="false" bordered>
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'how'">
           {{ getPayWay(record.how) }}
@@ -93,19 +93,19 @@ const Permission = ref({
 })
 
 const baseColumns: TableColumnsType<CashWithdrawalRecord> = [
-  { title: '申请用户', dataIndex: 'member_name', key: 'applyMemberName', width: 180 },
-  { title: '手机号码', dataIndex: 'phone', key: 'phone', width: 160 },
-  { title: '会员名称', dataIndex: 'member_name', key: 'member_name', width: 180 },
-  { title: '所属运营商', dataIndex: 'platform_name', key: 'platform_name', width: 180 },
-  { title: '提现金额', dataIndex: 'Cash_quantity', key: 'Cash_quantity', width: 140 },
-  { title: '提现方式', dataIndex: 'how', key: 'how', width: 120 },
-  { title: '审核状态', dataIndex: 'Review_status', key: 'Review_status', width: 120 },
-  { title: '提现状态', dataIndex: 'order_status', key: 'order_status', width: 120 },
-  { title: '申请时间', dataIndex: 'create_time', key: 'create_time', width: 180 },
-  { title: '操作人员', dataIndex: 'name', key: 'name', width: 160 }
+  { title: '申请用户', dataIndex: 'member_name', key: 'applyMemberName', width: 130 },
+  { title: '手机号码', dataIndex: 'phone', key: 'phone', width: 130 },
+  { title: '会员名称', dataIndex: 'member_name', key: 'member_name', width: 130 },
+  { title: '所属运营商', dataIndex: 'platform_name', key: 'platform_name', width: 150 },
+  { title: '提现金额', dataIndex: 'Cash_quantity', key: 'Cash_quantity', width: 110 },
+  { title: '提现方式', dataIndex: 'how', key: 'how', width: 100 },
+  { title: '审核状态', dataIndex: 'Review_status', key: 'Review_status', width: 100 },
+  { title: '提现状态', dataIndex: 'order_status', key: 'order_status', width: 100 },
+  { title: '申请时间', dataIndex: 'create_time', key: 'create_time', width: 160 },
+  { title: '操作人员', dataIndex: 'name', key: 'name', width: 120 }
 ]
 
-const auditColumns: TableColumnsType<CashWithdrawalRecord> = [...baseColumns, { title: '操作', key: 'action', width: 180, fixed: 'right' }]
+const auditColumns: TableColumnsType<CashWithdrawalRecord> = [...baseColumns, { title: '操作', key: 'action', width: 140 }]
 
 onMounted(() => {
   QueryParm.status = 0

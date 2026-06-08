@@ -71,7 +71,7 @@
 
     <ADivider />
 
-    <ATable row-key="id" :columns="mediumColumns" :data-source="tableData" :pagination="false" :row-selection="mediumRowSelection" :scroll="{ x: 1500 }" bordered>
+    <ATable row-key="id" :columns="mediumColumns" :data-source="tableData" :pagination="false" :row-selection="mediumRowSelection" :scroll="{ x: 'max-content' }" bordered>
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'media'">
           <div v-if="record.file_type == 1" class="media-image-frame">
@@ -143,7 +143,15 @@
         </AFormItem>
 
         <AFormItem label="媒体链接" required>
-          <AUpload class="media-uploader" :action="UpImageURL" :show-upload-list="false" :before-upload="beforeAvatarUpload" :headers="headObject" @change="handleAvatarSuccess">
+          <AUpload
+            class="media-uploader"
+            :action="UpImageURL"
+            :show-upload-list="false"
+            :before-upload="beforeAvatarUpload"
+            :headers="headObject"
+            :custom-request="uppyUploadRequest"
+            @change="handleAvatarSuccess"
+          >
             <div v-if="showImage" class="avatar-frame">
               <img v-if="!uploadImageFailed" :src="GetImageURL(ruleForm.fileName)" class="avatar" @error="uploadImageFailed = true" />
               <span v-else class="avatar-empty">图片加载失败</span>
@@ -339,6 +347,10 @@
 </template>
 
 <script setup lang="ts">
+import { addMediumApi, clearMediumApi, deleteMediumBatchApi, getClearDeviceApi, getMediumListApi, publishMediumApi, reviseMediumApi } from '@/api/video'
+
+import { getDeviceForMediumApi, getScreenClassApi } from '@/api/machine'
+
 import { computed, inject, onMounted, reactive, ref } from 'vue'
 import {
   Button as AButton,
@@ -359,7 +371,8 @@ import {
 import type { TableColumnsType, UploadChangeParam } from 'ant-design-vue'
 import qs from 'qs'
 import { FormatDate, GetImageURL, GetVideoURL } from '@/utils/tools'
-import { PATH_URL, service } from '@/config/axios/service'
+import * as requestApi from '@/api/request'
+import { uppyUploadRequest } from '@/utils/uppyUpload'
 import { Icon } from '@/components/Icon'
 import { Cvideo } from './components'
 
@@ -506,7 +519,7 @@ const screenSizeArray = ref<any[]>([])
 const screenTypeOptions = computed(() => screenTypeArray.map((item) => ({ label: item.label, value: item.id })))
 const screenSizeOptions = computed(() => screenSizeArray.value.map((item) => ({ label: item.label, value: item.id })))
 const EnableDelete = computed(() => selectedRowKeys.value.length === 0)
-const UpImageURL = computed(() => PATH_URL + '/Common/upLoadImage')
+const UpImageURL = computed(() => requestApi.getUploadImageUrl())
 const headObject = computed(() => ({
   Authorization: localStorage.getItem('token') || ''
 }))
@@ -609,7 +622,7 @@ const markMediaImageFailed = (record: Record<string, any>) => {
 }
 
 const getTableData = () => {
-  service.post(PATH_URL + '/medMedium/getMedium', Queryparam.value).then((res: any) => {
+  getMediumListApi(Queryparam.value).then((res: any) => {
     tableData.value = res.data?.records || []
     total.value = res.data?.total || 0
     selectedRowKeys.value = []
@@ -646,7 +659,7 @@ const deleteMediumBatch = (ids: number[], content: string) => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      await service.post(PATH_URL + '/medMedium/deleteBatch', qs.stringify({ ids }, { arrayFormat: 'brackets' }))
+      await deleteMediumBatchApi(qs.stringify({ ids }, { arrayFormat: 'brackets' }))
       message.success('操作成功')
       getTableData()
     }
@@ -751,14 +764,14 @@ const submitForm = () => {
 }
 
 const updateMedium = async () => {
-  await service.post(PATH_URL + '/medMedium/reviseMedium', ruleForm)
+  await reviseMediumApi(ruleForm)
   message.success('操作成功')
   getTableData()
   addDialogVisible.value = false
 }
 
 const addMedium = async () => {
-  await service.post(PATH_URL + '/medMedium/addMedium', ruleForm)
+  await addMediumApi(ruleForm)
   message.success('操作成功')
   getTableData()
   addDialogVisible.value = false
@@ -800,7 +813,7 @@ const onPublishReset = () => {
 }
 
 const getPublishDevice = () => {
-  service.post(PATH_URL + '/MachineMange/getDeviceForMedium', QueryDeviceParam.value).then((res: any) => {
+  getDeviceForMediumApi(QueryDeviceParam.value).then((res: any) => {
     deviceData.value = res.data?.records || []
     QueryDeviceParam.value.total = res.data?.total || 0
     publishSelectedRowKeys.value = []
@@ -856,7 +869,7 @@ const DoPublish = () => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      await service.post(PATH_URL + '/medMedium/doPublish', {
+      await publishMediumApi({
         location: pushLocation.value,
         mediumId: QueryDeviceParam.value.id,
         ids: deviceSelectArray
@@ -898,7 +911,7 @@ const DoClear = () => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      await service.post(PATH_URL + '/medMedium/doClear', qs.stringify({ ids: clearIds }, { arrayFormat: 'brackets' }))
+      await clearMediumApi(qs.stringify({ ids: clearIds }, { arrayFormat: 'brackets' }))
       message.success('操作成功')
       getClearData()
     }
@@ -906,7 +919,7 @@ const DoClear = () => {
 }
 
 const getClearData = () => {
-  service.post(PATH_URL + '/medMedium/getClearDevice', QueryClearDevice.value).then((res: any) => {
+  getClearDeviceApi(QueryClearDevice.value).then((res: any) => {
     ClearData.value = res.data?.records || []
     QueryClearDevice.value.total = res.data?.total || 0
     clearSelectedRowKeys.value = []
@@ -915,7 +928,7 @@ const getClearData = () => {
 }
 
 const getScreenSize = () => {
-  service.get(PATH_URL + '/MachineMange/getScreenClass').then((res: any) => {
+  getScreenClassApi().then((res: any) => {
     screenSizeArray.value = res.data || []
   })
 }

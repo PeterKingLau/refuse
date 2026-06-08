@@ -9,6 +9,10 @@ const { getPrefixCls } = useDesign()
 
 const prefixCls = getPrefixCls('icon')
 const ICON_CACHE_PREFIX = 'refuse-iconify-cache:'
+const ICON_CACHE_VERSION = 1
+const ICON_CACHE_TTL = 7 * 24 * 60 * 60 * 1000
+const ICON_MEMORY_CACHE_LIMIT = 300
+const ICON_STORAGE_CACHE_LIMIT = 300
 
 interface IconifyCollection {
   prefix: string
@@ -23,11 +27,19 @@ interface PublicIconSetFile {
   path: string
 }
 
+interface IconStoragePayload {
+  version: number
+  created: number
+  expire: number
+  value: Required<IconifyIcon>
+}
+
 const ICON_ALIAS_MAP: Record<string, string> = {
   'ant-design:line-chart-outlined': 'mdi:chart-line'
 }
 
 const fallbackPublicIconSetFiles: PublicIconSetFile[] = [
+  { name: 'Ant Design Outlined', prefix: 'ant-design', path: 'ant-design-icons.json' },
   { name: 'Element Plus', prefix: 'ep', path: 'ep-icons.json' },
   { name: 'Material Design', prefix: 'mdi', path: 'mdi-icons.json' },
   { name: 'Material Symbols', prefix: 'material-symbols', path: 'material-symbols-icons.json' },
@@ -86,6 +98,77 @@ const loadIconSetFileMap = async () => {
 
 const getCacheKey = (icon: string) => `${ICON_CACHE_PREFIX}${icon}`
 
+const isIconStoragePayload = (value: unknown): value is IconStoragePayload => {
+  return !!value && typeof value === 'object' && 'version' in value && 'expire' in value && 'value' in value
+}
+
+const setIconMemoryCache = (icon: string, data: Required<IconifyIcon> | null) => {
+  if (iconMemoryCache.has(icon)) {
+    iconMemoryCache.delete(icon)
+  }
+
+  iconMemoryCache.set(icon, data)
+
+  while (iconMemoryCache.size > ICON_MEMORY_CACHE_LIMIT) {
+    const oldestIcon = iconMemoryCache.keys().next().value
+    if (!oldestIcon) break
+    iconMemoryCache.delete(oldestIcon)
+  }
+}
+
+const getStoredIconEntries = () => {
+  if (!isClient()) return []
+
+  return Array.from({ length: window.localStorage.length }, (_, index) => window.localStorage.key(index))
+    .filter((key): key is string => !!key && key.startsWith(ICON_CACHE_PREFIX))
+    .map((key) => {
+      try {
+        const cached = window.localStorage.getItem(key)
+        if (!cached) return undefined
+
+        const parsed = JSON.parse(cached) as IconStoragePayload | Required<IconifyIcon>
+        if (!isIconStoragePayload(parsed)) {
+          return {
+            key,
+            created: 0,
+            expire: Number.MAX_SAFE_INTEGER
+          }
+        }
+
+        return {
+          key,
+          created: parsed.created,
+          expire: parsed.expire
+        }
+      } catch {
+        window.localStorage.removeItem(key)
+        return undefined
+      }
+    })
+    .filter(Boolean) as Array<{ key: string; created: number; expire: number }>
+}
+
+const pruneStoredIconCache = (reserveCount = 0) => {
+  if (!isClient()) return
+
+  const now = Date.now()
+  const entries = getStoredIconEntries().filter((entry) => {
+    if (entry.expire > now) return true
+    window.localStorage.removeItem(entry.key)
+    return false
+  })
+
+  const overflowCount = entries.length + reserveCount - ICON_STORAGE_CACHE_LIMIT
+  if (overflowCount <= 0) return
+
+  entries
+    .sort((a, b) => a.expire - b.expire || a.created - b.created)
+    .slice(0, overflowCount)
+    .forEach((entry) => {
+      window.localStorage.removeItem(entry.key)
+    })
+}
+
 const loadLocalIconCollection = async (prefix: string) => {
   const cachedCollection = iconCollectionCache.get(prefix)
   if (cachedCollection !== undefined) return cachedCollection
@@ -143,7 +226,7 @@ const restoreIconFromCache = (icon: string) => {
 
   const iconifyIcon = getIcon(icon)
   if (iconifyIcon) {
-    iconMemoryCache.set(icon, iconifyIcon)
+    setIconMemoryCache(icon, iconifyIcon)
     return iconifyIcon
   }
 
@@ -151,10 +234,17 @@ const restoreIconFromCache = (icon: string) => {
     const cached = window.localStorage.getItem(getCacheKey(icon))
     if (!cached) return undefined
 
-    const parsed = JSON.parse(cached) as Required<IconifyIcon>
-    addIcon(icon, parsed)
-    iconMemoryCache.set(icon, parsed)
-    return parsed
+    const parsed = JSON.parse(cached) as IconStoragePayload | Required<IconifyIcon>
+    const cachedIcon = isIconStoragePayload(parsed) ? parsed.value : parsed
+
+    if (isIconStoragePayload(parsed) && parsed.expire <= Date.now()) {
+      window.localStorage.removeItem(getCacheKey(icon))
+      return undefined
+    }
+
+    addIcon(icon, cachedIcon)
+    setIconMemoryCache(icon, cachedIcon)
+    return cachedIcon
   } catch {
     window.localStorage.removeItem(getCacheKey(icon))
     return undefined
@@ -162,15 +252,27 @@ const restoreIconFromCache = (icon: string) => {
 }
 
 const cacheIcon = (icon: string, data: Required<IconifyIcon>) => {
-  iconMemoryCache.set(icon, data)
+  setIconMemoryCache(icon, data)
   addIcon(icon, data)
 
   if (!isClient()) return
 
+  const payload: IconStoragePayload = {
+    version: ICON_CACHE_VERSION,
+    created: Date.now(),
+    expire: Date.now() + ICON_CACHE_TTL,
+    value: data
+  }
+
   try {
-    window.localStorage.setItem(getCacheKey(icon), JSON.stringify(data))
+    window.localStorage.setItem(getCacheKey(icon), JSON.stringify(payload))
   } catch {
-    // Storage can be full or blocked. The in-memory cache still prevents duplicate work.
+    pruneStoredIconCache(1)
+    try {
+      window.localStorage.setItem(getCacheKey(icon), JSON.stringify(payload))
+    } catch {
+      // Storage can be full or blocked. The in-memory cache still prevents duplicate work.
+    }
   }
 }
 
@@ -191,7 +293,7 @@ const preloadIcon = (icon: string) => {
       return data
     })
     .catch(() => {
-      iconMemoryCache.set(icon, null)
+      setIconMemoryCache(icon, null)
       return null
     })
     .finally(() => {
@@ -217,6 +319,7 @@ const rootRef = ref<HTMLElement>()
 const isVisible = ref(false)
 const isIconReady = ref(false)
 let observer: IntersectionObserver | undefined
+let isUnmounted = false
 
 const symbolId = computed(() => {
   return unref(isLocal) ? `#icon-${props.icon.split('svg-icon:')[1]}` : unref(normalizedIcon)
@@ -233,6 +336,8 @@ const getIconifyStyle = computed(() => {
 })
 
 const loadCurrentIcon = async () => {
+  if (isUnmounted) return
+
   if (unref(isLocal)) {
     isIconReady.value = true
     return
@@ -258,7 +363,7 @@ const loadCurrentIcon = async () => {
 
   const loadedIcon = await preloadIcon(icon)
 
-  if (unref(normalizedIcon) === icon) {
+  if (!isUnmounted && unref(normalizedIcon) === icon) {
     isIconReady.value = !!loadedIcon
   }
 }
@@ -293,7 +398,7 @@ const initLazyObserver = async () => {
 watch(
   () => [unref(normalizedIcon), unref(isVisible)],
   () => {
-    loadCurrentIcon()
+    void loadCurrentIcon()
   },
   {
     immediate: true
@@ -301,11 +406,15 @@ watch(
 )
 
 onMounted(() => {
+  isUnmounted = false
+  pruneStoredIconCache()
   initLazyObserver()
 })
 
 onBeforeUnmount(() => {
+  isUnmounted = true
   observer?.disconnect()
+  observer = undefined
 })
 </script>
 

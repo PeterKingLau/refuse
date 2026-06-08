@@ -1,5 +1,6 @@
+import { getMenuTreeApi } from '@/api/permission'
 import router from '@/router'
-import { service } from '@/config/axios/service'
+import * as requestApi from '@/api/request'
 import { useCache } from '@/hooks/web/useCache'
 import { usePermissionStoreWithOut } from '@/store/modules/permission'
 import type { RouteRecordRaw } from 'vue-router'
@@ -48,7 +49,7 @@ export const removeDynamicRoutes = () => {
 }
 
 export const fetchMenuRoutes = async () => {
-  const res = await service.get('/Permission/getMenuTree')
+  const res = await getMenuTreeApi()
   return normalizeMenuRoutes((res?.data || []) as MyCustomRouteRaw[])
 }
 

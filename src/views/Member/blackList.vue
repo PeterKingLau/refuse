@@ -1,10 +1,6 @@
 <template>
   <div class="black-list-page">
     <AForm v-if="showSearchForm" :model="searchFormData" layout="horizontal" class="search-form">
-      <AFormItem label="OPENID" class="search-form-item">
-        <AInput v-model:value="searchFormData.openId" placeholder="请输入 OPENID" />
-      </AFormItem>
-
       <AFormItem label="手机号码" class="search-form-item">
         <AInput v-model:value="searchFormData.phone" placeholder="请输入手机号码" />
       </AFormItem>
@@ -91,6 +87,8 @@
 </template>
 
 <script setup lang="ts">
+import { getBlackListApi, recoveryBlackListApi } from '@/api/member'
+
 import { inject, onMounted, reactive, ref } from 'vue'
 import {
   Button as AButton,
@@ -106,7 +104,7 @@ import {
   message
 } from 'ant-design-vue'
 import type { TableColumnsType } from 'ant-design-vue'
-import { PATH_URL, service } from '@/config/axios/service'
+import * as requestApi from '@/api/request'
 import { Icon } from '@/components/Icon'
 
 const ARangePicker = ADatePicker.RangePicker
@@ -114,7 +112,6 @@ const ARangePicker = ADatePicker.RangePicker
 type DateRange = [string, string] | undefined
 
 interface SearchStruct {
-  openId: string
   phone: string
   nickName: string
   time: DateRange
@@ -148,7 +145,6 @@ const Permission = ref({
 
 const showSearchForm = ref(true)
 const searchFormData = reactive<SearchStruct>({
-  openId: '',
   phone: '',
   nickName: '',
   time: undefined
@@ -161,7 +157,6 @@ const total = ref(0)
 
 const columns: TableColumnsType<BlackListStruct> = [
   { title: '用户头像', dataIndex: 'pic', key: 'pic', width: 120 },
-  { title: 'OPENID', dataIndex: 'openId', key: 'openId', width: 180 },
   { title: '用户昵称', dataIndex: 'nickName', key: 'nickName', width: 160 },
   { title: '手机号码', dataIndex: 'phone', key: 'phone', width: 160 },
   { title: '绑定卡号', dataIndex: 'cardNo', key: 'cardNo', width: 160 },
@@ -170,24 +165,21 @@ const columns: TableColumnsType<BlackListStruct> = [
 ]
 
 const getImageURL = (imageURL?: string) => {
-  return imageURL ? PATH_URL + '/Common/downLoadPic/' + imageURL : ''
+  return imageURL ? requestApi.getDownloadPicUrl(imageURL) : ''
 }
 
 const getBlackList = () => {
-  service
-    .post(PATH_URL + '/memMember/getBlackList', {
-      openId: searchFormData.openId,
-      phone: searchFormData.phone,
-      nickName: searchFormData.nickName,
-      sTime: searchFormData.time?.[0],
-      eTime: searchFormData.time?.[1],
-      page: currentPage.value,
-      size: pageSize.value
-    })
-    .then((res: any) => {
-      tableData.value = res.data?.records || []
-      total.value = res.data?.total || 0
-    })
+  getBlackListApi({
+    phone: searchFormData.phone,
+    nickName: searchFormData.nickName,
+    sTime: searchFormData.time?.[0],
+    eTime: searchFormData.time?.[1],
+    page: currentPage.value,
+    size: pageSize.value
+  }).then((res: any) => {
+    tableData.value = res.data?.records || []
+    total.value = res.data?.total || 0
+  })
 }
 
 const onSearch = () => {
@@ -197,7 +189,6 @@ const onSearch = () => {
 
 const onReset = () => {
   searchFormData.nickName = ''
-  searchFormData.openId = ''
   searchFormData.phone = ''
   searchFormData.time = undefined
   currentPage.value = 1
@@ -211,7 +202,7 @@ const handleDetail = (record: Record<string, any>) => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      await service.post(PATH_URL + '/memMember/recoveryBlacList', { id: record.id })
+      await recoveryBlackListApi({ id: record.id })
       message.success('操作成功')
       getBlackList()
     }

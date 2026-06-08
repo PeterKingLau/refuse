@@ -160,7 +160,15 @@
         <ARow :gutter="16">
           <ACol :span="12">
             <AFormItem label="公司 Logo">
-              <AUpload class="avatar-uploader" :action="UpImageURL" :show-upload-list="false" :before-upload="beforeAvatarUpload" :headers="headObject" @change="handleLogoUploadChange">
+              <AUpload
+                class="avatar-uploader"
+                :action="UpImageURL"
+                :show-upload-list="false"
+                :before-upload="beforeAvatarUpload"
+                :headers="headObject"
+                :custom-request="uppyUploadRequest"
+                @change="handleLogoUploadChange"
+              >
                 <img v-if="updateForm.logo_path" :src="getImageURL(updateForm.logo_path)" class="avatar" />
                 <div v-else class="upload-placeholder">
                   <Icon icon="ant-design:plus-outlined" :size="24" />
@@ -171,7 +179,15 @@
 
           <ACol :span="12">
             <AFormItem label="Icon">
-              <AUpload class="avatar-uploader" :action="UpImageURL" :show-upload-list="false" :before-upload="beforeAvatarUpload" :headers="headObject" @change="handleIconUploadChange">
+              <AUpload
+                class="avatar-uploader"
+                :action="UpImageURL"
+                :show-upload-list="false"
+                :before-upload="beforeAvatarUpload"
+                :headers="headObject"
+                :custom-request="uppyUploadRequest"
+                @change="handleIconUploadChange"
+              >
                 <img v-if="updateForm.ico_path" :src="getImageURL(updateForm.ico_path)" class="avatar" />
                 <div v-else class="upload-placeholder">
                   <Icon icon="ant-design:plus-outlined" :size="24" />
@@ -205,6 +221,8 @@
 </template>
 
 <script setup lang="ts">
+import { addDepartmentApi, deleteDepartmentApi, deleteDepartmentBatchApi, getDepartmentApi } from '@/api/permission'
+
 import { computed, inject, onMounted, reactive, ref } from 'vue'
 import {
   Button as AButton,
@@ -225,7 +243,8 @@ import {
 import type { Rule } from 'ant-design-vue/es/form'
 import type { UploadChangeParam } from 'ant-design-vue'
 import type { AxiosRequestConfig } from 'axios'
-import { service, PATH_URL } from '@/config/axios/service'
+import * as requestApi from '@/api/request'
+import { uppyUploadRequest } from '@/utils/uppyUpload'
 import { Icon } from '@/components/Icon'
 
 const ATextarea = AInput.TextArea
@@ -292,7 +311,7 @@ const handleRemove = (record: Record<string, any>) => {
         params: { id: data.id }
       }
 
-      await service.get(PATH_URL + '/Permission/deletDepartment', temp)
+      await deleteDepartmentApi(temp)
       message.success('删除记录成功')
       getDepartmentData()
     }
@@ -385,11 +404,11 @@ const OnClickAdd = () => {
 }
 
 // 上传图片地址
-const UpImageURL = computed(() => PATH_URL + '/Common/upLoadImage')
+const UpImageURL = computed(() => requestApi.getUploadImageUrl())
 
 // 获取图片的地址
 const getImageURL = computed(() => (imageURL?: string) => {
-  return imageURL ? PATH_URL + '/Common/downLoadPic/' + imageURL : ''
+  return imageURL ? requestApi.getDownloadPicUrl(imageURL) : ''
 })
 
 const headObject = computed(() => ({
@@ -444,8 +463,7 @@ const getDepartmentData = () => {
     phone: form.fixed_telephone
   }
 
-  service
-    .post(PATH_URL + '/Permission/getDepartment', temp)
+  getDepartmentApi(temp)
     .then((res: any) => {
       console.log('department', res)
       tableData.value = res.data.records
@@ -498,7 +516,7 @@ const BatchDelete = () => {
 
 const doBatchDelete = async () => {
   const id = [...DeleteIdArray]
-  await service.post(PATH_URL + '/Permission/deleteDeparmentOfBatch', id)
+  await deleteDepartmentBatchApi(id)
   message.success('删除成功')
   getDepartmentData()
 }
@@ -527,7 +545,7 @@ const addDepartment = () => {
 }
 
 const doAddDepartment = async () => {
-  await service.post('/Permission/addDepartment', updateForm)
+  await addDepartmentApi(updateForm)
   if (dialogType.value == 1) {
     message.success('添加记录成功！')
   } else {
@@ -557,8 +575,32 @@ const doAddDepartment = async () => {
   align-items: flex-start;
 
   :deep(.ant-form-item) {
+    display: flex;
     margin-inline-end: 0;
     margin-bottom: 16px;
+    align-items: center;
+    flex-wrap: nowrap;
+  }
+
+  :deep(.ant-form-item-label) {
+    flex: 0 0 72px;
+    padding: 0 10px 0 0;
+    line-height: 1;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  :deep(.ant-form-item-label > label) {
+    height: 32px;
+    color: var(--app-text-color-regular);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  :deep(.ant-form-item-control) {
+    min-width: 0;
+    flex: 1;
   }
 }
 
@@ -572,7 +614,7 @@ const doAddDepartment = async () => {
 }
 
 .search-input {
-  width: 192px;
+  width: 100%;
 
   @media (width <= 768px) {
     width: 100%;

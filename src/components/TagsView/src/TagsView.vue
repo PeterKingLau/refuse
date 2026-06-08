@@ -123,6 +123,78 @@ const moveToCurrentTag = async () => {
 }
 
 const tagLinksRefs = useTemplateRefsList<RouterLinkProps>()
+const draggingTagFullPath = ref('')
+const dragOverTagFullPath = ref('')
+const dragOverPlacement = ref<'before' | 'after'>('before')
+
+const canDragTag = (view: RouteLocationNormalizedLoaded) => {
+  return !view?.meta?.affix
+}
+
+const resetDragState = () => {
+  draggingTagFullPath.value = ''
+  dragOverTagFullPath.value = ''
+  dragOverPlacement.value = 'before'
+}
+
+const getDragPlacement = (event: DragEvent) => {
+  const target = event.currentTarget as HTMLElement
+  const rect = target.getBoundingClientRect()
+
+  return event.clientX > rect.left + rect.width / 2 ? 'after' : 'before'
+}
+
+const onTagDragStart = (event: DragEvent, view: RouteLocationNormalizedLoaded) => {
+  if (!canDragTag(view)) {
+    event.preventDefault()
+    return
+  }
+
+  draggingTagFullPath.value = view.fullPath
+  event.dataTransfer?.setData('text/plain', view.fullPath)
+
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move'
+  }
+}
+
+const onTagDragEnter = (event: DragEvent, view: RouteLocationNormalizedLoaded) => {
+  if (!draggingTagFullPath.value || draggingTagFullPath.value === view.fullPath || !canDragTag(view)) return
+
+  event.preventDefault()
+  dragOverTagFullPath.value = view.fullPath
+  dragOverPlacement.value = getDragPlacement(event)
+}
+
+const onTagDragOver = (event: DragEvent, view: RouteLocationNormalizedLoaded) => {
+  if (!draggingTagFullPath.value || draggingTagFullPath.value === view.fullPath || !canDragTag(view)) return
+
+  event.preventDefault()
+
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = 'move'
+  }
+
+  const placement = getDragPlacement(event)
+
+  dragOverTagFullPath.value = view.fullPath
+  dragOverPlacement.value = placement
+  tagsViewStore.moveVisitedView(draggingTagFullPath.value, view.fullPath, placement)
+}
+
+const onTagDrop = async (event: DragEvent, view: RouteLocationNormalizedLoaded) => {
+  event.preventDefault()
+
+  const sourceFullPath = draggingTagFullPath.value || event.dataTransfer?.getData('text/plain')
+
+  if (sourceFullPath && sourceFullPath !== view.fullPath && canDragTag(view)) {
+    tagsViewStore.moveVisitedView(sourceFullPath, view.fullPath, getDragPlacement(event))
+    await nextTick()
+    moveToCurrentTag()
+  }
+
+  resetDragState()
+}
 
 const getScrollWrap = () => unref(scrollbarRef)
 
@@ -310,12 +382,24 @@ watch(
               `${prefixCls}__item`,
               item?.meta?.affix ? `${prefixCls}__item--affix` : '',
               {
-                'is-active': isActive(item)
+                'is-active': isActive(item),
+                'is-dragging': draggingTagFullPath === item.fullPath,
+                'is-drag-over': dragOverTagFullPath === item.fullPath,
+                'is-drag-before': dragOverTagFullPath === item.fullPath && dragOverPlacement === 'before',
+                'is-drag-after': dragOverTagFullPath === item.fullPath && dragOverPlacement === 'after'
               }
             ]"
             @visible-change="visibleChange"
           >
-            <div class="tag-content-wrap">
+            <div
+              class="tag-content-wrap"
+              :draggable="canDragTag(item)"
+              @dragstart="onTagDragStart($event, item)"
+              @dragenter="onTagDragEnter($event, item)"
+              @dragover="onTagDragOver($event, item)"
+              @drop="onTagDrop($event, item)"
+              @dragend="resetDragState"
+            >
               <svg class="tag-bg tag-bg-left" width="10" height="100%">
                 <path d="M 0 100 A 10 10 0 0 0 10 90 L 10 0 L 10 100 Z" />
               </svg>
@@ -471,6 +555,10 @@ watch(
     margin-right: 0;
     z-index: 1;
 
+    &:not(.@{prefix-cls}__item--affix) {
+      cursor: grab;
+    }
+
     .tag-content-wrap {
       position: relative;
       height: 100%;
@@ -563,6 +651,44 @@ watch(
         background-color: #f0f0f0;
         color: #262626;
       }
+    }
+
+    &.is-dragging {
+      cursor: grabbing;
+
+      .tag-inner {
+        opacity: 0.45;
+      }
+    }
+
+    &.is-drag-over:not(.is-dragging) {
+      .tag-inner {
+        background-color: #e6f4ff;
+      }
+
+      .tag-bg {
+        fill: #e6f4ff;
+      }
+    }
+
+    &.is-drag-before::before,
+    &.is-drag-after::after {
+      position: absolute;
+      top: 5px;
+      bottom: 5px;
+      width: 2px;
+      background-color: var(--app-color-primary);
+      border-radius: 2px;
+      content: '';
+      z-index: 5;
+    }
+
+    &.is-drag-before::before {
+      left: 2px;
+    }
+
+    &.is-drag-after::after {
+      right: 2px;
     }
 
     &:last-child {
@@ -662,6 +788,16 @@ watch(
         .tag-inner {
           background-color: #1f1f1f;
         }
+        .tag-bg {
+          fill: #1f1f1f;
+        }
+      }
+
+      &.is-drag-over:not(.is-dragging) {
+        .tag-inner {
+          background-color: #1f1f1f;
+        }
+
         .tag-bg {
           fill: #1f1f1f;
         }

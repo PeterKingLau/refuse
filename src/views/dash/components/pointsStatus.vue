@@ -15,9 +15,11 @@
 </template>
 
 <script setup lang="ts">
+import { getPointGroupByDepartmentApi } from '@/api/machine'
+
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { Card as ACard, Select as ASelect, SelectOption as ASelectOption } from 'ant-design-vue'
-import { PATH_URL, service } from '@/config/axios/service'
+import * as requestApi from '@/api/request'
 import { createDashboardChart, renderDashboardChart, timeOptions, toDashboardChartData } from '@/utils/g2Chart'
 
 const day = ref(6)
@@ -40,7 +42,7 @@ const onchange = () => {
 }
 
 const getPointsData = () => {
-  service.get(PATH_URL + '/MachineMange/PointGroupByDepartment?item=' + day.value).then((res: any) => {
+  getPointGroupByDepartmentApi(day.value).then((res: any) => {
     console.log('res', res)
     const categories = res.data.pName || []
     const data = toDashboardChartData(categories, [

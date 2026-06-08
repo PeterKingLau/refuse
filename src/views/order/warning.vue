@@ -87,7 +87,7 @@
 
     <ADivider />
 
-    <ATable row-key="id" :columns="columns" :data-source="tableData" :pagination="false" :row-selection="rowSelection" :scroll="{ x: 1900 }" bordered>
+    <ATable row-key="id" :columns="columns" :data-source="tableData" :pagination="false" :row-selection="rowSelection" :scroll="{ x: 'max-content' }" bordered>
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'warning_model'">
           {{ record.warning_model == 1 ? '运维' : '清运' }}
@@ -144,6 +144,10 @@
 </template>
 
 <script setup lang="ts">
+import { getProductApi, getWarningListApi, setWarningProcessApi } from '@/api/machine'
+
+import { getDepartmentForSelectApi } from '@/api/permission'
+
 import { computed, inject, onMounted, ref } from 'vue'
 import {
   Button as AButton,
@@ -162,7 +166,7 @@ import {
   message
 } from 'ant-design-vue'
 import type { TableColumnsType } from 'ant-design-vue'
-import { PATH_URL, service } from '@/config/axios/service'
+import * as requestApi from '@/api/request'
 import { FormatDate } from '@/utils/tools'
 import { Icon } from '@/components/Icon'
 
@@ -322,7 +326,7 @@ const getTableData = () => {
   QueryParm.value.sTime = operationTime.value?.[0] || ''
   QueryParm.value.eTime = operationTime.value?.[1] || ''
 
-  service.post(PATH_URL + '/MachineMange/getWarningList', QueryParm.value).then((res: any) => {
+  getWarningListApi(QueryParm.value).then((res: any) => {
     tableData.value = res.data?.records || []
     QueryParm.value.total = res.data?.total || 0
     selectedRowKeys.value = []
@@ -357,18 +361,16 @@ const onReset = () => {
 }
 
 const getProduct = () => {
-  service
-    .post(PATH_URL + '/MachineMange/getProduct', {
-      page: 1,
-      size: 100
-    })
-    .then((res: any) => {
-      deviceTypeArray.value = res.data || []
-    })
+  getProductApi({
+    page: 1,
+    size: 100
+  }).then((res: any) => {
+    deviceTypeArray.value = res.data || []
+  })
 }
 
 const getDepartment = () => {
-  service.get(PATH_URL + '/Permission/getDepartmentForSelect').then((res: any) => {
+  getDepartmentForSelectApi().then((res: any) => {
     departmentArray.value = res.data || []
   })
 }
@@ -379,7 +381,7 @@ const toDo = () => {
     return
   }
 
-  service.post(PATH_URL + '/MachineMange/setWarningProcess', ProcessData.value).then((res: any) => {
+  setWarningProcessApi(ProcessData.value).then((res: any) => {
     if (res.code == 200) {
       message.success('操作成功')
       getTableData()

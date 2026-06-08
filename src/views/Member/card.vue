@@ -138,6 +138,8 @@
 </template>
 
 <script setup lang="ts">
+import { addCardApi, deleteCardBatchApi, getCardApi, updateCardApi } from '@/api/member'
+
 import { computed, inject, onMounted, reactive, ref } from 'vue'
 import {
   Button as AButton,
@@ -156,7 +158,7 @@ import {
 } from 'ant-design-vue'
 import type { TableColumnsType } from 'ant-design-vue'
 import qs from 'qs'
-import { PATH_URL, service } from '@/config/axios/service'
+import * as requestApi from '@/api/request'
 import { Icon } from '@/components/Icon'
 
 type TableKey = string | number
@@ -247,20 +249,18 @@ const rowSelection = computed(() => ({
 }))
 
 const getCardData = () => {
-  service
-    .post(PATH_URL + '/memMember/getCard', {
-      page: currentPage.value,
-      size: pageSize.value,
-      cardNo: searchFormData.cardNo,
-      type: searchFormData.type,
-      status: searchFormData.status
-    })
-    .then((res: any) => {
-      TableData.value = res.data?.records || []
-      total.value = res.data?.total || 0
-      selectedRowKeys.value = []
-      DeleteIdArray = []
-    })
+  getCardApi({
+    page: currentPage.value,
+    size: pageSize.value,
+    cardNo: searchFormData.cardNo,
+    type: searchFormData.type,
+    status: searchFormData.status
+  }).then((res: any) => {
+    TableData.value = res.data?.records || []
+    total.value = res.data?.total || 0
+    selectedRowKeys.value = []
+    DeleteIdArray = []
+  })
 }
 
 const handlePageChange = (page: number, size: number) => {
@@ -330,7 +330,7 @@ const deleteCards = (ids: number[], content: string) => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      await service.post(PATH_URL + '/memMember/deleteCardBatch', qs.stringify({ ids }, { arrayFormat: 'brackets' }))
+      await deleteCardBatchApi(qs.stringify({ ids }, { arrayFormat: 'brackets' }))
       message.success('操作成功')
       getCardData()
     }
@@ -349,7 +349,7 @@ const onClickConfirm = () => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      await service.post(PATH_URL + '/memMember/addCard', addFormData)
+      await addCardApi(addFormData)
       message.success('操作成功')
       getCardData()
       dialogFormVisible.value = false
@@ -364,7 +364,7 @@ const doUpdate = () => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      await service.post(PATH_URL + '/memMember/updateCard', addFormData)
+      await updateCardApi(addFormData)
       message.success('操作成功')
       getCardData()
       dialogFormVisible.value = false

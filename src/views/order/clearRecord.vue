@@ -78,7 +78,7 @@
 
     <ADivider />
 
-    <ATable row-key="id" :columns="columns" :data-source="logData" :pagination="false" :row-selection="rowSelection" :scroll="{ x: 1580 }" bordered>
+    <ATable row-key="id" :columns="columns" :data-source="logData" :pagination="false" :row-selection="rowSelection" :scroll="{ x: 'max-content' }" bordered>
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'status'">
           {{ record.status == 1 ? '已清运' : '未清运' }}
@@ -108,6 +108,10 @@
 </template>
 
 <script setup lang="ts">
+import { getClearRecordApi } from '@/api/order'
+
+import { getDepartmentForSelectApi, getDeviceAreaForSelectApi } from '@/api/permission'
+
 import { computed, inject, onMounted, ref } from 'vue'
 import {
   Button as AButton,
@@ -123,7 +127,7 @@ import {
   Tooltip as ATooltip
 } from 'ant-design-vue'
 import type { TableColumnsType } from 'ant-design-vue'
-import { PATH_URL, service } from '@/config/axios/service'
+import * as requestApi from '@/api/request'
 import { Icon } from '@/components/Icon'
 
 const ARangePicker = ADatePicker.RangePicker
@@ -233,7 +237,7 @@ const getTableData = () => {
   QueryParm.value.sTime = operationTime.value?.[0] || ''
   QueryParm.value.eTime = operationTime.value?.[1] || ''
 
-  service.post(PATH_URL + '/ordClearRecord/getClearRecord', QueryParm.value).then((res: any) => {
+  getClearRecordApi(QueryParm.value).then((res: any) => {
     if (res.code == 200) {
       logData.value = res.data?.records || []
       total.value = res.data?.total || 0
@@ -256,7 +260,7 @@ const onReset = () => {
 }
 
 const getDepartment = () => {
-  service.get(PATH_URL + '/Permission/getDepartmentForSelect').then((res: any) => {
+  getDepartmentForSelectApi().then((res: any) => {
     if (res.code == 200) {
       departmentArray.value = res.data || []
     }
@@ -264,7 +268,7 @@ const getDepartment = () => {
 }
 
 const getDeviceArea = () => {
-  service.get(PATH_URL + '/Permission/getDeviceAreaForSelect').then((res: any) => {
+  getDeviceAreaForSelectApi().then((res: any) => {
     if (res.code == 200) {
       deviceAreaArray.value = res.data || []
     }

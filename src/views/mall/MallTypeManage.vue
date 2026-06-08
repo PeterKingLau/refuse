@@ -50,7 +50,7 @@
       </ASpace>
     </div>
 
-    <ATable row-key="id" :columns="columns" :data-source="resultData" :loading="tableLoading" :pagination="false" :scroll="{ x: 760 }" bordered>
+    <ATable row-key="id" :columns="columns" :data-source="resultData" :loading="tableLoading" :pagination="false" :scroll="{ x: 'max-content' }" bordered>
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'status'">
           <ATag :color="getStatusMeta(record.status).color" :bordered="false">
@@ -105,6 +105,8 @@
 </template>
 
 <script setup lang="ts">
+import { addOrUpdateMallTypeApi, disableMallTypeApi, enableMallTypeApi, getMallTypeApi } from '@/api/mall'
+
 import { onMounted, reactive, ref } from 'vue'
 import {
   Button as AButton,
@@ -122,7 +124,7 @@ import {
 } from 'ant-design-vue'
 import type { TableColumnsType } from 'ant-design-vue'
 import qs from 'qs'
-import { PATH_URL, service } from '@/config/axios/service'
+import * as requestApi from '@/api/request'
 import { Icon } from '@/components/Icon'
 
 interface MallTypeRecord {
@@ -180,8 +182,7 @@ const submitAdd = async () => {
   submitLoading.value = true
 
   try {
-    const res: any = await service.post(
-      PATH_URL + '/mal/malType/AddOrUpdateMalType',
+    const res: any = await addOrUpdateMallTypeApi(
       qs.stringify({
         id: addForm.id,
         malTypeName: addForm.malTypeName.trim()
@@ -223,8 +224,7 @@ const closeAddDialog = () => {
 }
 
 const enableRecord = async (row: MallTypeRecord) => {
-  const res: any = await service.post(
-    PATH_URL + '/mal/malType/EnableRecord',
+  const res: any = await enableMallTypeApi(
     qs.stringify({
       id: row.id
     })
@@ -235,8 +235,7 @@ const enableRecord = async (row: MallTypeRecord) => {
 }
 
 const disableRecord = async (row: MallTypeRecord) => {
-  const res: any = await service.post(
-    PATH_URL + '/mal/malType/DisableRecord',
+  const res: any = await disableMallTypeApi(
     qs.stringify({
       id: row.id
     })
@@ -250,8 +249,7 @@ const getGoodsType = async () => {
   tableLoading.value = true
 
   try {
-    const res: any = await service.post(
-      PATH_URL + '/mal/malType/GetMalType',
+    const res: any = await getMallTypeApi(
       qs.stringify({
         page: currentPage.value - 1,
         size: queryForm.size,

@@ -34,6 +34,7 @@ const iconAliasMap: Record<string, string> = {
 }
 
 const fallbackPublicIconSetFiles: PublicIconSetFile[] = [
+  { name: 'Ant Design Outlined', prefix: 'ant-design', path: 'ant-design-icons.json' },
   { name: 'Element Plus', prefix: 'ep', path: 'ep-icons.json' },
   { name: 'Material Design', prefix: 'mdi', path: 'mdi-icons.json' },
   { name: 'Material Symbols', prefix: 'material-symbols', path: 'material-symbols-icons.json' },
@@ -44,6 +45,7 @@ const ICON_CACHE_VERSION = 1
 const ICON_CACHE_PREFIX = 'refuse-iconify:'
 const ICON_SET_CACHE_TTL = 7 * 24 * 60 * 60 * 1000
 const REMOTE_SEARCH_CACHE_TTL = 24 * 60 * 60 * 1000
+const ICON_LOCAL_CACHE_LIMIT = 80
 
 const iconCollectionMap = new Map<string, IconifyCollection>()
 const iconCollectionLoadingMap = new Map<string, Promise<LocalIconSet | undefined>>()
@@ -62,6 +64,50 @@ const getPublicIconUrl = (fileName: string) => {
 
 const getCacheKey = (key: string) => `${ICON_CACHE_PREFIX}${key}`
 
+const getLocalCacheEntries = () => {
+  if (!isClient()) return []
+
+  return Array.from({ length: window.localStorage.length }, (_, index) => window.localStorage.key(index))
+    .filter((key): key is string => !!key && key.startsWith(ICON_CACHE_PREFIX))
+    .map((key) => {
+      try {
+        const cached = window.localStorage.getItem(key)
+        if (!cached) return undefined
+
+        const payload = JSON.parse(cached) as LocalCachePayload<unknown>
+        return {
+          key,
+          expire: payload.expire
+        }
+      } catch {
+        window.localStorage.removeItem(key)
+        return undefined
+      }
+    })
+    .filter(Boolean) as Array<{ key: string; expire: number }>
+}
+
+const pruneLocalCache = (reserveCount = 0) => {
+  if (!isClient()) return
+
+  const now = Date.now()
+  const entries = getLocalCacheEntries().filter((entry) => {
+    if (entry.expire > now) return true
+    window.localStorage.removeItem(entry.key)
+    return false
+  })
+
+  const overflowCount = entries.length + reserveCount - ICON_LOCAL_CACHE_LIMIT
+  if (overflowCount <= 0) return
+
+  entries
+    .sort((a, b) => a.expire - b.expire)
+    .slice(0, overflowCount)
+    .forEach((entry) => {
+      window.localStorage.removeItem(entry.key)
+    })
+}
+
 const getLocalCache = <T>(key: string): T | undefined => {
   if (!isClient()) return undefined
 
@@ -71,7 +117,7 @@ const getLocalCache = <T>(key: string): T | undefined => {
 
     const payload = JSON.parse(cached) as LocalCachePayload<T>
 
-    if (payload.version !== ICON_CACHE_VERSION || payload.expire <= Date.now()) {
+    if (!payload || payload.version !== ICON_CACHE_VERSION || payload.expire <= Date.now()) {
       window.localStorage.removeItem(getCacheKey(key))
       return undefined
     }
@@ -86,20 +132,27 @@ const getLocalCache = <T>(key: string): T | undefined => {
 const setLocalCache = <T>(key: string, value: T, ttl = ICON_SET_CACHE_TTL) => {
   if (!isClient()) return
 
-  try {
-    const payload: LocalCachePayload<T> = {
-      version: ICON_CACHE_VERSION,
-      expire: Date.now() + ttl,
-      value
-    }
+  const payload: LocalCachePayload<T> = {
+    version: ICON_CACHE_VERSION,
+    expire: Date.now() + ttl,
+    value
+  }
 
+  try {
     window.localStorage.setItem(getCacheKey(key), JSON.stringify(payload))
   } catch {
-    // Storage can be unavailable or full. Memory cache still prevents repeated requests.
+    pruneLocalCache(1)
+    try {
+      window.localStorage.setItem(getCacheKey(key), JSON.stringify(payload))
+    } catch {
+      // Storage can be unavailable or full. Memory cache still prevents repeated requests.
+    }
   }
 }
 
 const loadPublicIconSetFiles = async () => {
+  pruneLocalCache()
+
   if (cachedPublicIconSetFiles) return cachedPublicIconSetFiles
   if (publicIconSetFilesLoading) return publicIconSetFilesLoading
 

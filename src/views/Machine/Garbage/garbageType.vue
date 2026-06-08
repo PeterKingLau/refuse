@@ -108,7 +108,15 @@
 
           <ACol :span="12">
             <AFormItem label="图片">
-              <AUpload class="avatar-uploader" :action="UpImageURL" :show-upload-list="false" :before-upload="beforeAvatarUpload" :headers="headObject" @change="handleUploadChange">
+              <AUpload
+                class="avatar-uploader"
+                :action="UpImageURL"
+                :show-upload-list="false"
+                :before-upload="beforeAvatarUpload"
+                :headers="headObject"
+                :custom-request="uppyUploadRequest"
+                @change="handleUploadChange"
+              >
                 <img v-if="updateForm.pic" :src="getImageURL(updateForm.pic)" class="avatar" />
                 <div v-else class="upload-placeholder">
                   <Icon icon="ant-design:plus-outlined" :size="24" />
@@ -130,6 +138,8 @@
 </template>
 
 <script setup lang="ts">
+import { addPointsTypeApi, deleteGarbageTypeApi, getGarbageTypeApi, getPointsTypeApi, updatePointsTypeApi } from '@/api/machine'
+
 import { computed, inject, onMounted, reactive, ref } from 'vue'
 import {
   Button as AButton,
@@ -149,7 +159,8 @@ import {
 } from 'ant-design-vue'
 import type { TableColumnsType, UploadChangeParam } from 'ant-design-vue'
 import qs from 'qs'
-import { PATH_URL, service } from '@/config/axios/service'
+import * as requestApi from '@/api/request'
+import { uppyUploadRequest } from '@/utils/uppyUpload'
 import { Icon } from '@/components/Icon'
 
 type TableKey = string | number
@@ -209,7 +220,7 @@ const form = reactive({
 })
 
 const getGarbageType = () => {
-  service.post(PATH_URL + '/MachineMange/getGarbageType', qs.stringify({ typeName: form.typeName }, { arrayFormat: 'brackets' })).then((res: any) => {
+  getGarbageTypeApi(qs.stringify({ typeName: form.typeName }, { arrayFormat: 'brackets' })).then((res: any) => {
     garbageTypeData.value = res.data || []
     selectedRowKeys.value = []
     DeleteIdArray = []
@@ -247,7 +258,7 @@ const pointTypeOptions = computed(() =>
 )
 
 const getPointsTypeData = () => {
-  service.get(PATH_URL + '/MachineMange/getPointsType').then((res: any) => {
+  getPointsTypeApi().then((res: any) => {
     pointTypeData.value = res.data || []
   })
 }
@@ -295,8 +306,7 @@ const onAddConfirm = () => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      await service.post(
-        PATH_URL + '/MachineMange/addPointsType',
+      await addPointsTypeApi(
         qs.stringify(
           {
             points: updateForm.points,
@@ -321,8 +331,7 @@ const onUpdate = () => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      await service.post(
-        PATH_URL + '/MachineMange/updatePointsType',
+      await updatePointsTypeApi(
         qs.stringify(
           {
             points: updateForm.points,
@@ -381,7 +390,7 @@ const deleteGarbageType = (ids: number[], content: string) => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      await service.post(PATH_URL + '/MachineMange/deleteGarbageType', qs.stringify({ ids }, { arrayFormat: 'brackets' }))
+      await deleteGarbageTypeApi(qs.stringify({ ids }, { arrayFormat: 'brackets' }))
       message.success('操作成功')
       getGarbageType()
     }
@@ -405,10 +414,10 @@ const headObject = computed(() => ({
   Authorization: localStorage.getItem('token') || ''
 }))
 
-const UpImageURL = computed(() => PATH_URL + '/Common/upLoadImage')
+const UpImageURL = computed(() => requestApi.getUploadImageUrl())
 
 const getImageURL = (imageURL?: string) => {
-  return imageURL ? PATH_URL + '/Common/downLoadPic/' + imageURL : ''
+  return imageURL ? requestApi.getDownloadPicUrl(imageURL) : ''
 }
 
 //#endregion

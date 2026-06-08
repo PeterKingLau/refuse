@@ -69,7 +69,7 @@
         :expanded-row-keys="expandedRowKeys"
         :loading="loading"
         :pagination="false"
-        :scroll="{ x: 1410 }"
+        :scroll="{ x: 'max-content' }"
         :custom-row="getTableCustomRow"
         class="menu-table"
         @expand="handleTableExpand"

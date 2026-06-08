@@ -9,10 +9,6 @@
         <ASelect v-model:value="QueryParm.deviceArea" :options="deviceAreaOptions" allow-clear placeholder="请选择设备区域" />
       </AFormItem>
 
-      <AFormItem label="会员ID" class="search-form-item">
-        <AInput v-model:value="QueryParm.admin" placeholder="请输入用户 ID" />
-      </AFormItem>
-
       <AFormItem label="来源" class="search-form-item">
         <ASelect v-model:value="QueryParm.reason" :options="reasonOptions" allow-clear placeholder="请选择来源" />
       </AFormItem>
@@ -84,7 +80,7 @@
 
     <ADivider />
 
-    <ATable row-key="id" :columns="columns" :data-source="logData" :pagination="false" :row-selection="rowSelection" :scroll="{ x: 1900 }" bordered>
+    <ATable row-key="id" :columns="columns" :data-source="logData" :pagination="false" :row-selection="rowSelection" bordered>
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'record_type'">
           {{ convertPointype(record.record_type) }}
@@ -104,6 +100,10 @@
 
         <template v-else-if="column.key === 'create_time'">
           {{ converDateFormat(record.create_time) }}
+        </template>
+
+        <template v-else-if="column.key === 'staff_id'">
+          {{ getStaffName(record.staff_id) }}
         </template>
       </template>
     </ATable>
@@ -140,6 +140,12 @@
 </template>
 
 <script setup lang="ts">
+import { getPointsRatioApi, updatePointsRatioApi } from '@/api/order'
+
+import { getPointListApi, getPointReasonApi } from '@/api/member'
+
+import { getDepartmentForSelectApi, getDeviceAreaForSelectApi, getStaffApi } from '@/api/permission'
+
 import { computed, inject, onMounted, ref } from 'vue'
 import {
   Button as AButton,
@@ -159,7 +165,6 @@ import {
 } from 'ant-design-vue'
 import type { TableColumnsType } from 'ant-design-vue'
 import qs from 'qs'
-import { PATH_URL, service } from '@/config/axios/service'
 import { Icon } from '@/components/Icon'
 
 const ARangePicker = ADatePicker.RangePicker
@@ -170,7 +175,6 @@ type DateRange = [string, string] | undefined
 interface QueryParamStruct {
   department?: number
   deviceArea?: number
-  admin?: string
   reason?: number
   type?: number
   serialNumber: string
@@ -203,6 +207,7 @@ const total = ref(0)
 const departmentArray = ref<any[]>([])
 const deviceAreaArray = ref<any[]>([])
 const reasonArray = ref<any[]>([])
+const staffArray = ref<any[]>([])
 const logData = ref<PointRecord[]>([])
 const showSearchForm = ref(true)
 const selectedRowKeys = ref<TableKey[]>([])
@@ -216,7 +221,6 @@ const pointType = [
 const QueryParm = ref<QueryParamStruct>({
   department: undefined,
   deviceArea: undefined,
-  admin: '',
   reason: undefined,
   type: undefined,
   serialNumber: '',
@@ -230,10 +234,18 @@ const disableRemove = computed(() => selectedRowKeys.value.length === 0)
 const departmentOptions = computed(() => departmentArray.value.map((item) => ({ label: item.platform_name, value: item.id })))
 const deviceAreaOptions = computed(() => deviceAreaArray.value.map((item) => ({ label: item.areaName, value: item.id })))
 const reasonOptions = computed(() => reasonArray.value.map((item) => ({ label: item.label, value: item.id })))
+const staffNameMap = computed(() => {
+  const map = new Map<string, string>()
+
+  staffArray.value.forEach((item) => {
+    if (item.id != null) map.set(String(item.id), item.name)
+    if (item.adminId != null) map.set(String(item.adminId), item.name)
+  })
+
+  return map
+})
 
 const columns: TableColumnsType<PointRecord> = [
-  { title: '日志编号', dataIndex: 'id', key: 'id', width: 100 },
-  { title: '用户编号', dataIndex: 'member_id', key: 'member_id', width: 160 },
   { title: '积分类型', dataIndex: 'record_type', key: 'record_type', width: 120 },
   { title: '积分数额', dataIndex: 'points', key: 'points', width: 120 },
   { title: '来源', dataIndex: 'reason', key: 'reason', width: 160 },
@@ -257,7 +269,7 @@ const rowSelection = computed(() => ({
 }))
 
 const getPointsRatio = () => {
-  service.get(PATH_URL + '/sysSetting/getPointsRatio').then((res: any) => {
+  getPointsRatioApi().then((res: any) => {
     PointsRatio.value = res.data.ratio
   })
 }
@@ -271,7 +283,7 @@ const setPointsClose = () => {
 }
 
 const doSetPoints = () => {
-  service.post(PATH_URL + '/sysSetting/updatePointsRatio', qs.stringify({ ratio: PointsRatio.value }, { arrayFormat: 'brackets' })).then(() => {
+  updatePointsRatioApi(qs.stringify({ ratio: PointsRatio.value }, { arrayFormat: 'brackets' })).then(() => {
     message.success('操作成功')
     getPointsRatio()
     setPointsVisible.value = false
@@ -288,10 +300,16 @@ const converReason = (item: any): string => {
   return reasonArray.value.find((element) => item == element.id)?.label || '未知'
 }
 
+const getStaffName = (staffId?: string | number) => {
+  if (staffId == null || staffId === '') return '-'
+  return staffNameMap.value.get(String(staffId)) || String(staffId)
+}
+
 onMounted(() => {
   getDepartment()
   getPontsReason()
   getDeviceArea()
+  getStaff()
   getTableData()
   getPointsRatio()
 })
@@ -313,7 +331,7 @@ const handlePageChange = (page: number, size: number) => {
 const getTableData = () => {
   QueryParm.value.sTime = operationTime.value?.[0] || ''
   QueryParm.value.eTime = operationTime.value?.[1] || ''
-  service.post(PATH_URL + '/memMember/getPointList', QueryParm.value).then((res: any) => {
+  getPointListApi(QueryParm.value).then((res: any) => {
     if (res.code == 200) {
       logData.value = res.data?.records || []
       total.value = res.data?.total || 0
@@ -325,7 +343,6 @@ const getTableData = () => {
 
 const onReset = () => {
   QueryParm.value.department = undefined
-  QueryParm.value.admin = ''
   QueryParm.value.deviceArea = undefined
   QueryParm.value.reason = undefined
   QueryParm.value.type = undefined
@@ -336,7 +353,7 @@ const onReset = () => {
 }
 
 const getDepartment = () => {
-  service.get(PATH_URL + '/Permission/getDepartmentForSelect').then((res: any) => {
+  getDepartmentForSelectApi().then((res: any) => {
     if (res.code == 200) {
       departmentArray.value = res.data || []
     }
@@ -344,7 +361,7 @@ const getDepartment = () => {
 }
 
 const getDeviceArea = () => {
-  service.get(PATH_URL + '/Permission/getDeviceAreaForSelect').then((res: any) => {
+  getDeviceAreaForSelectApi().then((res: any) => {
     if (res.code == 200) {
       deviceAreaArray.value = res.data || []
     }
@@ -352,9 +369,17 @@ const getDeviceArea = () => {
 }
 
 const getPontsReason = () => {
-  service.get(PATH_URL + '/memMember/getPointReason').then((res: any) => {
+  getPointReasonApi().then((res: any) => {
     if (res.code == 200) {
       reasonArray.value = res.data || []
+    }
+  })
+}
+
+const getStaff = () => {
+  getStaffApi({ index: 1, size: 99999 }).then((res: any) => {
+    if (res.code == 200) {
+      staffArray.value = res.data?.records || []
     }
   })
 }

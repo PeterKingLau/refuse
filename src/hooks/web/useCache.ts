@@ -6,6 +6,7 @@ type CacheType = 'sessionStorage' | 'localStorage'
 
 interface CachePayload<T = unknown> {
   value: T
+  created?: number
   expire?: number
 }
 
@@ -20,7 +21,9 @@ interface CacheSetOptions {
 }
 
 interface CacheStorage {
+  readonly length?: number
   getItem(key: string): string | null
+  key?(index: number): string | null
   setItem(key: string, value: string): void
   removeItem(key: string): void
   clear(): void
@@ -28,12 +31,27 @@ interface CacheStorage {
 
 const CACHE_PREFIX = '__refuse_cache_v1__:'
 const CACHE_SECRET = 'refuse-classification-system'
+const CACHE_MAX_ENTRIES = 160
+
+interface CacheEntryMeta {
+  key: string
+  created: number
+  expire?: number
+}
 
 class MemoryStorage implements CacheStorage {
   private cache = new Map<string, string>()
 
+  get length() {
+    return this.cache.size
+  }
+
   getItem(key: string) {
     return this.cache.get(key) ?? null
+  }
+
+  key(index: number) {
+    return Array.from(this.cache.keys())[index] ?? null
   }
 
   setItem(key: string, value: string) {
@@ -50,7 +68,9 @@ class MemoryStorage implements CacheStorage {
 }
 
 class WebStorageCache {
-  constructor(private readonly storage: CacheStorage) {}
+  constructor(private readonly storage: CacheStorage) {
+    this.pruneExpired()
+  }
 
   set<T>(key: string, value: T, options?: CacheSetOptions) {
     if (value === undefined) {
@@ -59,6 +79,7 @@ class WebStorageCache {
     }
 
     const payload: CachePayload<T> = {
+      created: Date.now(),
       value
     }
 
@@ -68,7 +89,15 @@ class WebStorageCache {
       payload.expire = expire
     }
 
-    this.storage.setItem(key, encodeStorageValue(JSON.stringify(payload)))
+    const storageValue = encodeStorageValue(JSON.stringify(payload))
+
+    try {
+      this.storage.setItem(key, storageValue)
+    } catch {
+      this.pruneExpired()
+      this.pruneOverflow(1)
+      this.storage.setItem(key, storageValue)
+    }
 
     return value
   }
@@ -91,7 +120,22 @@ class WebStorageCache {
           return null as T
         }
 
-        return JSON.parse(payload.v) as T
+        const value = JSON.parse(payload.v) as T
+        try {
+          this.storage.setItem(
+            key,
+            encodeStorageValue(
+              JSON.stringify({
+                created: payload.c,
+                expire: payload.e,
+                value
+              })
+            )
+          )
+        } catch {
+          // Keep returning the legacy value even if migration cannot be written.
+        }
+        return value
       }
 
       if (!('value' in payload)) return payload as T
@@ -117,12 +161,83 @@ class WebStorageCache {
   }
 
   clear() {
-    this.storage.clear()
+    getStorageKeys(this.storage).forEach((key) => {
+      const item = this.storage.getItem(key)
+      if (item?.startsWith(CACHE_PREFIX) || isLegacyCacheStorageValue(item)) {
+        this.storage.removeItem(key)
+      }
+    })
+  }
+
+  pruneExpired() {
+    const now = Date.now()
+
+    getStorageKeys(this.storage).forEach((key) => {
+      const meta = getCacheEntryMeta(this.storage, key)
+      if (meta?.expire && meta.expire <= now) {
+        this.storage.removeItem(key)
+      }
+    })
+  }
+
+  private pruneOverflow(reservedEntries = 0) {
+    const entries = getStorageKeys(this.storage)
+      .map((key) => getCacheEntryMeta(this.storage, key))
+      .filter(Boolean) as CacheEntryMeta[]
+
+    const overflowCount = entries.length + reservedEntries - CACHE_MAX_ENTRIES
+    if (overflowCount <= 0) return
+
+    entries
+      .sort((a, b) => {
+        const expireDiff = (a.expire ?? Number.MAX_SAFE_INTEGER) - (b.expire ?? Number.MAX_SAFE_INTEGER)
+        return expireDiff || a.created - b.created
+      })
+      .slice(0, overflowCount)
+      .forEach((entry) => {
+        this.storage.removeItem(entry.key)
+      })
   }
 }
 
 const isLegacyCachePayload = (payload: unknown): payload is LegacyCachePayload => {
   return !!payload && typeof payload === 'object' && 'c' in payload && 'e' in payload && 'v' in payload
+}
+
+const isLegacyCacheStorageValue = (value: string | null) => {
+  if (!value) return false
+
+  try {
+    return isLegacyCachePayload(JSON.parse(value))
+  } catch {
+    return false
+  }
+}
+
+const getStorageKeys = (storage: CacheStorage) => {
+  if (!storage.key || typeof storage.length !== 'number') return []
+
+  return Array.from({ length: storage.length }, (_, index) => storage.key?.(index)).filter(Boolean) as string[]
+}
+
+const getCacheEntryMeta = (storage: CacheStorage, key: string): CacheEntryMeta | undefined => {
+  const item = storage.getItem(key)
+
+  if (!item?.startsWith(CACHE_PREFIX)) return undefined
+
+  try {
+    const payload = JSON.parse(decodeStorageValue(item)) as CachePayload
+    if (!payload || typeof payload !== 'object' || !('value' in payload)) return undefined
+
+    return {
+      key,
+      created: payload.created || 0,
+      expire: payload.expire
+    }
+  } catch {
+    storage.removeItem(key)
+    return undefined
+  }
 }
 
 const getExpireTime = (exp?: CacheSetOptions['exp']) => {
@@ -191,8 +306,15 @@ const getStorage = (type: CacheType): CacheStorage => {
   return window[type]
 }
 
+const cacheInstanceMap = new Map<CacheType, WebStorageCache>()
+
 export const useCache = (type: CacheType = 'sessionStorage') => {
-  const wsCache = new WebStorageCache(getStorage(type))
+  const cachedInstance = cacheInstanceMap.get(type)
+  const wsCache = cachedInstance || new WebStorageCache(getStorage(type))
+
+  if (!cachedInstance) {
+    cacheInstanceMap.set(type, wsCache)
+  }
 
   return {
     wsCache

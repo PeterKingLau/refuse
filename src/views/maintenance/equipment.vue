@@ -207,6 +207,10 @@
 </template>
 
 <script setup lang="ts">
+import { getChannelInfoApi, getDeviceApi, getDeviceParameterApi, getDeviceStatusApi, getDeviceTypeApi, getExternalUnitApi, getRTOApi, sendParameterApi, sendRTOApi } from '@/api/machine'
+
+import { getDeviceAreaApi } from '@/api/permission'
+
 import { computed, inject, onMounted, Ref, ref } from 'vue'
 import {
   Button as AButton,
@@ -229,7 +233,7 @@ import {
   message
 } from 'ant-design-vue'
 import type { TableColumnsType } from 'ant-design-vue'
-import { PATH_URL, service } from '@/config/axios/service'
+import * as requestApi from '@/api/request'
 import { Icon } from '@/components/Icon'
 
 interface SearchDataStruct {
@@ -397,7 +401,7 @@ const doSendParam = () => {
   currentParameter.value.channel = currentParameter.value.isAll ? 0 : selectItem.value
   currentParameter.value.deviceId = currentDevice.id
 
-  service.post(PATH_URL + '/MachineMange/sendParameter', currentParameter.value).then((res: any) => {
+  sendParameterApi(currentParameter.value).then((res: any) => {
     if (res.code == 200) {
       message.success('操作成功')
     }
@@ -412,7 +416,7 @@ const getParameter = () => {
     channel: selectItem.value
   }
 
-  service.post(PATH_URL + '/MachineMange/getChannelInfo', parm).then((res: any) => {
+  getChannelInfoApi(parm).then((res: any) => {
     const data = res.data
     currentChannelInfo.value = []
 
@@ -477,7 +481,7 @@ const getParameter = () => {
     ]
   })
 
-  service.post(PATH_URL + '/MachineMange/getDeviceParameter', parm).then((res: any) => {
+  getDeviceParameterApi(parm).then((res: any) => {
     if (res.data) {
       currentParameter.value = {
         ...res.data,
@@ -525,7 +529,7 @@ const channelSet = (row: Record<string, any>) => {
 }
 
 const getExternalUnit = () => {
-  service.get(PATH_URL + '/MachineMange/getExternalUnit').then((res: any) => {
+  getExternalUnitApi().then((res: any) => {
     ExternalUnitArray.value = res.data || []
   })
 }
@@ -552,17 +556,15 @@ onMounted(() => {
 const doSend = (row: Record<string, any>) => {
   if (!currentDevice) return
 
-  service
-    .post(PATH_URL + '/MachineMange/sendRTO', {
-      deviceId: currentDevice.id,
-      operationId: row.id,
-      channelId: selectItem.value
-    })
-    .then((res: any) => {
-      if (res.code == 200) {
-        message.success('操作成功')
-      }
-    })
+  sendRTOApi({
+    deviceId: currentDevice.id,
+    operationId: row.id,
+    channelId: selectItem.value
+  }).then((res: any) => {
+    if (res.code == 200) {
+      message.success('操作成功')
+    }
+  })
 }
 
 const sendRecord = (row: Record<string, any>) => {
@@ -592,43 +594,41 @@ const onReset = () => {
 }
 
 const getDeviceStatus = () => {
-  service.get(PATH_URL + '/MachineMange/getDeviceStatus').then((res: any) => {
+  getDeviceStatusApi().then((res: any) => {
     deviceStatusArray.value = res.data || []
   })
 }
 
 const getDeviceArea = () => {
-  service.post(PATH_URL + '/Permission/getDeviceArea').then((res: any) => {
+  getDeviceAreaApi().then((res: any) => {
     deviceAreaArray.value = res.data || []
   })
 }
 
 const getDeviceData = () => {
-  service
-    .post(PATH_URL + '/MachineMange/getDevice', {
-      id: SearchFormData.value.dNumber,
-      deviceName: SearchFormData.value.dName,
-      deviceArea: SearchFormData.value.dArea,
-      deviceType: SearchFormData.value.dType,
-      onLine: SearchFormData.value.dOnLine,
-      status: SearchFormData.value.dStatus,
-      page: currentPage.value,
-      size: pageSize.value
-    })
-    .then((res: any) => {
-      TableData.value = res.data?.records || []
-      total.value = res.data?.total || 0
-    })
+  getDeviceApi({
+    id: SearchFormData.value.dNumber,
+    deviceName: SearchFormData.value.dName,
+    deviceArea: SearchFormData.value.dArea,
+    deviceType: SearchFormData.value.dType,
+    onLine: SearchFormData.value.dOnLine,
+    status: SearchFormData.value.dStatus,
+    page: currentPage.value,
+    size: pageSize.value
+  }).then((res: any) => {
+    TableData.value = res.data?.records || []
+    total.value = res.data?.total || 0
+  })
 }
 
 const getDevcieType = () => {
-  service.post(PATH_URL + '/MachineMange/getDeviceType').then((res: any) => {
+  getDeviceTypeApi().then((res: any) => {
     deviceTypeArray.value = res.data || []
   })
 }
 
 const getRTO = () => {
-  service.get(PATH_URL + '/MachineMange/getRTO').then((res: any) => {
+  getRTOApi().then((res: any) => {
     RTOArray.value = res.data || []
   })
 }

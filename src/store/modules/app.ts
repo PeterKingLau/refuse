@@ -10,6 +10,36 @@ import { ThemeTypes } from '@/types/theme'
 const { wsCache } = useCache()
 
 const legacyPrimaryKey = 'el' + 'ColorPrimary'
+const lightCssVarTheme = {
+  appBgColor: '#fff',
+  appContentBgColor: '#f4f6fa',
+  appBorderColor: '#d9d9d9',
+  appTextColorRegular: '#262626',
+  appTextColorSecondary: '#595959',
+  appTextColorPlaceholder: '#8c8c8c',
+  appTextColorDisabled: '#d9d9d9',
+  tagsViewBorderColor: '#edf0f5',
+  tabMenuBorderColor: '#eee',
+  antColorBgContainer: '#fff',
+  antColorBorder: '#d9d9d9'
+}
+const darkCssVarTheme = {
+  appBgColor: '#0f172a',
+  appContentBgColor: '#111827',
+  appBorderColor: '#334155',
+  appTextColorRegular: '#e5e7eb',
+  appTextColorSecondary: '#cbd5e1',
+  appTextColorPlaceholder: '#94a3b8',
+  appTextColorDisabled: '#64748b',
+  tagsViewBorderColor: '#1f2937',
+  tabMenuBorderColor: '#334155',
+  topHeaderBgColor: '#111827',
+  topHeaderTextColor: '#e5e7eb',
+  topHeaderHoverColor: '#1f2937',
+  topToolBorderColor: '#1f2937',
+  antColorBgContainer: '#141f33',
+  antColorBorder: '#334155'
+}
 const defaultTheme: ThemeTypes = {
   // 主题色
   appColorPrimary: '#1677ff',
@@ -49,6 +79,12 @@ const getCachedTheme = () => {
     ...defaultTheme,
     ...restTheme,
     appColorPrimary: restTheme.appColorPrimary || legacyPrimary || defaultTheme.appColorPrimary
+  }
+}
+
+const setThemeVars = (theme: Record<string, string>) => {
+  for (const key in theme) {
+    setCssVar(`--${humpToUnderline(key)}`, theme[key])
   }
 }
 
@@ -256,10 +292,18 @@ export const useAppStore = defineStore('app', {
       if (this.isDark) {
         document.documentElement.classList.add('dark')
         document.documentElement.classList.remove('light')
+        document.body?.classList.add('dark')
+        document.body?.classList.remove('light')
+        document.documentElement.style.colorScheme = 'dark'
       } else {
         document.documentElement.classList.add('light')
         document.documentElement.classList.remove('dark')
+        document.body?.classList.add('light')
+        document.body?.classList.remove('dark')
+        document.documentElement.style.colorScheme = 'light'
       }
+      this.setCssVarTheme()
+      setThemeVars(this.isDark ? darkCssVarTheme : lightCssVarTheme)
       wsCache.set('isDark', this.isDark)
     },
     setCurrentSize(currentSize: AppSize) {

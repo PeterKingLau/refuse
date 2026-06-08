@@ -92,7 +92,7 @@
 
     <ADivider />
 
-    <ATable row-key="id" :columns="columns" :data-source="OrderList" :pagination="false" :scroll="{ x: 1500 }" bordered>
+    <ATable row-key="id" :columns="columns" :data-source="OrderList" :pagination="false" :scroll="{ x: 'max-content' }" bordered>
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'createTime'">
           {{ converDateFormat(record.createTime) }}
@@ -216,6 +216,10 @@
 </template>
 
 <script setup lang="ts">
+import { getOrderDelayApi, updateDelayApi } from '@/api/order'
+
+import { doWorkApi, getOrderListApi } from '@/api/machine'
+
 import { computed, inject, onMounted, ref } from 'vue'
 import {
   Button as AButton,
@@ -237,7 +241,7 @@ import {
 import type { TableColumnsType } from 'ant-design-vue'
 import axios from 'axios'
 import qs from 'qs'
-import { PATH_URL, service } from '@/config/axios/service'
+import * as requestApi from '@/api/request'
 import { Icon } from '@/components/Icon'
 
 const ARangePicker = ADatePicker.RangePicker
@@ -384,7 +388,7 @@ const onOpenSetDelay = () => {
 }
 
 const onSetDelay = () => {
-  service.post(PATH_URL + '/sysSetting/updateDelay', qs.stringify({ delay: delayData.value }, { arrayFormat: 'brackets' })).then(() => {
+  updateDelayApi(qs.stringify({ delay: delayData.value }, { arrayFormat: 'brackets' })).then(() => {
     message.success('操作成功')
     getDelay()
     setDelaydialogVisible.value = false
@@ -392,7 +396,7 @@ const onSetDelay = () => {
 }
 
 const getDelay = () => {
-  service.get(PATH_URL + '/sysSetting/getOrderDelay').then((res: any) => {
+  getOrderDelayApi().then((res: any) => {
     delayData.value = res.data?.delay ?? 168
   })
 }
@@ -402,7 +406,7 @@ const onDelayClose = () => {
 }
 
 const getImageURL = (imageURL?: string) => {
-  return imageURL ? PATH_URL + '/Common/downLoadPic/' + imageURL : ''
+  return imageURL ? requestApi.getDownloadPicUrl(imageURL) : ''
 }
 
 const onSearch = () => {
@@ -425,18 +429,16 @@ const getStatus = (row: Record<string, any>): boolean => {
 }
 
 const doHandle = () => {
-  service
-    .post(PATH_URL + '/MachineMange/doWork', {
-      orderId: workId.value,
-      result: workResult.value
-    })
-    .then((res: any) => {
-      if (res.code == 200) {
-        message.success('操作成功')
-        handleShow.value = false
-      }
-      getOrderList()
-    })
+  doWorkApi({
+    orderId: workId.value,
+    result: workResult.value
+  }).then((res: any) => {
+    if (res.code == 200) {
+      message.success('操作成功')
+      handleShow.value = false
+    }
+    getOrderList()
+  })
 }
 
 const doWork = (row: Record<string, any>) => {
@@ -476,7 +478,7 @@ const handlePageChange = (page: number, size: number) => {
 
 const getOrderList = () => {
   setQueryTime()
-  service.post(PATH_URL + '/MachineMange/getOrderList', QueryParam.value).then((res: any) => {
+  getOrderListApi(QueryParam.value).then((res: any) => {
     OrderList.value = res.data?.records || []
     total.value = res.data?.total || 0
   })
@@ -487,7 +489,7 @@ const ExportOrderList = () => {
 
   axios({
     method: 'post',
-    url: PATH_URL + '/MachineMange/ExportOrderList',
+    url: requestApi.getApiUrl('/MachineMange/ExportOrderList'),
     responseType: 'blob',
     headers: {
       'Content-Type': 'application/json',

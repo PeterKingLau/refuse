@@ -28,7 +28,7 @@
       </ATabPane>
 
       <ATabPane key="channel" tab="仓位信息">
-        <ATable row-key="id" :columns="channelColumns" :data-source="channelData" :pagination="false" :scroll="{ x: 1180 }" bordered>
+        <ATable row-key="id" :columns="channelColumns" :data-source="channelData" :pagination="false" :scroll="{ x: 'max-content' }" bordered>
           <template #bodyCell="{ column, record }">
             <template v-if="column.key === 'spill_over'">
               {{ getSpillOverStatus(record.spill_over) }}
@@ -59,7 +59,7 @@
       </ATabPane>
 
       <ATabPane key="list" tab="投放列表">
-        <ATable row-key="rid" :columns="orderColumns" :data-source="orderLists" :pagination="false" :scroll="{ x: 1540 }" bordered>
+        <ATable row-key="rid" :columns="orderColumns" :data-source="orderLists" :pagination="false" :scroll="{ x: 'max-content' }" bordered>
           <template #bodyCell="{ column, record }">
             <template v-if="column.key === 'pic'">
               <img v-if="record.pic" :src="GetImageURL(record.pic)" class="table-image" />
@@ -128,6 +128,10 @@
 </template>
 
 <script setup lang="ts">
+import { getChannelMapApi, getClearCountApi, getOrderListByDeviceApi, getPointsApi, sendRTOApi, updateChannelMaxApi } from '@/api/machine'
+
+import { getPowStaffApi } from '@/api/permission'
+
 import { computed, onMounted, ref, watch } from 'vue'
 import {
   Button as AButton,
@@ -146,7 +150,7 @@ import {
   message
 } from 'ant-design-vue'
 import type { TableColumnsType } from 'ant-design-vue'
-import { PATH_URL, service } from '@/config/axios/service'
+import * as requestApi from '@/api/request'
 import { GetImageURL, FormatDate } from '@/utils/tools'
 import { Icon } from '@/components/Icon'
 
@@ -264,7 +268,7 @@ const GetOrderList = () => {
     size: size.value
   }
 
-  service.post(PATH_URL + '/MachineMange/GetOrderListByDevice', param).then((res: any) => {
+  getOrderListByDeviceApi(param).then((res: any) => {
     orderLists.value = res.data?.records || []
     total.value = res.data?.total || 0
   })
@@ -283,7 +287,7 @@ const handleOrderPageChange = (current: number, currentSize: number) => {
 }
 
 const getPoints = (id: number) => {
-  service.get(PATH_URL + '/MachineMange/getPoints?id=' + id).then((res: any) => {
+  getPointsApi(id).then((res: any) => {
     CurrentPoints.value = res.data || 0
   })
 }
@@ -291,7 +295,7 @@ const getPoints = (id: number) => {
 const getMaintenanceStaff = (id?: number) => {
   if (id == null) return
 
-  service.get(PATH_URL + '/Permission/getPowStaff?id=' + id).then((res: any) => {
+  getPowStaffApi(id).then((res: any) => {
     CurrentMaintenance.value = res.data || {}
   })
 }
@@ -299,7 +303,7 @@ const getMaintenanceStaff = (id?: number) => {
 const getOperators = (id?: number) => {
   if (id == null) return
 
-  service.get(PATH_URL + '/Permission/getPowStaff?id=' + id).then((res: any) => {
+  getPowStaffApi(id).then((res: any) => {
     currentOperation.value = res.data || {}
   })
 }
@@ -307,13 +311,13 @@ const getOperators = (id?: number) => {
 const getCreateStaff = (id?: number) => {
   if (id == null) return
 
-  service.get(PATH_URL + '/Permission/getPowStaff?id=' + id).then((res: any) => {
+  getPowStaffApi(id).then((res: any) => {
     currentCreateStaff.value = res.data || {}
   })
 }
 
 const getClearCount = (id: number) => {
-  service.get(PATH_URL + '/MachineMange/getClearCount?id=' + id).then((res: any) => {
+  getClearCountApi(id).then((res: any) => {
     clearNumber.value = res.data || 0
   })
 }
@@ -352,7 +356,7 @@ const showOrderDetail = (row: OrderRecord) => {
 }
 
 const getChannelData = (id: number) => {
-  service.get(PATH_URL + '/MachineMange/getCheannelMap?id=' + id).then((res: any) => {
+  getChannelMapApi(id).then((res: any) => {
     channelData.value = res.data || []
   })
 }
@@ -377,7 +381,7 @@ const doOpen = (row: ChannelRecord) => {
     channelId: row.code
   }
 
-  service.post(PATH_URL + '/MachineMange/sendRTO', parm).then((res: any) => {
+  sendRTOApi(parm).then((res: any) => {
     if (res.code == 200) {
       message.success('指令发送成功')
     }
@@ -390,7 +394,7 @@ const doRev = () => {
     maxWeight: currentChannel.value.maxWeight
   }
 
-  service.post(PATH_URL + '/MachineMange/updateChannelMax', param).then((res: any) => {
+  updateChannelMaxApi(param).then((res: any) => {
     if (res.code == 200) {
       message.success('操作成功')
       getChannelData(pp.value.id)

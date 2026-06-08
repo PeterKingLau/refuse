@@ -69,6 +69,7 @@ export default {
     headerTheme: '头部主题',
     cutMenu: '切割菜单',
     copy: '拷贝',
+    clearCache: '清除缓存并重置',
     clearAndReset: '清除缓存并且重置',
     copySuccess: '拷贝成功',
     copyFailed: '拷贝失败',

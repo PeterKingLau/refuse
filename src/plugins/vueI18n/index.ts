@@ -10,8 +10,14 @@ const createI18nOptions = async (): Promise<I18nOptions> => {
   const localeStore = useLocaleStoreWithOut()
   const locale = localeStore.getCurrentLocale
   const localeMap = localeStore.getLocaleMap
-  const defaultLocal = await import(`../../locales/${locale.lang}.ts`)
-  const message = defaultLocal.default ?? {}
+  const messages = Object.fromEntries(
+    await Promise.all(
+      localeMap.map(async ({ lang }) => {
+        const langModule = await import(`../../locales/${lang}.ts`)
+        return [lang, langModule.default ?? {}]
+      })
+    )
+  )
 
   setHtmlPageLang(locale.lang)
 
@@ -22,16 +28,13 @@ const createI18nOptions = async (): Promise<I18nOptions> => {
 
   return {
     legacy: false,
+    globalInjection: true,
     locale: locale.lang,
-    fallbackLocale: locale.lang,
-    messages: {
-      [locale.lang]: message
-    },
+    fallbackLocale: 'zh-CN',
+    messages,
     availableLocales: localeMap.map((v) => v.lang),
-    sync: true,
-    silentTranslationWarn: true,
     missingWarn: false,
-    silentFallbackWarn: true
+    fallbackWarn: false
   }
 }
 

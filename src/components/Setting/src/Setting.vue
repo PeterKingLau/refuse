@@ -14,17 +14,31 @@ import { useCache } from '@/hooks/web/useCache'
 import { useClipboard } from '@vueuse/core'
 import { useDesign } from '@/hooks/web/useDesign'
 
+const props = withDefaults(
+  defineProps<{
+    inline?: boolean
+    iconColor?: string
+  }>(),
+  {
+    inline: false,
+    iconColor: ''
+  }
+)
+
 const { getPrefixCls } = useDesign()
 
 const prefixCls = getPrefixCls('setting')
 
 const appStore = useAppStore()
 
-const { t } = useI18n()
+const { t } = useI18n('setting')
 
 const layout = computed(() => appStore.getLayout)
 
 const drawer = ref(false)
+
+const iconColor = computed(() => props.iconColor || (props.inline ? 'var(--top-header-text-color)' : '#fff'))
+const iconSize = computed(() => (props.inline ? 16 : 18))
 
 // 主题色相关
 const systemTheme = ref(appStore.getTheme.appColorPrimary)
@@ -176,11 +190,11 @@ const copyConfig = async () => {
     `
   })
   if (!isSupported) {
-    message.error(t('setting.copyFailed'))
+    message.error(t('copyFailed'))
   } else {
     await copy()
     if (unref(copied)) {
-      message.success(t('setting.copySuccess'))
+      message.success(t('copySuccess'))
     }
   }
 }
@@ -196,51 +210,49 @@ const clear = () => {
 </script>
 
 <template>
-  <div :class="prefixCls" class="fixed top-[45%] right-0 w-40px h-40px text-center leading-40px bg-[var(--app-color-primary)] cursor-pointer" @click="drawer = true">
-    <Icon icon="ant-design:setting-outlined" color="#fff" />
+  <div :class="[prefixCls, props.inline ? `${prefixCls}--inline` : `${prefixCls}--fixed`]" @click="drawer = true">
+    <Icon icon="ant-design:setting-outlined" :color="iconColor" :size="iconSize" />
   </div>
 
-  <ADrawer v-model:open="drawer" placement="right" width="350px" :z-index="4000">
+  <ADrawer v-model:open="drawer" placement="right" width="360px" :z-index="4000">
     <template #title>
-      <span class="text-16px font-700">{{ t('setting.projectSetting') }}</span>
+      <span class="text-16px font-700">{{ t('projectSetting') }}</span>
     </template>
 
-    <div class="text-center">
+    <div :class="`${prefixCls}__section`" class="text-center">
       <!-- 主题 -->
-      <ADivider>{{ t('setting.theme') }}</ADivider>
+      <ADivider class="setting-divider">{{ t('theme') }}</ADivider>
       <ThemeSwitch />
 
       <!-- 布局 -->
-      <ADivider>{{ t('setting.layout') }}</ADivider>
+      <ADivider class="setting-divider">{{ t('layout') }}</ADivider>
       <LayoutRadioPicker />
 
       <!-- 系统主题 -->
-      <ADivider>{{ t('setting.systemTheme') }}</ADivider>
+      <ADivider class="setting-divider">{{ t('systemTheme') }}</ADivider>
       <ColorRadioPicker v-model="systemTheme" :schema="['#409eff', '#009688', '#536dfe', '#ff5c93', '#ee4f12', '#0096c7', '#9c27b0', '#ff9800']" @change="setSystemTheme" />
 
       <!-- 头部主题 -->
-      <ADivider>{{ t('setting.headerTheme') }}</ADivider>
+      <ADivider class="setting-divider">{{ t('headerTheme') }}</ADivider>
       <ColorRadioPicker v-model="headerTheme" :schema="['#fff', '#151515', '#5172dc', '#e74c3c', '#24292e', '#394664', '#009688', '#383f45']" @change="setHeaderTheme" />
 
       <!-- 菜单主题 -->
       <template v-if="layout !== 'top'">
-        <ADivider>{{ t('setting.menuTheme') }}</ADivider>
+        <ADivider class="setting-divider">{{ t('menuTheme') }}</ADivider>
         <ColorRadioPicker v-model="menuTheme" :schema="['#fff', '#001529', '#212121', '#273352', '#191b24', '#383f45', '#001628', '#344058']" @change="setMenuTheme" />
       </template>
     </div>
 
     <!-- 界面显示 -->
-    <ADivider>{{ t('setting.interfaceDisplay') }}</ADivider>
-    <InterfaceDisplay />
-
-    <ADivider />
-    <div>
-      <AButton type="primary" block @click="copyConfig">{{ t('setting.copy') }}</AButton>
+    <div :class="`${prefixCls}__section`">
+      <ADivider class="setting-divider">{{ t('interfaceDisplay') }}</ADivider>
+      <InterfaceDisplay />
     </div>
-    <div class="mt-5px">
-      <AButton danger block @click="clear">
-        {{ t('setting.clearAndReset') }}
-      </AButton>
+
+    <ADivider class="setting-divider" />
+    <div :class="`${prefixCls}__actions`">
+      <AButton type="primary" block @click="copyConfig">{{ t('copy') }}</AButton>
+      <AButton danger block @click="clear">{{ t('clearCache') }}</AButton>
     </div>
   </ADrawer>
 </template>
@@ -249,6 +261,61 @@ const clear = () => {
 @prefix-cls: ~'@{namespace}-setting';
 
 .@{prefix-cls} {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  line-height: 1;
+  transition:
+    background-color 0.2s cubic-bezier(0, 0, 1, 1),
+    color 0.2s cubic-bezier(0, 0, 1, 1);
+}
+
+.@{prefix-cls}--fixed {
+  position: fixed;
+  top: 45%;
+  right: 0;
+  width: 40px;
+  height: 40px;
+  background-color: var(--app-color-primary);
   border-radius: 6px 0 0 6px;
+}
+
+.@{prefix-cls}--inline {
+  color: var(--top-header-text-color);
+}
+
+.@{prefix-cls}--inline:hover {
+  background-color: var(--top-header-hover-color, rgba(0, 0, 0, 0.04));
+}
+
+:deep(.ant-drawer-header) {
+  padding: 14px 18px;
+  border-bottom-color: var(--app-border-color);
+}
+
+:deep(.ant-drawer-body) {
+  padding: 12px 18px 18px;
+}
+
+:deep(.setting-divider) {
+  margin: 18px 0 14px;
+  color: var(--app-text-color-regular);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+:deep(.setting-divider::before),
+:deep(.setting-divider::after) {
+  border-block-start-color: var(--app-border-color);
+}
+
+.@{prefix-cls}__section {
+  color: var(--app-text-color-regular);
+}
+
+.@{prefix-cls}__actions {
+  display: grid;
+  gap: 8px;
 }
 </style>

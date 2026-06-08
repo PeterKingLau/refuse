@@ -190,6 +190,10 @@
 </template>
 
 <script setup lang="ts">
+import { addRuleApi, deleteRuleApi, getDeviceRuleApi, getDeviceTypeByProductIdApi, getGarbagePicApi, getGarbageTypeApi, getProductApi, publishRuleApi, updateRuleApi } from '@/api/machine'
+
+import { getDepartmentForSelectApi } from '@/api/permission'
+
 import { computed, inject, onMounted, reactive, ref } from 'vue'
 import {
   Button as AButton,
@@ -211,7 +215,7 @@ import {
 } from 'ant-design-vue'
 import type { TableColumnsType } from 'ant-design-vue'
 import qs from 'qs'
-import { PATH_URL, service } from '@/config/axios/service'
+import * as requestApi from '@/api/request'
 import { Icon } from '@/components/Icon'
 
 interface PicStruct {
@@ -353,7 +357,7 @@ const garbageTypeOptions = computed(() => garbageTypeArray.value.map((item) => (
 const departmentOptions = computed(() => DepartmentArray.value.map((item) => ({ label: item.platform_name, value: item.id })))
 
 const getImageURL = (imageURL?: string) => {
-  return imageURL ? PATH_URL + '/Common/downLoadPic/' + imageURL : ''
+  return imageURL ? requestApi.getDownloadPicUrl(imageURL) : ''
 }
 
 const onSearch = () => {
@@ -373,16 +377,14 @@ const onReset = () => {
 }
 
 const getProductType = () => {
-  service
-    .post(PATH_URL + '/MachineMange/getProduct', {
-      id: 0,
-      name: '',
-      page: 1,
-      size: 99999
-    })
-    .then((res: any) => {
-      productArray.value = res.data || []
-    })
+  getProductApi({
+    id: 0,
+    name: '',
+    page: 1,
+    size: 99999
+  }).then((res: any) => {
+    productArray.value = res.data || []
+  })
 }
 
 const OnClickAdd = () => {
@@ -404,7 +406,7 @@ const initAddRuleData = () => {
 }
 
 const productChange = (val: number) => {
-  service.post(PATH_URL + '/MachineMange/getDeviceTypeByProductId', qs.stringify({ ProductId: val }, { arrayFormat: 'brackets' })).then((res: any) => {
+  getDeviceTypeByProductIdApi(qs.stringify({ ProductId: val }, { arrayFormat: 'brackets' })).then((res: any) => {
     addRuleFormData.deviceId = undefined
     warehouseArray.value = []
     deviceTypeArray.value = res.data || []
@@ -431,7 +433,7 @@ const warehouseFactory = (val: number) => {
 }
 
 const getGarbageType = () => {
-  service.post(PATH_URL + '/MachineMange/getGarbageType', { typeName: '' }).then((res: any) => {
+  getGarbageTypeApi({ typeName: '' }).then((res: any) => {
     garbageTypeArray.value = res.data || []
   })
 }
@@ -464,7 +466,7 @@ const onAddConfirm = () => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      await service.post(PATH_URL + '/MachineMange/addRule', {
+      await addRuleApi({
         ruleName: addRuleFormData.ruleName,
         productId: addRuleFormData.productId,
         deviceId: addRuleFormData.deviceId,
@@ -485,7 +487,7 @@ const onUpdateRule = () => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      await service.post(PATH_URL + '/MachineMange/updateRule', {
+      await updateRuleApi({
         ruleName: addRuleFormData.ruleName,
         productId: addRuleFormData.productId,
         deviceId: addRuleFormData.deviceId,
@@ -505,7 +507,7 @@ const getPicArray = (val?: number | null) => {
     return
   }
 
-  service.post(PATH_URL + '/MachineMange/getGarbagePic', qs.stringify({ garbageId: val }, { arrayFormat: 'brackets' })).then((res: any) => {
+  getGarbagePicApi(qs.stringify({ garbageId: val }, { arrayFormat: 'brackets' })).then((res: any) => {
     PicArray.value = res.data || []
     showImgBox.value = true
   })
@@ -530,14 +532,14 @@ const handlePageChange = (page: number, size: number) => {
 const getDeviceRuleTableData = () => {
   searchFormData.page = currentPage.value
   searchFormData.size = pageSize.value
-  service.post(PATH_URL + '/MachineMange/getDeviceRule', searchFormData).then((res: any) => {
+  getDeviceRuleApi(searchFormData).then((res: any) => {
     TableData.value = res.data?.records || []
     total.value = res.data?.total || 0
   })
 }
 
 const getDepartment = () => {
-  service.get(PATH_URL + '/Permission/getDepartmentForSelect').then((res: any) => {
+  getDepartmentForSelectApi().then((res: any) => {
     DepartmentArray.value = res.data || []
   })
 }
@@ -554,7 +556,7 @@ const handleDetail = (record: Record<string, any>) => {
 }
 
 const updateProductBind = (val: number) => {
-  service.post(PATH_URL + '/MachineMange/getDeviceTypeByProductId', qs.stringify({ ProductId: val }, { arrayFormat: 'brackets' })).then((res: any) => {
+  getDeviceTypeByProductIdApi(qs.stringify({ ProductId: val }, { arrayFormat: 'brackets' })).then((res: any) => {
     if (!selectedTable) return
 
     deviceTypeArray.value = res.data || []
@@ -578,7 +580,7 @@ const handleRemove = (record: Record<string, any>) => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      await service.post(PATH_URL + '/MachineMange/deleteRule', qs.stringify({ ruleId: val.id }, { arrayFormat: 'brackets' }))
+      await deleteRuleApi(qs.stringify({ ruleId: val.id }, { arrayFormat: 'brackets' }))
       message.success('操作成功')
       getDeviceRuleTableData()
     }
@@ -597,7 +599,7 @@ const handlePublish = (record: Record<string, any>) => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      await service.post(PATH_URL + '/MachineMange/publishRule', qs.stringify({ ruleId: val.id }, { arrayFormat: 'brackets' }))
+      await publishRuleApi(qs.stringify({ ruleId: val.id }, { arrayFormat: 'brackets' }))
       message.success('操作成功')
       getDeviceRuleTableData()
     }

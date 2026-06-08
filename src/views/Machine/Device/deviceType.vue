@@ -131,7 +131,15 @@
 
           <ACol :span="12">
             <AFormItem label="图片">
-              <AUpload class="avatar-uploader" :action="UpImageURL" :show-upload-list="false" :before-upload="beforeAvatarUpload" :headers="headObject" @change="handleUploadChange">
+              <AUpload
+                class="avatar-uploader"
+                :action="UpImageURL"
+                :show-upload-list="false"
+                :before-upload="beforeAvatarUpload"
+                :headers="headObject"
+                :custom-request="uppyUploadRequest"
+                @change="handleUploadChange"
+              >
                 <img v-if="addFormData.pic" :src="getImageURL(addFormData.pic)" class="avatar" />
                 <div v-else class="upload-placeholder">
                   <Icon icon="ant-design:plus-outlined" :size="24" />
@@ -153,6 +161,8 @@
 </template>
 
 <script setup lang="ts">
+import { addDeviceTypeApi, deleteDeviceTypeApi, getDeviceTypeApi, getProductApi, getScreenClassApi, updateDeviceTypeApi } from '@/api/machine'
+
 import { computed, inject, onMounted, reactive, ref } from 'vue'
 import {
   Button as AButton,
@@ -173,7 +183,8 @@ import {
   message
 } from 'ant-design-vue'
 import type { TableColumnsType, UploadChangeParam } from 'ant-design-vue'
-import { PATH_URL, service } from '@/config/axios/service'
+import * as requestApi from '@/api/request'
+import { uppyUploadRequest } from '@/utils/uppyUpload'
 import { Icon } from '@/components/Icon'
 import qs from 'qs'
 
@@ -323,14 +334,14 @@ const headObject = computed(() => ({
   Authorization: localStorage.getItem('token') || ''
 }))
 
-const UpImageURL = computed(() => PATH_URL + '/Common/upLoadImage')
+const UpImageURL = computed(() => requestApi.getUploadImageUrl())
 
 const getImageURL = (imageURL?: string) => {
-  return imageURL ? PATH_URL + '/Common/downLoadPic/' + imageURL : ''
+  return imageURL ? requestApi.getDownloadPicUrl(imageURL) : ''
 }
 
 const getScreenClassData = () => {
-  service.get(PATH_URL + '/MachineMange/getScreenClass').then((res: any) => {
+  getScreenClassApi().then((res: any) => {
     ScreenClassArray.value = res.data || []
   })
 }
@@ -343,7 +354,7 @@ const getProductTypeData = () => {
     size: 99999
   }
 
-  service.post(PATH_URL + '/MachineMange/getProduct', parm).then((res: any) => {
+  getProductApi(parm).then((res: any) => {
     const data = res.data
     PorductTypeArray.value = Array.isArray(data) ? data : data?.records || []
   })
@@ -414,8 +425,7 @@ const doAddDeviceType = (content: string) => {
     cancelText: '取消',
     onOk: async () => {
       const screenClass = addFormData.screenModel === 0 ? null : getSelectedScreenClassId()
-      await service.post(
-        PATH_URL + '/MachineMange/addDeviceType',
+      await addDeviceTypeApi(
         qs.stringify(
           {
             product: getSelectedProductId(),
@@ -444,8 +454,7 @@ const doUpdateDeviceType = (content: string) => {
     cancelText: '取消',
     onOk: async () => {
       const screenClass = addFormData.screenModel === 0 ? null : getSelectedScreenClassId()
-      await service.post(
-        PATH_URL + '/MachineMange/updateDeviceType',
+      await updateDeviceTypeApi(
         qs.stringify(
           {
             id: addFormData.id,
@@ -511,8 +520,7 @@ const handleRemove = (record: Record<string, any>) => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      await service.post(
-        PATH_URL + '/MachineMange/deleteDeviceType',
+      await deleteDeviceTypeApi(
         qs.stringify(
           {
             id: val.id
@@ -541,21 +549,18 @@ const converScreenModel = (val: number) => {
 }
 
 const getDeviceTypeData = () => {
-  service
-    .post(
-      PATH_URL + '/MachineMange/getDeviceType',
-      qs.stringify(
-        {
-          productId: SearchForm.productId,
-          name: SearchForm.deviceTypeName,
-          warehouse: SearchForm.warehouses
-        },
-        { arrayFormat: 'brackets' }
-      )
+  getDeviceTypeApi(
+    qs.stringify(
+      {
+        productId: SearchForm.productId,
+        name: SearchForm.deviceTypeName,
+        warehouse: SearchForm.warehouses
+      },
+      { arrayFormat: 'brackets' }
     )
-    .then((res: any) => {
-      TableData.value = res.data || []
-    })
+  ).then((res: any) => {
+    TableData.value = res.data || []
+  })
 }
 
 onMounted(() => {

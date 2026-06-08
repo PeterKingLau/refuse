@@ -2,26 +2,25 @@
 import { ContentWrap } from '@/components/ContentWrap'
 import { Editor, type EditorExpose, type RichTextEditor } from '@/components/Editor'
 import { useI18n } from '@/hooks/web/useI18n'
-import { ref, onMounted, unref } from 'vue'
+import { onBeforeUnmount, ref } from 'vue'
 
 const { t } = useI18n()
 
 const change = (editor: RichTextEditor) => {
-  console.log(editor.getHtml())
+  editor.getHtml()
 }
 
 const editorRef = ref<typeof Editor & EditorExpose>()
 
 const defaultHtml = ref('')
 
-onMounted(async () => {
-  const editor = await unref(editorRef)?.getEditorRef()
-  console.log(editor)
-})
-
-setTimeout(() => {
+const defaultHtmlTimer = window.setTimeout(() => {
   defaultHtml.value = '<p>hello <strong>world</strong></p>'
 }, 3000)
+
+onBeforeUnmount(() => {
+  window.clearTimeout(defaultHtmlTimer)
+})
 </script>
 
 <template>

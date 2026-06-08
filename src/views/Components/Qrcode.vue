@@ -2,7 +2,7 @@
 import { Qrcode } from '@/components/Qrcode'
 import { ContentWrap } from '@/components/ContentWrap'
 import { useI18n } from '@/hooks/web/useI18n'
-import { computed, ref, unref } from 'vue'
+import { computed, onBeforeUnmount, ref, unref } from 'vue'
 import { useAppStore } from '@/store/modules/app'
 import { Card as ACard, Col as ACol, Row as ARow, message } from 'ant-design-vue'
 // @ts-ignore
@@ -16,9 +16,13 @@ const title = computed(() => appStore.getTitle)
 
 const asyncTitle = ref('')
 
-setTimeout(() => {
+const asyncTitleTimer = window.setTimeout(() => {
   asyncTitle.value = unref(title)
 }, 3000)
+
+onBeforeUnmount(() => {
+  window.clearTimeout(asyncTitleTimer)
+})
 
 const codeClick = () => {
   message.info(t('qrcodeDemo.click'))

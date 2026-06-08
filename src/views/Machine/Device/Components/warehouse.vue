@@ -13,7 +13,7 @@
 <script setup lang="ts">
 import { computed, toRef } from 'vue'
 import { Button as AButton, Col as ACol, Row as ARow, message } from 'ant-design-vue'
-import { PATH_URL } from '@/config/axios/service'
+import * as requestApi from '@/api/request'
 
 const props = defineProps({
   ruleId: {
@@ -29,7 +29,7 @@ const test = () => {
 }
 
 const getImageURL = (imageURL: string) => {
-  return PATH_URL + '/Common/downLoadPic/' + imageURL
+  return requestApi.getDownloadPicUrl(imageURL)
 }
 </script>
 

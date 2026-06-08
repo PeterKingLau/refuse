@@ -110,6 +110,10 @@
 </template>
 
 <script setup lang="ts">
+import { getAreaChinaApi } from '@/api/machine'
+
+import { addDeviceAreaApi, deleteDeviceAreaApi, getDeviceAreaApi, updateDeviceAreaApi } from '@/api/permission'
+
 import { computed, inject, onMounted, reactive, ref } from 'vue'
 import {
   Button as AButton,
@@ -126,7 +130,7 @@ import {
 import type { TableColumnsType } from 'ant-design-vue'
 import type { AxiosRequestConfig } from 'axios'
 import qs from 'qs'
-import { PATH_URL, service } from '@/config/axios/service'
+import * as requestApi from '@/api/request'
 import { Icon } from '@/components/Icon'
 
 type TreeKey = string | number
@@ -209,7 +213,7 @@ const deleteDeviceArea = (ids: number[], content: string) => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      await service.post(PATH_URL + '/Permission/deleteDeviceArea', qs.stringify({ ids }, { arrayFormat: 'brackets' }))
+      await deleteDeviceAreaApi(qs.stringify({ ids }, { arrayFormat: 'brackets' }))
       getAreaData()
       message.success('删除记录成功')
     }
@@ -239,7 +243,7 @@ const rowSelection = computed(() => ({
 }))
 
 const getAreaData = () => {
-  service.post(PATH_URL + '/Permission/getDeviceArea', qs.stringify({ name: form.area }, { arrayFormat: 'brackets' })).then((res: any) => {
+  getDeviceAreaApi(qs.stringify({ name: form.area }, { arrayFormat: 'brackets' })).then((res: any) => {
     areaTableData.value = res.data || []
     selectedRowKeys.value = []
     DeleteIdArray = []
@@ -337,7 +341,7 @@ const getAreaChildren = async (pcode: TreeKey) => {
       pcode
     }
   }
-  const res: any = await service.get(PATH_URL + '/MachineManage/getAreaChina', config)
+  const res: any = await getAreaChinaApi(config)
   return normalizeAreaTree(res.data || [])
 }
 
@@ -393,7 +397,7 @@ const onAddConfirm = () => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      await service.post(PATH_URL + '/Permission/addDeviceArea', addFormData)
+      await addDeviceAreaApi(addFormData)
       message.success('操作成功')
       getAreaData()
       closeAreaDialog()
@@ -414,7 +418,7 @@ const updateDeviceArea = () => {
         areaName: addFormData.areaName
       }
 
-      await service.post(PATH_URL + '/Permission/updateDeviceArea', qs.stringify(data, { arrayFormat: 'brackets' }))
+      await updateDeviceAreaApi(qs.stringify(data, { arrayFormat: 'brackets' }))
       message.success('操作成功')
       getAreaData()
       closeAreaDialog()

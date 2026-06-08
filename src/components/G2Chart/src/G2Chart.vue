@@ -72,19 +72,34 @@ const elRef = ref<HTMLElement>()
 const contentEl = ref<Element>()
 
 let chartRef: Nullable<G2ChartInstance> = null
+let renderToken = 0
+let isDisposed = false
 
 const renderChart = async () => {
-  if (!chartRef) return
+  const chart = chartRef
+  if (!chart || isDisposed) return
 
-  chartRef.options(unref(chartOptions))
-  await chartRef.render()
-  emit('rendered', chartRef)
+  const currentToken = ++renderToken
+
+  try {
+    chart.options(unref(chartOptions))
+    await chart.render()
+  } catch (error) {
+    if (!isDisposed) {
+      throw error
+    }
+    return
+  }
+
+  if (isDisposed || chartRef !== chart || currentToken !== renderToken) return
+
+  emit('rendered', chart)
 }
 
 const initChart = async () => {
   await nextTick()
   const el = unref(elRef)
-  if (!el || chartRef) return
+  if (!el || chartRef || isDisposed) return
 
   chartRef = new Chart({
     container: el,
@@ -96,7 +111,7 @@ const initChart = async () => {
 }
 
 const resizeChart = async () => {
-  if (!chartRef) return
+  if (!chartRef || isDisposed) return
 
   await chartRef.forceFit()
 }
@@ -122,6 +137,7 @@ watch(
 )
 
 onMounted(() => {
+  isDisposed = false
   void initChart()
 
   window.addEventListener('resize', resizeHandler)
@@ -131,6 +147,8 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  isDisposed = true
+  renderToken += 1
   window.removeEventListener('resize', resizeHandler)
   unref(contentEl)?.removeEventListener('transitionend', contentResizeHandler)
   resizeHandler.cancel()

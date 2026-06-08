@@ -51,8 +51,7 @@ export const useTagsViewStore = defineStore('tagsView', {
         const name = item.name as string
         cacheMap.add(name)
       }
-      if (Array.from(this.cachedViews).sort().toString() === Array.from(cacheMap).sort().toString())
-        return
+      if (Array.from(this.cachedViews).sort().toString() === Array.from(cacheMap).sort().toString()) return
       this.cachedViews = cacheMap
     },
     // 删除某个
@@ -100,10 +99,7 @@ export const useTagsViewStore = defineStore('tagsView', {
     },
     // 删除左侧
     delLeftViews(view: RouteLocationNormalizedLoaded) {
-      const index = findIndex<RouteLocationNormalizedLoaded>(
-        this.visitedViews,
-        (v) => v.path === view.path
-      )
+      const index = findIndex<RouteLocationNormalizedLoaded>(this.visitedViews, (v) => v.path === view.path)
       if (index > -1) {
         this.visitedViews = this.visitedViews.filter((v, i) => {
           return v?.meta?.affix || v.path === view.path || i > index
@@ -113,10 +109,7 @@ export const useTagsViewStore = defineStore('tagsView', {
     },
     // 删除右侧
     delRightViews(view: RouteLocationNormalizedLoaded) {
-      const index = findIndex<RouteLocationNormalizedLoaded>(
-        this.visitedViews,
-        (v) => v.path === view.path
-      )
+      const index = findIndex<RouteLocationNormalizedLoaded>(this.visitedViews, (v) => v.path === view.path)
       if (index > -1) {
         this.visitedViews = this.visitedViews.filter((v, i) => {
           return v?.meta?.affix || v.path === view.path || i < index
@@ -131,6 +124,23 @@ export const useTagsViewStore = defineStore('tagsView', {
           break
         }
       }
+    },
+    moveVisitedView(sourceFullPath: string, targetFullPath: string, placement: 'before' | 'after' = 'before') {
+      const sourceIndex = this.visitedViews.findIndex((v) => v.fullPath === sourceFullPath)
+      const targetIndex = this.visitedViews.findIndex((v) => v.fullPath === targetFullPath)
+
+      if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) return
+
+      const sourceView = this.visitedViews[sourceIndex]
+      const targetView = this.visitedViews[targetIndex]
+
+      if (sourceView?.meta?.affix || targetView?.meta?.affix) return
+
+      const [movedView] = this.visitedViews.splice(sourceIndex, 1)
+      const nextTargetIndex = this.visitedViews.findIndex((v) => v.fullPath === targetFullPath)
+      const insertIndex = placement === 'after' ? nextTargetIndex + 1 : nextTargetIndex
+
+      this.visitedViews.splice(insertIndex, 0, movedView)
     }
   }
 })

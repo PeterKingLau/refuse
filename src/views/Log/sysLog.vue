@@ -148,6 +148,8 @@
 </template>
 
 <script setup lang="ts">
+import { deleteLogIdsApi, getLogDataApi } from '@/api/machine'
+
 import { computed, inject, onMounted, ref } from 'vue'
 import {
   Button as AButton,
@@ -166,7 +168,7 @@ import {
 } from 'ant-design-vue'
 import type { TableColumnsType } from 'ant-design-vue'
 import qs from 'qs'
-import { PATH_URL, service } from '@/config/axios/service'
+import * as requestApi from '@/api/request'
 import { Icon } from '@/components/Icon'
 
 const ARangePicker = ADatePicker.RangePicker
@@ -297,7 +299,7 @@ const getLogData = () => {
   Queryparam.value.page = currentPage.value
   Queryparam.value.size = pageSize.value
 
-  service.post(PATH_URL + '/MachineMange/getLogData', Queryparam.value).then((res: any) => {
+  getLogDataApi(Queryparam.value).then((res: any) => {
     total.value = res.data?.total || 0
     logData.value = res.data?.records || []
     selectedRowKeys.value = []
@@ -311,23 +313,20 @@ const deleteOfDetail = () => {
     return
   }
 
-  service
-    .post(
-      PATH_URL + '/MachineMange/deleteLogIds',
-      qs.stringify(
-        {
-          ids: DeleteIdArray
-        },
-        { arrayFormat: 'brackets' }
-      )
+  deleteLogIdsApi(
+    qs.stringify(
+      {
+        ids: DeleteIdArray
+      },
+      { arrayFormat: 'brackets' }
     )
-    .then((res: any) => {
-      if (res.code == 200) {
-        message.success('操作成功')
-        DeleteIdArray = []
-        getLogData()
-      }
-    })
+  ).then((res: any) => {
+    if (res.code == 200) {
+      message.success('操作成功')
+      DeleteIdArray = []
+      getLogData()
+    }
+  })
 }
 
 const onReset = () => {

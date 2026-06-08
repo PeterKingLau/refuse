@@ -16,7 +16,15 @@
 
         <AFormItem label="积分提现比例 1元兑换" name="proportional" class="inline-form-item">
           <div class="addon-control">
-            <AInputNumber v-model:value="settingValue.proportional" :min="1" :max="99999" class="addon-input" placeholder="请输入" />
+            <AInput
+              :value="getNumberInputValue(settingValue.proportional)"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              :maxlength="5"
+              class="addon-input"
+              placeholder="请输入"
+              @update:value="(value) => setNumberInputValue('proportional', value)"
+            />
             <span class="addon-after">积分</span>
           </div>
         </AFormItem>
@@ -24,21 +32,45 @@
         <AFormItem label="单笔最小可提现金额" name="minimumWithdrawalAmount" class="inline-form-item">
           <div class="addon-control">
             <span class="addon-before">¥</span>
-            <AInputNumber v-model:value="settingValue.minimumWithdrawalAmount" :min="1" :max="99999" class="addon-input" placeholder="请输入" />
+            <AInput
+              :value="getNumberInputValue(settingValue.minimumWithdrawalAmount)"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              :maxlength="5"
+              class="addon-input"
+              placeholder="请输入"
+              @update:value="(value) => setNumberInputValue('minimumWithdrawalAmount', value)"
+            />
           </div>
         </AFormItem>
 
         <AFormItem label="单笔最大可提现金额" name="maximumWithdrawalAmount" class="inline-form-item">
           <div class="addon-control">
             <span class="addon-before">¥</span>
-            <AInputNumber v-model:value="settingValue.maximumWithdrawalAmount" :min="1" :max="99999" class="addon-input" placeholder="请输入" />
+            <AInput
+              :value="getNumberInputValue(settingValue.maximumWithdrawalAmount)"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              :maxlength="5"
+              class="addon-input"
+              placeholder="请输入"
+              @update:value="(value) => setNumberInputValue('maximumWithdrawalAmount', value)"
+            />
           </div>
         </AFormItem>
 
         <AFormItem label="单日最大可提现金额" name="maximumOfDay" class="inline-form-item">
           <div class="addon-control">
             <span class="addon-before">¥</span>
-            <AInputNumber v-model:value="settingValue.maximumOfDay" :min="1" :max="99999" class="addon-input" placeholder="请输入" />
+            <AInput
+              :value="getNumberInputValue(settingValue.maximumOfDay)"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              :maxlength="5"
+              class="addon-input"
+              placeholder="请输入"
+              @update:value="(value) => setNumberInputValue('maximumOfDay', value)"
+            />
           </div>
         </AFormItem>
 
@@ -51,7 +83,10 @@
         </AFormItem>
 
         <AFormItem class="form-actions">
-          <AButton type="primary" @click="onSubmit">提交</AButton>
+          <div class="action-buttons">
+            <AButton type="primary" @click="onSubmit">提交</AButton>
+            <AButton @click="onReset">重置</AButton>
+          </div>
         </AFormItem>
       </AForm>
     </div>
@@ -59,13 +94,16 @@
 </template>
 
 <script setup lang="ts">
+import { getDepartmentForSelectApi } from '@/api/permission'
+import { getPointSwappingRulesApi, savePointSwappingRulesApi } from '@/api/maintenance/pointsSetting'
+
 import { computed, onMounted, reactive, ref } from 'vue'
 import {
   Button as AButton,
   Divider as ADivider,
   Form as AForm,
   FormItem as AFormItem,
-  InputNumber as AInputNumber,
+  Input as AInput,
   Modal as AModal,
   RadioGroup as ARadioGroup,
   Select as ASelect,
@@ -74,7 +112,6 @@ import {
 } from 'ant-design-vue'
 import type { FormInstance } from 'ant-design-vue'
 import qs from 'qs'
-import { PATH_URL, service } from '@/config/axios/service'
 
 interface DepartmentStruct {
   id: number
@@ -94,6 +131,7 @@ interface SettingValueStruct {
 }
 
 type SwitchField = 'canBeGiven' | 'isEnabled'
+type NumberField = 'proportional' | 'minimumWithdrawalAmount' | 'maximumWithdrawalAmount' | 'maximumOfDay'
 
 const departmentArray = ref<DepartmentStruct[]>([])
 const selectDepartment = ref<number>()
@@ -139,6 +177,18 @@ const rules: Record<string, any[]> = {
   maximumOfDay: numberRangeRule('单日最大可提现金额必须输入')
 }
 
+const getNumberInputValue = (value: number) => {
+  return value ? String(value) : ''
+}
+
+const setNumberInputValue = (field: NumberField, value: string) => {
+  const normalizedValue = String(value || '')
+    .replace(/\D/g, '')
+    .slice(0, 5)
+
+  settingValue[field] = normalizedValue ? Number(normalizedValue) : 0
+}
+
 const onSubmit = () => {
   baseForm.value
     ?.validate()
@@ -157,9 +207,7 @@ const onSubmit = () => {
 }
 
 const saveData = async () => {
-  const url = '/mem/memPointSwappingRules/savePointSwappingRules'
-  const res: any = await service.post(
-    PATH_URL + url,
+  const res: any = await savePointSwappingRulesApi(
     qs.stringify(
       {
         id: settingValue.id,
@@ -196,8 +244,7 @@ const resetSettingValue = (departmentId: number) => {
 const onChange = () => {
   if (!selectDepartment.value) return
 
-  const url = '/mem/memPointSwappingRules/getPointSwappingRules?departmentId=' + selectDepartment.value
-  service.get(PATH_URL + url).then((res: any) => {
+  getPointSwappingRulesApi(selectDepartment.value).then((res: any) => {
     if (res.data == null) {
       message.warning('当前运营商没有设置提现规则，显示默认设置')
       resetSettingValue(selectDepartment.value as number)
@@ -216,12 +263,22 @@ const onChange = () => {
   })
 }
 
+const onReset = () => {
+  if (selectDepartment.value) {
+    onChange()
+    return
+  }
+
+  baseForm.value?.clearValidate()
+  resetSettingValue(0)
+}
+
 const setSwitchValue = (field: SwitchField, checked: boolean | string | number) => {
   settingValue[field] = checked ? 1 : 0
 }
 
 const getDepartment = () => {
-  service.get(PATH_URL + '/Permission/getDepartmentForSelect').then((res: any) => {
+  getDepartmentForSelectApi().then((res: any) => {
     if (res.code == 200) {
       departmentArray.value = res.data || []
     }
@@ -237,14 +294,15 @@ onMounted(() => {
 .points-setting-page {
   display: flex;
   width: 100%;
+  padding: 24px 0;
+  color: var(--app-text-color-regular);
   justify-content: center;
 }
 
 .setting-panel {
   width: min(760px, 100%);
-  padding: 24px;
-  background: #fff;
-  border-radius: 6px;
+  padding: 0;
+  background: transparent;
 }
 
 .department-form,
@@ -266,7 +324,7 @@ onMounted(() => {
 
   :deep(.ant-form-item-label > label) {
     height: 32px;
-    color: #262626;
+    color: var(--app-text-color-regular);
     font-weight: 500;
   }
 
@@ -274,6 +332,19 @@ onMounted(() => {
     min-width: 0;
     flex: 1;
   }
+}
+
+.department-form {
+  margin-bottom: 18px;
+}
+
+.setting-form {
+  padding-top: 6px;
+}
+
+:deep(.ant-divider) {
+  margin: 20px 0;
+  border-color: var(--app-border-color);
 }
 
 .inline-form-item,
@@ -297,28 +368,30 @@ onMounted(() => {
 .addon-before,
 .addon-after {
   display: inline-flex;
-  min-width: 42px;
-  padding: 0 11px;
-  color: #595959;
-  background: #fafafa;
-  border: 1px solid #d9d9d9;
+  min-width: 28px;
+  padding: 0 8px;
+  color: var(--app-text-color-secondary);
   align-items: center;
   justify-content: center;
 }
 
 .addon-before {
-  border-right: 0;
-  border-radius: 6px 0 0 6px;
+  padding-left: 0;
 }
 
 .addon-after {
-  border-left: 0;
-  border-radius: 0 6px 6px 0;
+  justify-content: flex-start;
 }
 
 .form-actions {
   :deep(.ant-form-item-control) {
     margin-left: 220px;
   }
+}
+
+.action-buttons {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
 }
 </style>

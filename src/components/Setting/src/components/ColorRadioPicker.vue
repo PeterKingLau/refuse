@@ -38,11 +38,11 @@ watch(
 </script>
 
 <template>
-  <div :class="prefixCls" class="flex flex-wrap space-x-14px">
+  <div :class="prefixCls">
     <span
       v-for="(item, i) in schema"
       :key="`radio-${i}`"
-      class="w-20px h-20px cursor-pointer rounded-2px border-solid border-gray-300 border-2px text-center leading-20px mb-5px"
+      class="w-20px h-20px cursor-pointer rounded-2px border-solid border-gray-300 border-2px text-center leading-20px"
       :class="{ 'is-active': colorVal === item }"
       :style="{
         background: item
@@ -58,6 +58,11 @@ watch(
 @prefix-cls: ~'@{namespace}-color-radio-picker';
 
 .@{prefix-cls} {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px 13px;
+  justify-content: center;
+
   .is-active {
     border-color: var(--app-color-primary);
   }

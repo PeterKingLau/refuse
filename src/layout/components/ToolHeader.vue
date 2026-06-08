@@ -6,6 +6,7 @@ import { SizeDropdown } from '@/components/SizeDropdown'
 import { UserInfo } from '@/components/UserInfo'
 import { Screenfull } from '@/components/Screenfull'
 import { Breadcrumb } from '@/components/Breadcrumb'
+import { Setting } from '@/components/Setting'
 import { useAppStore } from '@/store/modules/app'
 import { useDesign } from '@/hooks/web/useDesign'
 
@@ -59,6 +60,7 @@ export default defineComponent({
           ) : undefined}
           */}
           <UserInfo class="hover-trigger"></UserInfo>
+          <Setting class="hover-trigger" inline iconColor="var(--top-header-text-color)"></Setting>
         </div>
       </div>
     )

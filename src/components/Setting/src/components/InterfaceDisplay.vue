@@ -136,79 +136,97 @@ watch(
 
 <template>
   <div :class="prefixCls">
-    <div class="flex justify-between items-center">
+    <div class="setting-row">
       <span class="text-14px">{{ t('setting.breadcrumb') }}</span>
       <ASwitch v-model:checked="breadcrumb" @change="breadcrumbChange" />
     </div>
 
-    <div class="flex justify-between items-center">
+    <div class="setting-row">
       <span class="text-14px">{{ t('setting.breadcrumbIcon') }}</span>
       <ASwitch v-model:checked="breadcrumbIcon" @change="breadcrumbIconChange" />
     </div>
 
-    <div class="flex justify-between items-center">
+    <div class="setting-row">
       <span class="text-14px">{{ t('setting.hamburgerIcon') }}</span>
       <ASwitch v-model:checked="hamburger" @change="hamburgerChange" />
     </div>
 
-    <div class="flex justify-between items-center">
+    <div class="setting-row">
       <span class="text-14px">{{ t('setting.screenfullIcon') }}</span>
       <ASwitch v-model:checked="screenfull" @change="screenfullChange" />
     </div>
 
-    <div class="flex justify-between items-center">
+    <div class="setting-row">
       <span class="text-14px">{{ t('setting.sizeIcon') }}</span>
       <ASwitch v-model:checked="size" @change="sizeChange" />
     </div>
 
-    <div class="flex justify-between items-center">
+    <div class="setting-row">
       <span class="text-14px">{{ t('setting.localeIcon') }}</span>
       <ASwitch v-model:checked="locale" @change="localeChange" />
     </div>
 
-    <div class="flex justify-between items-center">
+    <div class="setting-row">
       <span class="text-14px">{{ t('setting.tagsView') }}</span>
       <ASwitch v-model:checked="tagsView" @change="tagsViewChange" />
     </div>
 
-    <div class="flex justify-between items-center">
+    <div class="setting-row">
       <span class="text-14px">{{ t('setting.tagsViewIcon') }}</span>
       <ASwitch v-model:checked="tagsViewIcon" @change="tagsViewIconChange" />
     </div>
 
-    <div class="flex justify-between items-center">
+    <div class="setting-row">
       <span class="text-14px">{{ t('setting.logo') }}</span>
       <ASwitch v-model:checked="logo" @change="logoChange" />
     </div>
 
-    <div class="flex justify-between items-center">
+    <div class="setting-row">
       <span class="text-14px">{{ t('setting.uniqueOpened') }}</span>
       <ASwitch v-model:checked="uniqueOpened" @change="uniqueOpenedChange" />
     </div>
 
-    <div class="flex justify-between items-center">
+    <div class="setting-row">
       <span class="text-14px">{{ t('setting.fixedHeader') }}</span>
       <ASwitch v-model:checked="fixedHeader" @change="fixedHeaderChange" />
     </div>
 
-    <div class="flex justify-between items-center">
+    <div class="setting-row">
       <span class="text-14px">{{ t('setting.footer') }}</span>
       <ASwitch v-model:checked="footer" @change="footerChange" />
     </div>
 
-    <div class="flex justify-between items-center">
+    <div class="setting-row">
       <span class="text-14px">{{ t('setting.greyMode') }}</span>
       <ASwitch v-model:checked="greyMode" @change="greyModeChange" />
     </div>
 
-    <div class="flex justify-between items-center">
+    <div class="setting-row">
       <span class="text-14px">{{ t('setting.dynamicRouter') }}</span>
       <ASwitch v-model:checked="dynamicRouter" @change="dynamicRouterChange" />
     </div>
 
-    <div class="flex justify-between items-center">
+    <div class="setting-row">
       <span class="text-14px">{{ t('setting.fixedMenu') }}</span>
       <ASwitch v-model:checked="fixedMenu" @change="fixedMenuChange" />
     </div>
   </div>
 </template>
+
+<style lang="less" scoped>
+@prefix-cls: ~'@{namespace}-interface-display';
+
+.@{prefix-cls} {
+  display: grid;
+  gap: 6px;
+}
+
+.setting-row {
+  display: grid;
+  min-height: 30px;
+  color: var(--app-text-color-regular);
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+</style>

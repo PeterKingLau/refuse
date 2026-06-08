@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed } from 'vue'
 import { useAppStore } from '@/store/modules/app'
 import { Switch as ASwitch } from 'ant-design-vue'
 import { useIcon } from '@/hooks/web/useIcon'
@@ -16,16 +16,18 @@ const CrescentMoon = useIcon({ icon: 'emojione-monotone:crescent-moon', color: '
 const appStore = useAppStore()
 
 // 初始化获取是否是暗黑主题
-const isDark = ref(appStore.getIsDark)
+const isDark = computed({
+  get: () => appStore.getIsDark,
+  set: (val: boolean) => {
+    appStore.setIsDark(val)
+  }
+})
 
 // 设置switch的背景颜色
-const themeChange = (val: boolean) => {
-  appStore.setIsDark(val)
-}
 </script>
 
 <template>
-  <ASwitch :class="prefixCls" v-model:checked="isDark" @change="themeChange">
+  <ASwitch :class="prefixCls" v-model:checked="isDark">
     <template #checkedChildren>
       <component :is="Sun" />
     </template>

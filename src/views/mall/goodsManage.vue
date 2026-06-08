@@ -50,7 +50,7 @@
       </ASpace>
     </div>
 
-    <ATable row-key="id" :columns="columns" :data-source="resultData" :loading="tableLoading" :pagination="false" :row-selection="rowSelection" :scroll="{ x: 1080 }" bordered>
+    <ATable row-key="id" :columns="columns" :data-source="resultData" :loading="tableLoading" :pagination="false" :row-selection="rowSelection" :scroll="{ x: 'max-content' }" bordered>
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'status'">
           <ATag :color="record.status === 1 ? 'success' : 'error'" :bordered="false">
@@ -112,7 +112,15 @@
           <AInput v-model:value="goodsForm.name" allow-clear placeholder="请输入商品名称" />
         </AFormItem>
         <AFormItem label="商品图片">
-          <AUpload class="avatar-uploader" :action="uploadImageUrl" :show-upload-list="false" :before-upload="beforeAvatarUpload" :headers="headObject" @change="handleAvatarSuccess">
+          <AUpload
+            class="avatar-uploader"
+            :action="uploadImageUrl"
+            :show-upload-list="false"
+            :before-upload="beforeAvatarUpload"
+            :headers="headObject"
+            :custom-request="uppyUploadRequest"
+            @change="handleAvatarSuccess"
+          >
             <img v-if="goodsForm.fileName" :src="GetImageURL(goodsForm.fileName)" class="avatar" />
             <div v-else class="upload-placeholder">
               <Icon icon="ant-design:plus-outlined" />
@@ -131,6 +139,8 @@
 </template>
 
 <script setup lang="ts">
+import { addGoodsApi, getGoodsApi, getMallTypeForSelectApi, updateGoodsApi, updateGoodsStatusApi } from '@/api/mall'
+
 import { computed, onMounted, reactive, ref } from 'vue'
 import {
   Button as AButton,
@@ -151,7 +161,8 @@ import {
 } from 'ant-design-vue'
 import type { TableColumnsType, TableProps, UploadChangeParam } from 'ant-design-vue'
 import qs from 'qs'
-import { PATH_URL, service } from '@/config/axios/service'
+import * as requestApi from '@/api/request'
+import { uppyUploadRequest } from '@/utils/uppyUpload'
 import { Icon } from '@/components/Icon'
 import { GetImageURL } from '@/utils/tools'
 
@@ -243,7 +254,7 @@ const headObject = computed(() => ({
   Authorization: localStorage.getItem('token') || ''
 }))
 
-const uploadImageUrl = computed(() => PATH_URL + '/Common/upLoadImage')
+const uploadImageUrl = computed(() => requestApi.getUploadImageUrl())
 
 const resetGoodsForm = () => {
   goodsForm.id = undefined
@@ -261,8 +272,8 @@ const handleBatchStatus = async (url: string) => {
     return
   }
 
-  const res: any = await service.post(
-    PATH_URL + url,
+  const res: any = await updateGoodsStatusApi(
+    url,
     qs.stringify(
       {
         ids: selectedIds.value
@@ -277,8 +288,8 @@ const handleBatchStatus = async (url: string) => {
 }
 
 const handleRowStatus = async (id: number, url: string) => {
-  const res: any = await service.post(
-    PATH_URL + url,
+  const res: any = await updateGoodsStatusApi(
+    url,
     qs.stringify(
       {
         ids: [id]
@@ -352,8 +363,7 @@ const updateSubmit = async () => {
   submitLoading.value = true
 
   try {
-    const res: any = await service.post(
-      PATH_URL + '/mal/malGoods/UpdateGoods',
+    const res: any = await updateGoodsApi(
       qs.stringify({
         id: goodsForm.id,
         goodsName: goodsForm.name,
@@ -377,8 +387,7 @@ const submitAdd = async () => {
   submitLoading.value = true
 
   try {
-    const res: any = await service.post(
-      PATH_URL + '/mal/malGoods/addGoods',
+    const res: any = await addGoodsApi(
       qs.stringify({
         goodsName: goodsForm.name,
         goodsType: goodsForm.type,
@@ -414,7 +423,7 @@ const onQuery = () => {
 }
 
 const getGoodsType = async () => {
-  const res: any = await service.get(PATH_URL + '/mal/malType/GetMalTypeForSelect')
+  const res: any = await getMallTypeForSelectApi()
   goodsTypeList.value = res.data || []
 }
 
@@ -422,8 +431,7 @@ const getGoods = async () => {
   tableLoading.value = true
 
   try {
-    const res: any = await service.post(
-      PATH_URL + '/mal/malGoods/GetGoods',
+    const res: any = await getGoodsApi(
       qs.stringify({
         page: currentPage.value - 1,
         size: queryForm.size,

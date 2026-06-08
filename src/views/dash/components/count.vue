@@ -33,9 +33,11 @@
 </template>
 
 <script setup lang="ts">
+import { getDeviceCountApi, getMemberCountApi, getPointCountApi, getWarningCountApi } from '@/api/machine'
+
 import { computed, onMounted, ref } from 'vue'
 import { Col as ACol, Row as ARow } from 'ant-design-vue'
-import { PATH_URL, service } from '@/config/axios/service'
+import * as requestApi from '@/api/request'
 import s1 from '@/assets/imgs/s1.png'
 import s2 from '@/assets/imgs/s2.png'
 import s3 from '@/assets/imgs/s3.png'
@@ -59,7 +61,7 @@ onMounted(() => {
 })
 
 const getPointsData = () => {
-  service.get(PATH_URL + '/MachineMange/GetPointCount').then((res: any) => {
+  getPointCountApi().then((res: any) => {
     point_count.value = toSafeNumber(res.data?.count)
     point_thisMonth.value = toSafeNumber(res.data?.thisMonth)
     point_QOQ.value = toSafeNumber(res.data?.QOQ)
@@ -67,7 +69,7 @@ const getPointsData = () => {
 }
 
 const getMemberCount = () => {
-  service.get(PATH_URL + '/MachineMange/GetMemberCount').then((res: any) => {
+  getMemberCountApi().then((res: any) => {
     m_count.value = toSafeNumber(res.data?.count)
     m_thisMonth.value = toSafeNumber(res.data?.thisMonth)
     m_QOQ.value = toSafeNumber(res.data?.QOQ)
@@ -75,7 +77,7 @@ const getMemberCount = () => {
 }
 
 const getDeviceData = () => {
-  service.get(PATH_URL + '/MachineMange/GetDeviceCount').then((res: any) => {
+  getDeviceCountApi().then((res: any) => {
     deviceCount.value = toSafeNumber(res.data?.cc)
     deviceOffline.value = toSafeNumber(res.data?.off)
     deviceOnLine.value = toSafeNumber(res.data?.on)
@@ -83,7 +85,7 @@ const getDeviceData = () => {
 }
 
 const getWarningData = () => {
-  service.get(PATH_URL + '/MachineMange/GetWarningCount').then((res: any) => {
+  getWarningCountApi().then((res: any) => {
     w_count.value = toSafeNumber(res.data?.count)
     w_1.value = toSafeNumber(res.data?.w1)
     w_2.value = toSafeNumber(res.data?.w2)

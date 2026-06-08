@@ -125,7 +125,15 @@
 
           <ACol :span="12">
             <AFormItem label="图片">
-              <AUpload class="avatar-uploader" :action="UpImageURL" :show-upload-list="false" :before-upload="beforeAvatarUpload" :headers="headObject" @change="handleUploadChange">
+              <AUpload
+                class="avatar-uploader"
+                :action="UpImageURL"
+                :show-upload-list="false"
+                :before-upload="beforeAvatarUpload"
+                :headers="headObject"
+                :custom-request="uppyUploadRequest"
+                @change="handleUploadChange"
+              >
                 <img v-if="updateForm.pic" :src="getImageURL(updateForm.pic)" class="avatar" />
                 <div v-else class="upload-placeholder">
                   <Icon icon="ant-design:plus-outlined" :size="24" />
@@ -209,6 +217,10 @@
 </template>
 
 <script setup lang="ts">
+import { addProductApi, authorizeProductApi, deleteProductApi, getEmpowerApi, getPeripheralApi, getProductApi } from '@/api/machine'
+
+import { getDepartmentForSelectApi } from '@/api/permission'
+
 import { computed, inject, onMounted, reactive, ref } from 'vue'
 import {
   Button as AButton,
@@ -233,7 +245,8 @@ import {
 import type { TableColumnsType, UploadChangeParam } from 'ant-design-vue'
 import type { Rule } from 'ant-design-vue/es/form'
 import qs from 'qs'
-import { PATH_URL, service } from '@/config/axios/service'
+import * as requestApi from '@/api/request'
+import { uppyUploadRequest } from '@/utils/uppyUpload'
 import { Icon } from '@/components/Icon'
 
 type TableKey = string | number
@@ -351,7 +364,7 @@ const getProductType = () => {
     size: pageSize.value
   }
 
-  service.post(PATH_URL + '/MachineMange/getProduct', parm).then((res: any) => {
+  getProductApi(parm).then((res: any) => {
     const data = res.data
     const records = Array.isArray(data) ? data : data?.records || []
     productTableData.value = records
@@ -443,8 +456,7 @@ const onAddConfirm = () => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      await service.post(
-        PATH_URL + '/MachineMange/addProduct',
+      await addProductApi(
         qs.stringify(
           {
             name: updateForm.name,
@@ -464,10 +476,10 @@ const onAddConfirm = () => {
 
 const onUpdate = () => {}
 
-const UpImageURL = computed(() => PATH_URL + '/Common/upLoadImage')
+const UpImageURL = computed(() => requestApi.getUploadImageUrl())
 
 const getImageURL = (imageURL?: string) => {
-  return imageURL ? PATH_URL + '/Common/downLoadPic/' + imageURL : ''
+  return imageURL ? requestApi.getDownloadPicUrl(imageURL) : ''
 }
 
 const beforeAvatarUpload = () => true
@@ -497,7 +509,7 @@ const peripheralOptions = computed(() =>
 )
 
 const getPeripheralData = () => {
-  service.get(PATH_URL + '/MachineMange/getPeripheral').then((res: any) => {
+  getPeripheralApi().then((res: any) => {
     PeripheralTreeData.value = res.data || []
   })
 }
@@ -509,7 +521,7 @@ const cc = ref<Record<string, number>>({})
 const handleDetail = (record: Record<string, any>) => {
   const val = record as ProductRecord
   currentData.value = val
-  service.get(PATH_URL + '/MachineMange/getEmpower?productId=' + val.id).then((res: any) => {
+  getEmpowerApi(val.id).then((res: any) => {
     cc.value = res.data || {}
   })
 
@@ -551,7 +563,7 @@ const departmentOptions = computed(() =>
 )
 
 const getDepartments = () => {
-  service.get(PATH_URL + '/Permission/getDepartmentForSelect').then((res: any) => {
+  getDepartmentForSelectApi().then((res: any) => {
     Departments.value = res.data || []
   })
 }
@@ -567,8 +579,7 @@ const doAuth = () => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      await service.post(
-        PATH_URL + '/MachineMange/AuthorizeThePorduct',
+      await authorizeProductApi(
         qs.stringify(
           {
             productId: authData.id,
@@ -589,8 +600,7 @@ const doAuth = () => {
 }
 
 const doRemove = async (ids: number[]) => {
-  await service.post(
-    PATH_URL + '/MachineMange/deletrProduct',
+  await deleteProductApi(
     qs.stringify(
       {
         ids

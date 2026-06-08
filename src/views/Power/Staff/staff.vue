@@ -216,7 +216,15 @@
 
           <ACol :span="12">
             <AFormItem label="头像">
-              <AUpload class="avatar-uploader" :action="UpImageURL" :show-upload-list="false" :before-upload="beforeAvatarUpload" :headers="headObject" @change="handleAvatarUploadChange">
+              <AUpload
+                class="avatar-uploader"
+                :action="UpImageURL"
+                :show-upload-list="false"
+                :before-upload="beforeAvatarUpload"
+                :headers="headObject"
+                :custom-request="uppyUploadRequest"
+                @change="handleAvatarUploadChange"
+              >
                 <img v-if="addFormData.logoPath" :src="getImageURL(addFormData.logoPath)" class="avatar" />
                 <div v-else class="upload-placeholder">
                   <Icon icon="ant-design:plus-outlined" :size="24" />
@@ -257,6 +265,8 @@
 </template>
 
 <script setup lang="ts">
+import { addStaffApi, deleteStaffApi, getDepartmentTreeApi, getJobOfUserApi, getPowCharacterForSelectApi, getStaffApi, resetStaffPasswordApi, updateStaffApi } from '@/api/permission'
+
 import { computed, inject, onMounted, reactive, ref } from 'vue'
 import {
   Button as AButton,
@@ -288,7 +298,8 @@ import {
 import type { DataNode } from 'ant-design-vue/es/tree'
 import type { UploadChangeParam } from 'ant-design-vue'
 import type { TableColumnsType } from 'ant-design-vue'
-import { PATH_URL, service } from '@/config/axios/service'
+import * as requestApi from '@/api/request'
+import { uppyUploadRequest } from '@/utils/uppyUpload'
 import { Icon } from '@/components/Icon'
 
 type TreeKey = string | number
@@ -392,7 +403,7 @@ const jobOptions = computed(() =>
 )
 
 const getJobs = () => {
-  service.get(PATH_URL + '/Permission/getJobOfUser').then((res: any) => {
+  getJobOfUserApi().then((res: any) => {
     jobs.value = res.data || []
   })
 }
@@ -446,7 +457,7 @@ const deleteStaff = (ids: number[]) => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      const res: any = await service.post(PATH_URL + '/Permission/deleteStaff', ids)
+      const res: any = await deleteStaffApi(ids)
       if (res?.code === 200 || res) {
         message.success('操作成功')
         getStaffData()
@@ -486,7 +497,7 @@ const onClickRestPwd = () => {
         adminId: updatePwdFormData.value.adminId
       }
 
-      await service.post(PATH_URL + '/Permission/restPwd', params)
+      await resetStaffPasswordApi(params)
       message.success('操作成功')
       onClickClosePwdDialog()
     }
@@ -505,7 +516,7 @@ const updatePwdFormData = ref({
 })
 
 const getCharacter = () => {
-  service.get(PATH_URL + '/Permission/getPowCharacterForSelect').then((res: any) => {
+  getPowCharacterForSelectApi().then((res: any) => {
     characters.value = res.data || []
   })
 }
@@ -556,7 +567,7 @@ const onClickAddSubmit = () => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      const res: any = await service.post(PATH_URL + '/Permission/addStaff', addFormData.value)
+      const res: any = await addStaffApi(addFormData.value)
       if (res?.code === 200 || res) {
         message.success('添加成功')
         onCloseAddDialog()
@@ -572,7 +583,7 @@ const onUpdateStaff = () => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      await service.post(PATH_URL + '/Permission/updateStaff', addFormData.value)
+      await updateStaffApi(addFormData.value)
       message.success('操作成功')
       onCloseAddDialog()
     }
@@ -599,10 +610,10 @@ const headObject = computed(() => ({
   Authorization: localStorage.getItem('token') || ''
 }))
 
-const UpImageURL = computed(() => PATH_URL + '/Common/upLoadImage')
+const UpImageURL = computed(() => requestApi.getUploadImageUrl())
 
 const getImageURL = (imageURL?: string) => {
-  return imageURL ? PATH_URL + '/Common/downLoadPic/' + imageURL : ''
+  return imageURL ? requestApi.getDownloadPicUrl(imageURL) : ''
 }
 
 const addDialogVisible = ref(false)
@@ -676,7 +687,7 @@ const getStaffData = () => {
     eTime: endTime,
     departmentId: SearchFormData.departmentId
   }
-  service.post(PATH_URL + '/Permission/getStaff', params).then((res: any) => {
+  getStaffApi(params).then((res: any) => {
     tableData.value = res.data.records
     total.value = res.data.total
     selectedRowKeys.value = []
@@ -760,7 +771,7 @@ const SearchFormData = reactive<{
 const treeData = ref<DepartmentNode[]>([])
 
 const getDepartmentTree = () => {
-  service.get(PATH_URL + '/Permission/getDepartmentTree').then((res: any) => {
+  getDepartmentTreeApi().then((res: any) => {
     treeData.value = res.data || []
   })
 }

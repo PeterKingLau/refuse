@@ -1,4 +1,4 @@
-import { PATH_URL } from '@/config/axios/service'
+import * as requestApi from '@/api/request'
 
 export const FormatDate = (time: String): string => {
   if (time) {
@@ -8,17 +8,17 @@ export const FormatDate = (time: String): string => {
 }
 
 export const GetImageURL = (imageURL: string): string => {
-  return PATH_URL + '/Common/downLoadPic/' + imageURL
+  return requestApi.getDownloadPicUrl(imageURL)
 }
 
 export const GetVideoURL = (videoURL: string): string => {
-  return PATH_URL + '/Common/playVideo?fileName=' + videoURL
+  return requestApi.getPlayVideoUrl(videoURL)
 }
 
 export const GetInterFaceURL = (InterFaceURL: string): string => {
-  return PATH_URL + InterFaceURL
+  return requestApi.getApiUrl(InterFaceURL)
 }
 
 export const GetUpLoadExcelURL = (): string => {
-  return PATH_URL + '/Common/upLoadExcel'
+  return requestApi.getUploadExcelUrl()
 }

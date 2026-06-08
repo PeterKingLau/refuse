@@ -1,7 +1,7 @@
 <script lang="tsx">
 import { usePermissionStore } from '@/store/modules/permission'
 import { useAppStore } from '@/store/modules/app'
-import { computed, unref, defineComponent, watch, ref, onMounted } from 'vue'
+import { computed, unref, defineComponent, watch, ref, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import { Button as AButton } from 'ant-design-vue'
 import { Icon } from '@/components/Icon'
@@ -70,12 +70,17 @@ export default defineComponent({
     )
 
     const showTitle = ref(true)
+    let showTitleTimer: ReturnType<typeof setTimeout> | undefined
 
     watch(
       () => collapse.value,
       (collapse: boolean) => {
+        if (showTitleTimer) {
+          clearTimeout(showTitleTimer)
+        }
+
         if (!collapse) {
-          setTimeout(() => {
+          showTitleTimer = setTimeout(() => {
             showTitle.value = !collapse
           }, 200)
         } else {
@@ -83,6 +88,12 @@ export default defineComponent({
         }
       }
     )
+
+    onBeforeUnmount(() => {
+      if (showTitleTimer) {
+        clearTimeout(showTitleTimer)
+      }
+    })
 
     // 是否显示菜单
     const showMenu = ref(unref(fixedMenu) ? true : false)

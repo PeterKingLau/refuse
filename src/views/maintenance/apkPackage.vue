@@ -129,7 +129,15 @@
 
           <ACol :span="24">
             <AFormItem label="上传文件">
-              <AUploadDragger v-model:file-list="uploadFileList" :action="UpHarwarePackage" :headers="headObject" :max-count="1" @change="handleAvatarSuccess" @remove="deleteFile">
+              <AUploadDragger
+                v-model:file-list="uploadFileList"
+                :action="UpHarwarePackage"
+                :headers="headObject"
+                :custom-request="uppyUploadRequest"
+                :max-count="1"
+                @change="handleAvatarSuccess"
+                @remove="deleteFile"
+              >
                 <p class="upload-icon">
                   <Icon icon="ant-design:inbox-outlined" :size="36" />
                 </p>
@@ -181,6 +189,12 @@
 </template>
 
 <script setup lang="ts">
+import { addHardwareLibApi, deleteHardwareLibApi, deleteHardwarePackageApi, getHardwareLibApi, setPushRecordsApi } from '@/api/hardware'
+
+import { getDeviceTypeApi } from '@/api/machine'
+
+import { getDepartmentForSelectApi } from '@/api/permission'
+
 import { computed, inject, onMounted, ref } from 'vue'
 import {
   Button as AButton,
@@ -203,7 +217,8 @@ import {
 import type { TableColumnsType, UploadChangeParam } from 'ant-design-vue'
 import qs from 'qs'
 import { FormatDate } from '@/utils/tools'
-import { PATH_URL, service } from '@/config/axios/service'
+import * as requestApi from '@/api/request'
+import { uppyUploadRequest } from '@/utils/uppyUpload'
 import { Icon } from '@/components/Icon'
 
 const AUploadDragger = AUpload.Dragger
@@ -262,13 +277,13 @@ onMounted(() => {
 })
 
 const GetProduct = () => {
-  service.get(PATH_URL + '/Permission/getDepartmentForSelect').then((res: any) => {
+  getDepartmentForSelectApi().then((res: any) => {
     ProductArray.value = res.data || []
   })
 }
 
 const GetDeviceType = () => {
-  service.post(PATH_URL + '/MachineMange/getDeviceType').then((res: any) => {
+  getDeviceTypeApi().then((res: any) => {
     deviceTypeArray.value = res.data || []
   })
 }
@@ -352,7 +367,7 @@ const handlePageChange = (page: number, size: number) => {
 const GetApkPackageData = () => {
   searchFormData.value.page = currentPage.value
   searchFormData.value.size = pageSize.value
-  service.post(PATH_URL + '/HardwareLibrary/GetHardwareLib', searchFormData.value).then((res: any) => {
+  getHardwareLibApi(searchFormData.value).then((res: any) => {
     HardwareLibrary.value = res.data?.records || []
     total.value = res.data?.total || 0
     selectedRowKeys.value = []
@@ -369,7 +384,7 @@ const onClickAdd = () => {
   AddDialogVisible.value = true
 }
 
-const UpHarwarePackage = computed(() => PATH_URL + '/Common/upLoadHardware')
+const UpHarwarePackage = computed(() => requestApi.getUploadHardwareUrl())
 
 const InitAddPackageData = () => {
   AddPackageData.value = {
@@ -398,7 +413,7 @@ const handleAvatarSuccess = (info: UploadChangeParam) => {
 }
 
 const deleteFile = (file: any) => {
-  service.get(PATH_URL + '/Common/deleteHardwarePackage?fileName=' + file.name)
+  deleteHardwarePackageApi(file.name)
   return true
 }
 
@@ -412,7 +427,7 @@ const AddPackage = () => {
     return
   }
 
-  service.post(PATH_URL + '/HardwareLibrary/AddHardwareLib', AddPackageData.value).then(() => {
+  addHardwareLibApi(AddPackageData.value).then(() => {
     message.success('操作成功')
     uploadFileList.value = []
     GetApkPackageData()
@@ -444,7 +459,7 @@ const DeleteBatch = () => {
     okText: '确定',
     cancelText: '取消',
     onOk: async () => {
-      await service.post(PATH_URL + '/HardwareLibrary/DeleteHardwareLib', qs.stringify({ ids: DeleteIdArray }, { arrayFormat: 'brackets' }))
+      await deleteHardwareLibApi(qs.stringify({ ids: DeleteIdArray }, { arrayFormat: 'brackets' }))
       message.success('操作成功')
       GetApkPackageData()
     }
@@ -478,7 +493,7 @@ const handleClose = () => {
 
 const doPush = () => {
   PushData.value.id = currentRowId
-  service.post(PATH_URL + '/HardwareLibrary/SetPushRecords', PushData.value).then(() => {
+  setPushRecordsApi(PushData.value).then(() => {
     message.success('设置完成')
     PushdialogVisible.value = false
   })

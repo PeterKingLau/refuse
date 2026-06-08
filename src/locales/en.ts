@@ -69,6 +69,7 @@ export default {
     headerTheme: 'Header theme',
     cutMenu: 'Cut menu',
     copy: 'Copy',
+    clearCache: 'Clear cache and reset',
     clearAndReset: 'Clear cache and reset',
     copySuccess: 'Copied successfully',
     copyFailed: 'Copy failed',

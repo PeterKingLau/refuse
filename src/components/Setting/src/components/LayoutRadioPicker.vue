@@ -13,7 +13,7 @@ const layout = computed(() => appStore.getLayout)
 </script>
 
 <template>
-  <div :class="prefixCls" class="flex flex-wrap space-x-14px">
+  <div :class="prefixCls">
     <div
       :class="[
         `${prefixCls}__classic`,
@@ -63,6 +63,11 @@ const layout = computed(() => appStore.getLayout)
 @prefix-cls: ~'@{namespace}-layout-radio-picker';
 
 .@{prefix-cls} {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+
   &__classic {
     border: 2px solid #e5e7eb;
     border-radius: 4px;
